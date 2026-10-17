@@ -9,10 +9,14 @@ import { stars, zip } from '../shared/celebrate.js';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
-const KEEP = 5; // attempts remembered per problem
+const KEEP = 3; // attempts remembered per problem
 const SLOW = 5; // seconds: a wrong, missing, or slower attempt scores this
-const FAST = 1; // seconds: this fast or faster shows pure white
-const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0]]; // white, yellow, orange
+const GREEN = 3; // seconds: a cell whose average is under this is mastered
+const GREEN_COLOR = 'rgb(64, 192, 87)';
+const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; // white to red
+// A new record must beat the last cheer by about ten good answers' worth: a
+// 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
+const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
 
 // times: 'AxB' -> the last KEEP attempt scores in seconds, oldest first.
@@ -80,10 +84,13 @@ function speed() {
   return Math.exp(logs / (n * n));
 }
 
-// White at FAST seconds or faster, yellow halfway, orange at SLOW.
-function flame(seconds) {
-  const t = 2 * Math.min(1, Math.max(0, (seconds - FAST) / (SLOW - FAST)));
-  const i = Math.min(1, Math.floor(t));
+// Green under GREEN seconds. From there up to SLOW: white, yellow, orange,
+// red.
+function cellColor(seconds) {
+  if (seconds < GREEN) return GREEN_COLOR;
+  const last = FLAME.length - 1;
+  const t = last * Math.min(1, (seconds - GREEN) / (SLOW - GREEN));
+  const i = Math.min(last - 1, Math.floor(t));
   const from = FLAME[i];
   const to = FLAME[i + 1];
   return 'rgb(' + from.map(function (c, k) {
@@ -113,7 +120,7 @@ function buildGrid() {
     for (let y = 1; y <= n; y++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
-      cell.style.backgroundColor = flame(score(x, y));
+      cell.style.backgroundColor = cellColor(score(x, y));
       cells[x + 'x' + y] = cell;
       grid.appendChild(cell);
     }
@@ -220,24 +227,28 @@ function check(value) {
   else if (answer.indexOf(value) !== 0) wrong();
 }
 
-// Saves an attempt at the current problem, then repaints its cell and the
-// speed.
+// Saves an attempt at the current problem, repaints its cell and the speed,
+// and returns whether the cell just turned green.
 function remember(seconds) {
   const key = a + 'x' + b;
+  const before = score(a, b);
   saved.times[key] = attempts(a, b).concat(Math.round(seconds * 100) / 100).slice(-KEEP);
   storage.save(GAME_ID, saved);
-  cells[key].style.backgroundColor = flame(score(a, b));
-  pop(cells[key], 'is-updated');
+  const after = score(a, b);
+  const crowned = before >= GREEN && after < GREEN;
+  cells[key].style.backgroundColor = cellColor(after);
+  cells[key].classList.remove('is-updated', 'is-crowned');
+  pop(cells[key], crowned ? 'is-crowned' : 'is-updated');
   showSpeed();
+  return crowned;
 }
 
-// True when the speed beats the last cheer by a step: about ten good answers
-// at first, since a 2 s answer takes a fresh cell from 5 s to 4.4 s and
-// ten of those multiply the speed by exp(-1.25 / cells).
+// True when the speed beats the last cheer by RECORD_STEP, shared across the
+// grid's cells.
 function newRecord() {
   const n = saved.size;
   const now = speed();
-  if (now > saved.best[n] * Math.exp(-1.25 / (n * n))) return false;
+  if (now > saved.best[n] * Math.exp(-RECORD_STEP / (n * n))) return false;
   saved.best[n] = now;
   storage.save(GAME_ID, saved);
   return true;
@@ -245,23 +256,31 @@ function newRecord() {
 
 function right() {
   const seconds = Math.max(0.1, (performance.now() - shownAt) / 1000);
+  const time = seconds.toFixed(1) + ' s';
   pad.setEnabled(false);
-  remember(Math.min(seconds, SLOW));
+  const crowned = remember(Math.min(seconds, SLOW));
+  const record = newRecord();
   mark('is-correct');
   sound.correct();
   stars(pad.display);
-  if (newRecord()) {
-    say('New record! ' + seconds.toFixed(1) + ' s', 'record');
-    pop($('speed'), 'is-record');
+  if (record) say('New record! ' + time, 'record');
+  else if (crowned) say('👑 Mastered! ' + time, 'good');
+  else say(pick(PRAISE) + ' ' + time, 'good');
+  let cheerAt = 250;
+  if (crowned) {
+    stars(cells[a + 'x' + b]);
+    setTimeout(sound.trumpet, 250);
+    cheerAt += 1300; // after the trumpet
+  }
+  if (record) {
+    pop($('speed-box'), 'is-record');
     setTimeout(function () {
       sound.cheer();
       zip();
-    }, 250);
+    }, cheerAt);
     setTimeout(function () {
-      $('speed').classList.remove('is-record');
+      $('speed-box').classList.remove('is-record');
     }, 2000);
-  } else {
-    say(pick(PRAISE) + ' ' + seconds.toFixed(1) + ' s', 'good');
   }
   setTimeout(next, 700);
 }

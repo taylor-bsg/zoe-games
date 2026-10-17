@@ -42,10 +42,23 @@ Stated before building, with no objection:
   never comes twice in a row.
 - The clock restarts if the iPad leaves the game mid-problem.
 
+## Changes
+
+Requested by the user, verbatim (2026-10-17):
+
+> Okay looks pretty good. I think maybe it should just track the last 3. And we should have greater range, go from red to orange to yellow to white. If it’s below 3s, then make it green and make a royal trumpet sound.
+>
+> Also have the geomean score show on the screen
+
+Clarified: "below 3s" means a cell's average over its last 3 tries. That
+cell turns green, and the trumpet plays each time a cell turns green. Red,
+orange, yellow, and white cover 5 s down to 3 s. This replaces the 5-try
+window and the white-to-orange colors above.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
-- **Start screen:** a title card ("Answer fast to turn the grid white!"),
+- **Start screen:** a title card ("Answer fast to turn the grid green!"),
   the grid, the two size buttons (the chosen one is dark), and Start. The
   Start tap also unlocks sound.
 - **Layout:** the problem card spans the top. The grid, the largest square
@@ -53,27 +66,34 @@ Stated before building, with no objection:
   taller card and bigger problem text.
 - **Grid:** labels 1–N along the top and left. Cells are color only, with no
   numbers. A cell pops when its color changes.
-- **Colors:** linear in RGB from white (1 s or faster) to yellow `#ffe04d`
-  (3 s) to orange `#ff8a00` (5 s).
+- **Colors:** linear in RGB, red `#f03e3e` (5 s) → orange `#ff8a00` (4.33 s)
+  → yellow `#ffe04d` (3.67 s) → white (3 s). Green `#40c057` under 3 s.
+  Saved data from the 5-try version is read as its last 3 tries.
 - **Keypad:** digits only, with 0 centered on the bottom row.
 - **Timing:** runs from when the problem appears to the last right digit,
   saved to 0.01 s with a minimum of 0.1 s. The message shows the real time
   (e.g. "Nice! 2.3 s"), even when it's over 5 s and scored as 5.
 - **Right answer:** green box, ding, star burst, and praise with the time.
   The next problem comes after 0.7 s.
+- **Turning green:** the cell pops big with a white ring, stars burst from
+  it, and the message reads "👑 Mastered! 2.1 s". The trumpet is synthesized:
+  three quick G4 pickups, then a held C major chord with a timpani hit,
+  about 1.2 s.
 - **Wrong answer:** orange wiggle, the soft "uh-oh", and "Almost! Remember
   this one." After 0.5 s the right answer appears in a soft yellow box. The
   next problem comes 2.3 s after the mistake.
-- **Speed display:** the geomean, as "⏱ 4.37 s" in the top bar. It's
-  computed over the current grid size.
-- **Cheer step:** a new record means speed ≤ last cheer × exp(−1.25 / cells),
-  about 1.2% on 10×10 and 0.6% on 15×15. That's about ten 2 s answers on
-  fresh cells; in testing, 2 s answers gave a cheer every 8–10. The first
-  mark for a size is the speed when play first starts at that size.
-- **Cheer:** "New record! 2.1 s" in purple, and the speed turns gold for
-  2 s. A synthesized cheer plays (crowd, claps, two "woo!"s, sparkles). A
-  random animal (one of 24 Apple emoji) zips across on a wavy path in
-  1.4–1.8 s, trailing stars.
+- **Speed score:** the geomean, in a white "Speed score ⏱ 4.37 s" pill in
+  the top bar. It's computed over the current grid size, and turns gold for
+  2 s on a record.
+- **Cheer step:** a new record means speed ≤ last cheer × exp(−step /
+  cells), with step = 10 × ln(15 / 12) ≈ 2.23. That's the effect of ten 2 s
+  answers on fresh cells: about 2.2% on 10×10 and 1.0% on 15×15. In testing,
+  2 s answers gave a cheer every 7–11, usually 9–10. The first mark for a size is the
+  speed when play first starts at that size.
+- **Cheer:** "New record! 2.1 s" in purple. A synthesized cheer plays
+  (crowd, claps, two "woo!"s, sparkles). A random animal (one of 24 Apple
+  emoji) zips across on a wavy path in 1.4–1.8 s, trailing stars. If the
+  same answer also turns a cell green, the cheer waits for the trumpet.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
-  the last 5 scores in seconds); and `best` (size → speed at the last cheer).
+  the last 3 scores in seconds); and `best` (size → speed at the last cheer).
   Unreadable values are ignored.

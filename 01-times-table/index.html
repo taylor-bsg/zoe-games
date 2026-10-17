@@ -14,15 +14,33 @@
   <link rel="icon" href="../icons/icon-192.png">
   <link rel="stylesheet" href="../shared/base.css">
   <style>
+    /* The speed score: the geomean of every cell's score. Lower is better. */
     .speed {
-      font-size: 30px;
-      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 22px 6px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      line-height: 1.1;
       white-space: nowrap;
-      text-shadow: 0 2px 0 rgba(29, 43, 83, 0.2);
+    }
+
+    .speed-label {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.7;
+    }
+
+    .speed-value {
+      font-size: 30px;
+      font-weight: 900;
     }
 
     .speed.is-record {
-      color: var(--sun);
+      background: var(--sun);
       animation: pop 0.5s ease;
     }
 
@@ -131,6 +149,20 @@
       animation: pop 0.35s ease;
     }
 
+    /* Just turned green: a big pop with a white ring. */
+    .cell.is-crowned {
+      position: relative;
+      z-index: 2;
+      animation: crown 0.7s ease;
+    }
+
+    @keyframes crown {
+      30% {
+        transform: scale(1.7);
+        box-shadow: 0 0 0 4px var(--white);
+      }
+    }
+
     /* As wide as the keypad: three keys and two gaps. */
     .side {
       flex: none;
@@ -171,7 +203,10 @@
   <div class="page fit">
     <header class="topbar">
       <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
-      <div class="speed" id="speed"></div>
+      <div class="speed" id="speed-box">
+        <span class="speed-label">Speed score</span>
+        <span class="speed-value" id="speed"></span>
+      </div>
       <div class="topbar-balance"></div>
     </header>
 
@@ -179,7 +214,7 @@
       <div class="card prompt">
         <div class="intro" id="intro">
           <h1>Times Tables</h1>
-          <p>Answer fast to turn the grid white!</p>
+          <p>Answer fast to turn the grid green!</p>
         </div>
         <div class="playing" id="playing" hidden>
           <div class="problem"><span id="question"></span><span id="answer"></span></div>
