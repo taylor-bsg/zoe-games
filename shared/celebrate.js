@@ -1,14 +1,19 @@
 // Star bursts and confetti, drawn on a temporary full-screen canvas.
 //
-//   import { stars, confetti } from '../shared/celebrate.js';
+//   import { stars, confetti, zip } from '../shared/celebrate.js';
 //   stars(answerElement);  // small burst of stars, e.g. for a right answer
 //   confetti();            // big party, e.g. for finishing a round
+//   zip();                 // a cute animal zips across the screen
 //
 // stars() bursts from the center of an element, from a point {x, y} in CSS
-// pixels, or from the middle of the screen if given nothing. Both functions
-// return right away. The canvas sits above the page, lets taps through, and
+// pixels, or from the middle of the screen if given nothing. zip() picks a
+// random animal unless given an emoji. All of them return right away. The canvas sits above the page, lets taps through, and
 // removes itself when the last piece has fallen.
 
+// Animals for zip(). Apple draws these facing left, so they're flipped when
+// flying right. (Its snail faces right, so it's left out.)
+const CRITTERS = ['🐕', '🐈', '🐇', '🐢', '🦖', '🦕', '🐳', '🐬', '🐠', '🦔', '🦦', '🐘',
+  '🦄', '🐤', '🐝', '🦭', '🐧', '🦆', '🐿️', '🐁', '🐖', '🦘', '🐉', '🦓'];
 const COLORS = ['#ffd23f', '#ff6b6b', '#4cc9f0', '#80ed99', '#c77dff', '#ff9f1c', '#ff8fab'];
 const GOLDS = ['#ffd23f', '#ffe066', '#ffb703'];
 const GRAVITY = 1500; // px/s², scaled to the screen like everything else
@@ -154,4 +159,43 @@ export function confetti() {
     }
   });
   start();
+}
+
+export function zip(emoji) {
+  const u = unit();
+  const w = window.innerWidth;
+  const size = Math.round(150 * u);
+  const rightward = Math.random() < 0.5;
+  const middle = window.innerHeight * random(0.3, 0.6);
+  const wave = window.innerHeight * random(0.05, 0.1);
+  const duration = random(1400, 1800); // ms
+  const critter = document.createElement('div');
+  critter.textContent = emoji || pick(CRITTERS);
+  critter.setAttribute('aria-hidden', 'true');
+  critter.style.cssText = 'position:fixed;left:0;top:0;z-index:1001;pointer-events:none;' +
+    'line-height:1;will-change:transform;font-size:' + size + 'px';
+  document.body.appendChild(critter);
+  let begin = 0;
+  let lastSparkle = 0;
+  function step(now) {
+    if (!begin) begin = now;
+    const t = Math.min(1, (now - begin) / duration);
+    const x = rightward ? -size + t * (w + size) : w - t * (w + size);
+    const y = middle + Math.sin(t * Math.PI * 3) * wave - size / 2;
+    const tilt = Math.cos(t * Math.PI * 3) * 12;
+    critter.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + tilt + 'deg)' +
+      (rightward ? ' scaleX(-1)' : '');
+    if (now - lastSparkle > 70) { // a trail of little stars
+      lastSparkle = now;
+      const tail = x + size * (rightward ? 0.1 : 0.9);
+      for (let i = 0; i < 2; i++) {
+        add(tail, y + size / 2, random(0, Math.PI * 2), random(40, 160) * u, 'star', pick(GOLDS),
+          random(5, 10) * u, random(0.5, 0.8));
+      }
+      start();
+    }
+    if (t < 1) requestAnimationFrame(step);
+    else critter.parentNode.removeChild(critter);
+  }
+  requestAnimationFrame(step);
 }

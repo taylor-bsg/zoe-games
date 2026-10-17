@@ -6,6 +6,8 @@
 //   const pad = createKeypad(document.getElementById('keypad'), {
 //     display: document.getElementById('answer'), // optional, see below
 //     maxLength: 2,                               // digits allowed, default 3
+//     digitsOnly: true,    // optional: no backspace or check key, for games
+//                          // that check the answer in onChange as it's typed
 //     onSubmit(value) {},  // check key; value is a non-empty string of digits
 //     onChange(value) {},  // optional, after every edit
 //   });
@@ -50,6 +52,10 @@ export function createKeypad(container, options) {
   if (!opts.display) container.appendChild(display);
 
   KEYS.forEach(function (key) {
+    if (opts.digitsOnly && ICONS[key]) {
+      container.appendChild(document.createElement('span')); // keeps 0 centered
+      return;
+    }
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'keypad-key';
@@ -108,7 +114,7 @@ export function createKeypad(container, options) {
     else if (event.key === 'Backspace' || event.key === 'Delete') key = 'back';
     else if (event.key === 'Enter') key = 'enter';
     // getClientRects() is empty when the keypad or a parent is display: none.
-    if (!key || !enabled || !container.getClientRects().length) return;
+    if (!key || !buttons[key] || !enabled || !container.getClientRects().length) return;
     event.preventDefault();
     if (event.repeat && key !== 'back') return;
     const button = buttons[key];

@@ -117,13 +117,15 @@ Each file's header comment documents its API. In brief:
   `touch-action: manipulation`; no text selection, long-press callouts, drag,
   or tap highlight; `overscroll-behavior: none`. Nothing depends on hover.
   Text on the colored background is white; light surfaces use `--ink`.
-- **keypad.js:** `createKeypad(container, { display, maxLength, onSubmit,
-  onChange })` returns `{ value, clear(), setEnabled(on), display }`. Digits
-  0-9, backspace, a check key that submits, and an answer display; keys at
-  least 72px; acts on `pointerdown`; also takes digits, Backspace, and Enter
-  from a physical keyboard.
-- **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()`,
-  `isMuted()`, `setMuted(on)`. Synthesized with Web Audio, no audio files.
+- **keypad.js:** `createKeypad(container, { display, maxLength, digitsOnly,
+  onSubmit, onChange })` returns `{ value, clear(), setEnabled(on), display }`.
+  Digits 0-9, backspace, a check key that submits, and an answer display;
+  keys at least 72px; acts on `pointerdown`; also takes digits, Backspace,
+  and Enter from a physical keyboard. `digitsOnly` drops backspace and the
+  check key, for games that check answers in `onChange` as they're typed.
+- **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()` (a
+  fanfare), `cheer()` (crowd, claps, and "woo!"s), `isMuted()`,
+  `setMuted(on)`. Synthesized with Web Audio, no audio files.
   Mute is site-wide and remembered; the launcher has the toggle.
 - **storage.js:** `load(gameId, defaults)` returns the defaults overlaid with
   any saved fields; `save(gameId, data)`; `clear(gameId)`. One JSON object per
@@ -131,7 +133,9 @@ Each file's header comment documents its API. In brief:
   must work when nothing is saved, and saved data can vanish. Also, the Home
   Screen app and Safari keep separate storage.
 - **celebrate.js:** `stars(elementOrPoint)` for a small burst, `confetti()`
-  for a big party. A canvas overlay that ignores taps and removes itself.
+  for a big party, and `zip(emoji?)`, which sends a random cute animal
+  zipping across the screen. All three are overlays that ignore taps and
+  remove themselves.
 
 ## Testing
 
