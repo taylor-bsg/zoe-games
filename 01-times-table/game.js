@@ -48,7 +48,12 @@ const pad = createKeypad($('keypad'), {
 let cells = {}; // 'AxB' -> grid cell
 let a = 0; // the current problem is a × b
 let b = 0;
-let shownAt = 0; // performance.now() when it appeared
+let shownAt = 0; // performance.now() when it appeared, or was resumed
+let elapsed = 0; // ms it was on screen before a pause
+let answering = false; // waiting for an answer to the current problem
+let playing = false;
+let paused = false;
+let pendingNext = false; // the next problem is due once play resumes
 let clearTimer = 0;
 
 function pick(list) {
@@ -181,8 +186,43 @@ function start() {
   $('setup').hidden = true;
   $('playing').hidden = false;
   $('keypad').hidden = false;
+  $('pause-button').style.visibility = 'visible';
+  playing = true;
   fitGrid();
   next();
+}
+
+// Stops the clock and hides the problem, so a pause isn't thinking time.
+function pause() {
+  if (!playing || paused) return;
+  paused = true;
+  if (answering) elapsed += performance.now() - shownAt;
+  pad.setEnabled(false);
+  showPaused(true);
+}
+
+function resume() {
+  if (!paused) return;
+  paused = false;
+  showPaused(false);
+  if (pendingNext) {
+    pendingNext = false;
+    next();
+  } else if (answering) {
+    shownAt = performance.now();
+    pad.setEnabled(true);
+  }
+}
+
+function showPaused(on) {
+  const button = $('pause-button');
+  $('playing').hidden = on;
+  $('keypad').hidden = on;
+  $('paused').hidden = !on;
+  $('resume-button').hidden = !on;
+  grid.classList.toggle('is-paused', on);
+  button.textContent = on ? '▶️' : '⏸️';
+  button.setAttribute('aria-label', on ? 'Resume' : 'Pause');
 }
 
 // A random problem, weighted by score so slow ones come up more often, but
@@ -208,6 +248,10 @@ function choose() {
 }
 
 function next() {
+  if (paused) {
+    pendingNext = true;
+    return;
+  }
   const problem = choose();
   if (cells[a + 'x' + b]) cells[a + 'x' + b].classList.remove('is-current');
   a = problem.x;
@@ -218,6 +262,8 @@ function next() {
   mark(null);
   pad.clear();
   pad.setEnabled(true);
+  answering = true;
+  elapsed = 0;
   shownAt = performance.now();
 }
 
@@ -257,7 +303,8 @@ function newRecord() {
 }
 
 function right() {
-  const seconds = Math.max(0.1, (performance.now() - shownAt) / 1000);
+  const seconds = Math.max(0.1, (elapsed + performance.now() - shownAt) / 1000);
+  answering = false;
   const time = seconds.toFixed(1) + ' s';
   pad.setEnabled(false);
   const crowned = remember(Math.min(seconds, SLOW));
@@ -288,6 +335,7 @@ function right() {
 }
 
 function wrong() {
+  answering = false;
   pad.setEnabled(false);
   remember(SLOW);
   mark('is-wrong');
@@ -338,14 +386,19 @@ sizeButtons.forEach(function (button) {
   });
 });
 $('start-button').addEventListener('click', start);
+$('pause-button').addEventListener('click', function () {
+  if (paused) resume();
+  else pause();
+});
+$('resume-button').addEventListener('click', resume);
 window.addEventListener('resize', fitGrid);
 
-// If the iPad leaves the game mid-problem, the clock starts over on return.
+// Leaving the app (switching apps, the iPad sleeping) pauses the game.
 document.addEventListener('visibilitychange', function () {
-  if (!document.hidden) shownAt = performance.now();
+  if (document.hidden) pause();
 });
 window.addEventListener('pageshow', function (event) {
-  if (event.persisted) shownAt = performance.now();
+  if (event.persisted) pause();
 });
 
 showSize();

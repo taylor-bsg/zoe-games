@@ -59,6 +59,12 @@ Requested later the same day, verbatim:
 
 > Okay should be a clear button for the scores
 
+> Have a pause button
+
+With the pause button, leaving the app mid-game now pauses it too (see
+Implementation notes). This replaces "the clock restarts if the iPad
+leaves the game mid-problem" above.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
@@ -75,7 +81,7 @@ Requested later the same day, verbatim:
   Saved data from the 5-try version is read as its last 3 tries.
 - **Keypad:** digits only, with 0 centered on the bottom row.
 - **Timing:** runs from when the problem appears to the last right digit,
-  saved to 0.01 s with a minimum of 0.1 s. The message shows the real time
+  not counting time spent paused. Saved to 0.01 s with a minimum of 0.1 s. The message shows the real time
   (e.g. "Nice! 2.3 s"), even when it's over 5 s and scored as 5.
 - **Right answer:** green box, ding, star burst, and praise with the time.
   The next problem comes after 0.7 s.
@@ -98,6 +104,14 @@ Requested later the same day, verbatim:
   (crowd, claps, two "woo!"s, sparkles). A random animal (one of 24 Apple
   emoji) zips across on a wavy path in 1.4–1.8 s, trailing stars. If the
   same answer also turns a cell green, the cheer waits for the trumpet.
+- **Pause:** ⏸️ at the right end of the top bar, shown only during play. It
+  turns into ▶️ while paused. Pausing stops the clock and hides the
+  problem, the keypad, and the grid's outline of the waiting problem, so a
+  pause isn't thinking time. The grid and Speed score stay visible, with a
+  big Resume button. Resuming continues the same problem, and the clock
+  picks up where it stopped. A pause during the feedback after an answer
+  holds the next problem until Resume. Leaving the app (switching apps,
+  the iPad sleeping) pauses too.
 - **Clearing:** "Hold to clear scores" sits on the start screen, not during
   play. It takes a 2 s hold, with the button filling red, so a stray tap
   can't wipe progress. Letting go early cancels. It clears every problem's

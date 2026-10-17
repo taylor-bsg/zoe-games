@@ -44,9 +44,10 @@
       animation: pop 0.5s ease;
     }
 
-    /* As wide as the Home button, so the speed stays centered. */
-    .topbar-balance {
-      width: var(--tap);
+    /* Shown only while playing; it keeps its space so the speed stays
+       centered. */
+    .pause-button {
+      visibility: hidden;
     }
 
     .board {
@@ -145,6 +146,11 @@
       box-shadow: 0 0 0 3px var(--ink);
     }
 
+    /* While paused, don't give away which problem is waiting. */
+    .grid.is-paused .cell.is-current {
+      box-shadow: none;
+    }
+
     .cell.is-updated {
       animation: pop 0.35s ease;
     }
@@ -178,7 +184,8 @@
       gap: 16px;
     }
 
-    .setup .btn {
+    .setup .btn,
+    .resume-button {
       width: 100%;
     }
 
@@ -237,7 +244,7 @@
         <span class="speed-label">Speed score</span>
         <span class="speed-value" id="speed"></span>
       </div>
-      <div class="topbar-balance"></div>
+      <button type="button" class="btn btn-icon pause-button" id="pause-button" aria-label="Pause">⏸️</button>
     </header>
 
     <main class="board">
@@ -245,6 +252,10 @@
         <div class="intro" id="intro">
           <h1>Times Tables</h1>
           <p>Answer fast to turn the grid green!</p>
+        </div>
+        <div class="intro" id="paused" hidden>
+          <h1>Paused</h1>
+          <p>The clock is stopped. Tap Resume when you're ready.</p>
         </div>
         <div class="playing" id="playing" hidden>
           <div class="problem"><span id="question"></span><span id="answer"></span></div>
@@ -267,6 +278,7 @@
             </button>
           </div>
           <div id="keypad" hidden></div>
+          <button type="button" class="btn btn-big resume-button" id="resume-button" hidden>Resume</button>
         </div>
       </div>
     </main>
