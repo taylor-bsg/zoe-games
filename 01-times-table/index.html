@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Times Tables · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css">
+  <style>
+    .speed {
+      font-size: 30px;
+      font-weight: 800;
+      white-space: nowrap;
+      text-shadow: 0 2px 0 rgba(29, 43, 83, 0.2);
+    }
+
+    .speed.is-record {
+      color: var(--sun);
+      animation: pop 0.5s ease;
+    }
+
+    /* As wide as the Home button, so the speed stays centered. */
+    .topbar-balance {
+      width: var(--tap);
+    }
+
+    .board {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .prompt {
+      flex: none;
+      height: clamp(140px, 21vmin, 190px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      text-align: center;
+    }
+
+    .prompt h1 {
+      text-shadow: none;
+    }
+
+    .intro,
+    .playing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .problem {
+      display: flex;
+      align-items: center;
+      gap: 0.25em;
+      font-size: clamp(44px, 8.5vmin, 100px);
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .message {
+      min-height: 1.3em;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .message.good { color: var(--good); }
+    .message.oops { color: var(--oops); }
+    .message.record { color: var(--violet); }
+
+    /* The right answer, shown after a wrong one. */
+    .keypad-display.is-reveal {
+      border-color: var(--sun);
+      background: #fff3bf;
+      color: var(--ink);
+    }
+
+    .area {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      gap: 24px;
+    }
+
+    .grid-box {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* game.js sets the rows, columns, size, and font size. */
+    .grid {
+      display: grid;
+    }
+
+    .label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .cell {
+      border-radius: 18%;
+    }
+
+    .cell.is-current {
+      position: relative;
+      box-shadow: 0 0 0 3px var(--ink);
+    }
+
+    .cell.is-updated {
+      animation: pop 0.35s ease;
+    }
+
+    /* As wide as the keypad: three keys and two gaps. */
+    .side {
+      flex: none;
+      width: calc(var(--key) * 3 + 24px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .setup {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .setup .btn {
+      width: 100%;
+    }
+
+    .size-button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    /* Portrait has height to spare: a bigger problem, sized to the width. */
+    @media (orientation: portrait) {
+      .prompt {
+        height: clamp(150px, 20vh, 230px);
+      }
+
+      .problem {
+        font-size: clamp(44px, 12vw, 100px);
+      }
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="speed" id="speed"></div>
+      <div class="topbar-balance"></div>
+    </header>
+
+    <main class="board">
+      <div class="card prompt">
+        <div class="intro" id="intro">
+          <h1>Times Tables</h1>
+          <p>Answer fast to turn the grid white!</p>
+        </div>
+        <div class="playing" id="playing" hidden>
+          <div class="problem"><span id="question"></span><span id="answer"></span></div>
+          <p class="message" id="message"></p>
+        </div>
+      </div>
+
+      <div class="area">
+        <div class="grid-box" id="grid-box">
+          <div class="grid" id="grid" aria-hidden="true"></div>
+        </div>
+        <div class="side">
+          <div class="setup" id="setup">
+            <button type="button" class="btn btn-white size-button" data-size="10">10 × 10</button>
+            <button type="button" class="btn btn-white size-button" data-size="15">15 × 15</button>
+            <button type="button" class="btn btn-big" id="start-button">Start</button>
+          </div>
+          <div id="keypad" hidden></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

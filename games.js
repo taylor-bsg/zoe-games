@@ -7,5 +7,5 @@
 // template/ is deliberately not listed.
 
 export const games = [
-  // { id: '01-times-table', title: 'Times Tables', emoji: '✖️', description: 'Multiply up to 10 × 10' },
+  { id: '01-times-table', title: 'Times Tables', emoji: '✖️', description: 'Multiply fast!' },
 ];
