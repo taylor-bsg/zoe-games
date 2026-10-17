@@ -73,7 +73,8 @@ body {
 
 a,
 img,
-svg {
+svg,
+button {
   -webkit-user-drag: none; /* no iPad drag and drop on long press */
 }
 

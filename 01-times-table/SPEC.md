@@ -113,10 +113,13 @@ leaves the game mid-problem" above.
   holds the next problem until Resume. Leaving the app (switching apps,
   the iPad sleeping) pauses too.
 - **Clearing:** "Hold to clear scores" sits on the start screen, not during
-  play. It takes a 2 s hold, with the button filling red, so a stray tap
-  can't wipe progress. Letting go early cancels. It clears every problem's
-  scores (both grid sizes share them) and the record marks, but keeps the
-  size choice. The label then reads "Scores cleared" for 2 s.
+  play. It takes a 1.5 s hold, with the button filling red and reading "Keep
+  holding…", so a stray tap can't wipe progress. Letting go early cancels
+  and shows "Hold until the bar fills". The button blocks iOS's own
+  long-press handling (text selection, menus, drag), which could cut a hold
+  short. It clears every problem's scores (both grid sizes share them) and
+  the record marks, but keeps the size choice. The label then reads "Scores
+  cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
   the last 3 scores in seconds); and `best` (size → speed at the last cheer).
   Unreadable values are ignored.
