@@ -1,0 +1,157 @@
+// Star bursts and confetti, drawn on a temporary full-screen canvas.
+//
+//   import { stars, confetti } from '../shared/celebrate.js';
+//   stars(answerElement);  // small burst of stars, e.g. for a right answer
+//   confetti();            // big party, e.g. for finishing a round
+//
+// stars() bursts from the center of an element, from a point {x, y} in CSS
+// pixels, or from the middle of the screen if given nothing. Both functions
+// return right away. The canvas sits above the page, lets taps through, and
+// removes itself when the last piece has fallen.
+
+const COLORS = ['#ffd23f', '#ff6b6b', '#4cc9f0', '#80ed99', '#c77dff', '#ff9f1c', '#ff8fab'];
+const GOLDS = ['#ffd23f', '#ffe066', '#ffb703'];
+const GRAVITY = 1500; // px/s², scaled to the screen like everything else
+
+let canvas = null;
+let g = null;
+let pieces = [];
+let lastFrame = 0;
+
+function pick(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function random(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+// Sizes and speeds are tuned for an 800px screen and scaled from there.
+function unit() {
+  return Math.min(window.innerWidth, window.innerHeight) / 800;
+}
+
+function resize() {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(window.innerWidth * ratio);
+  canvas.height = Math.round(window.innerHeight * ratio);
+  g.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+function start() {
+  if (canvas) return; // already animating; new pieces join in
+  canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.cssText =
+    'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:1000';
+  document.body.appendChild(canvas);
+  g = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+  lastFrame = 0;
+  requestAnimationFrame(frame);
+}
+
+function stop() {
+  window.removeEventListener('resize', resize);
+  canvas.parentNode.removeChild(canvas);
+  canvas = null;
+  g = null;
+}
+
+function add(x, y, angle, speed, kind, color, size, life) {
+  pieces.push({
+    x: x,
+    y: y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    kind: kind, // 'star' or 'paper'
+    color: color,
+    size: size,
+    turn: random(0, Math.PI * 2),
+    spin: random(-8, 8), // radians per second
+    flip: random(0, Math.PI * 2), // paper tumbles by squashing
+    age: 0,
+    life: life, // seconds
+  });
+}
+
+function frame(now) {
+  const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 1 / 60;
+  lastFrame = now;
+  const gravity = GRAVITY * unit();
+  const height = window.innerHeight;
+  pieces = pieces.filter(function (p) {
+    const drag = p.kind === 'paper' ? 2.4 : 1.4; // paper floats down slowly
+    p.age += dt;
+    p.vy += gravity * dt;
+    p.vx -= p.vx * drag * dt;
+    p.vy -= p.vy * drag * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.turn += p.spin * dt;
+    p.flip += 7 * dt;
+    return p.age < p.life && p.y < height + 50;
+  });
+  g.clearRect(0, 0, window.innerWidth, height);
+  pieces.forEach(draw);
+  if (pieces.length) requestAnimationFrame(frame);
+  else stop();
+}
+
+function draw(p) {
+  g.save();
+  g.globalAlpha = Math.max(0, Math.min(1, (p.life - p.age) / 0.4)); // fade at the end
+  g.translate(p.x, p.y);
+  g.rotate(p.turn);
+  g.fillStyle = p.color;
+  if (p.kind === 'star') {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? p.size * 0.45 : p.size;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    g.closePath();
+    g.fill();
+  } else {
+    g.scale(1, Math.cos(p.flip));
+    g.fillRect(-p.size / 2, -p.size / 3, p.size, (p.size * 2) / 3);
+  }
+  g.restore();
+}
+
+function centerOf(from) {
+  if (from && from.getBoundingClientRect) {
+    const r = from.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  if (from && typeof from.x === 'number') return from;
+  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+}
+
+export function stars(from) {
+  const at = centerOf(from);
+  const u = unit();
+  for (let i = 0; i < 20; i++) {
+    add(at.x, at.y, random(0, Math.PI * 2), random(350, 900) * u, 'star', pick(GOLDS),
+      random(10, 20) * u, random(0.8, 1.3));
+  }
+  start();
+}
+
+export function confetti() {
+  const u = unit();
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  // Two party poppers in the bottom corners, aimed up and inward.
+  [[0, h, -Math.PI / 3], [w, h, (-2 * Math.PI) / 3]].forEach(function (popper) {
+    for (let i = 0; i < 80; i++) {
+      const star = Math.random() < 0.25;
+      add(popper[0], popper[1], popper[2] + random(-0.35, 0.35), random(1600, 3000) * u,
+        star ? 'star' : 'paper', star ? pick(GOLDS) : pick(COLORS),
+        (star ? random(10, 18) : random(12, 20)) * u, random(2.5, 3.5));
+    }
+  });
+  start();
+}
