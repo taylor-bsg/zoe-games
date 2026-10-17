@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Adding · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css">
+  <style>
+    .dots {
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .dot.on {
+      background: var(--sun);
+      box-shadow: 0 3px 0 rgba(29, 43, 83, 0.2);
+      animation: pop 0.35s ease;
+    }
+
+    .star-count {
+      min-width: var(--tap);
+      font-size: 32px;
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .play {
+      justify-content: space-evenly;
+    }
+
+    .problem-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 28px 40px 20px;
+    }
+
+    .problem {
+      display: flex;
+      align-items: center;
+      gap: 0.25em;
+      font-size: clamp(56px, 11vmin, 120px);
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .message {
+      min-height: 1.3em;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .message.good { color: var(--good); }
+    .message.oops { color: var(--oops); }
+
+    @media (orientation: landscape) {
+      .play {
+        flex-direction: row;
+      }
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <div class="star-count" id="star-count"></div>
+    </header>
+
+    <section class="screen" id="start">
+      <div class="big-emoji">🧮</div>
+      <h1>Adding</h1>
+      <p id="goal"></p>
+      <button type="button" class="btn btn-big" id="start-button">Start</button>
+    </section>
+
+    <section class="screen play" id="play" hidden>
+      <div class="card problem-card">
+        <div class="problem"><span id="question"></span><span id="answer"></span></div>
+        <p class="message" id="message"></p>
+      </div>
+      <div id="keypad"></div>
+    </section>
+
+    <section class="screen" id="done" hidden>
+      <div class="big-emoji">🏆</div>
+      <h1>You did it!</h1>
+      <p id="done-text"></p>
+      <button type="button" class="btn btn-big" id="again-button">Play again</button>
+    </section>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
