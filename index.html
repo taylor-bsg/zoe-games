@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Zoe's Games</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="shared/base.css">
+  <style>
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 230px;
+      padding: 24px;
+      border-radius: 32px;
+      background: #ffd166;
+      color: var(--ink);
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 8px 0 rgba(29, 43, 83, 0.25);
+      touch-action: manipulation;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+
+    .tile:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 rgba(29, 43, 83, 0.25);
+    }
+
+    .tile:nth-child(6n + 2) { background: #ff8fab; }
+    .tile:nth-child(6n + 3) { background: #80ed99; }
+    .tile:nth-child(6n + 4) { background: #ffb86b; }
+    .tile:nth-child(6n + 5) { background: #c3a6ff; }
+    .tile:nth-child(6n + 6) { background: #72efdd; }
+
+    .tile-emoji {
+      font-size: 88px;
+      line-height: 1;
+    }
+
+    .tile-title {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .tile-text {
+      font-size: 21px;
+      opacity: 0.75;
+    }
+
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin: auto;
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .version {
+      position: fixed;
+      right: calc(12px + env(safe-area-inset-right, 0px));
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      font-size: 14px;
+      opacity: 0.75;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <main class="page">
+    <header class="topbar">
+      <h1>Zoe's Games</h1>
+      <button type="button" class="btn btn-icon" id="mute" aria-label="Mute"></button>
+    </header>
+    <div class="tiles" id="tiles"></div>
+    <div class="card empty" id="empty" hidden>
+      <div class="big-emoji">🌟</div>
+      <p>New games are on the way!</p>
+    </div>
+  </main>
+  <p class="version" id="version"></p>
+
+  <script type="module">
+    import { games } from './games.js';
+    import { VERSION } from './version.js';
+    import * as sound from './shared/sound.js';
+
+    const tiles = document.getElementById('tiles');
+    games.forEach(function (game) {
+      const tile = document.createElement('a');
+      tile.className = 'tile';
+      tile.setAttribute('href', game.id + '/');
+      [['tile-emoji', game.emoji], ['tile-title', game.title], ['tile-text', game.description]]
+        .forEach(function (part) {
+          const span = document.createElement('span');
+          span.className = part[0];
+          span.textContent = part[1];
+          tile.appendChild(span);
+        });
+      tiles.appendChild(tile);
+    });
+    document.getElementById('empty').hidden = games.length > 0;
+
+    const mute = document.getElementById('mute');
+    function showMute() {
+      const muted = sound.isMuted();
+      mute.textContent = muted ? '🔇' : '🔊';
+      mute.setAttribute('aria-pressed', String(muted));
+    }
+    mute.addEventListener('click', function () {
+      sound.setMuted(!sound.isMuted());
+      showMute();
+      if (!sound.isMuted()) {
+        sound.unlock();
+        sound.correct(); // so you hear that sound is back on
+      }
+    });
+    showMute();
+
+    document.getElementById('version').textContent = 'v' + VERSION;
+  </script>
+</body>
+</html>
