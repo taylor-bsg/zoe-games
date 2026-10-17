@@ -6,6 +6,7 @@
 //   sound.wrong();
 //   sound.celebrate();
 //   sound.cheer();
+//   sound.trumpet();
 //
 // iOS keeps Web Audio silent until the page calls unlock() from a tap: use a
 // click handler (pointerdown doesn't count). After that, sounds can play at
@@ -197,4 +198,56 @@ export function cheer() {
   [1568, 2093, 2637, 3136].forEach(function (freq, i) {
     note(freq, 0.3 + i * 0.08, 0.2, 'sine', 0.05);
   });
+}
+
+// One brass note: a buzzy attack that settles, a scoop up into the pitch,
+// and vibrato on long notes.
+function horn(freq, start, length, volume) {
+  const t = ctx.currentTime + start;
+  const settle = Math.min(0.15, length * 0.8);
+  const osc = ctx.createOscillator();
+  const tone = ctx.createBiquadFilter();
+  const env = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(freq * 0.97, t);
+  osc.frequency.exponentialRampToValueAtTime(freq, t + 0.04);
+  tone.type = 'lowpass';
+  tone.Q.value = 1.5;
+  tone.frequency.setValueAtTime(freq * 1.5, t);
+  tone.frequency.exponentialRampToValueAtTime(freq * 6, t + 0.04);
+  tone.frequency.exponentialRampToValueAtTime(freq * 3.5, t + 0.25);
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(volume, t + 0.03);
+  env.gain.exponentialRampToValueAtTime(volume * 0.75, t + settle);
+  env.gain.setValueAtTime(volume * 0.75, t + length);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + length + 0.12);
+  if (length > 0.3) {
+    const wobble = ctx.createOscillator();
+    const depth = ctx.createGain();
+    wobble.frequency.value = 5.5;
+    depth.gain.setValueAtTime(0, t);
+    depth.gain.linearRampToValueAtTime(freq * 0.008, t + 0.3);
+    wobble.connect(depth);
+    depth.connect(osc.frequency);
+    wobble.start(t);
+    wobble.stop(t + length + 0.15);
+  }
+  osc.connect(tone);
+  tone.connect(env);
+  env.connect(output);
+  osc.start(t);
+  osc.stop(t + length + 0.15);
+}
+
+// A royal trumpet fanfare: three quick pickups, then a held chord with a
+// timpani hit. For example, when a fact is mastered.
+export function trumpet() {
+  if (!canPlay()) return;
+  [0, 0.13, 0.26].forEach(function (at) {
+    horn(392, at, 0.1, 0.12); // G4
+  });
+  horn(523, 0.4, 0.75, 0.12); // C5, E5, G5: a C major chord
+  horn(659, 0.4, 0.75, 0.08);
+  horn(784, 0.4, 0.75, 0.07);
+  note(98, 0.4, 0.7, 'sine', 0.25, 82); // timpani
 }

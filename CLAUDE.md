@@ -124,8 +124,8 @@ Each file's header comment documents its API. In brief:
   and Enter from a physical keyboard. `digitsOnly` drops backspace and the
   check key, for games that check answers in `onChange` as they're typed.
 - **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()` (a
-  fanfare), `cheer()` (crowd, claps, and "woo!"s), `isMuted()`,
-  `setMuted(on)`. Synthesized with Web Audio, no audio files.
+  fanfare), `cheer()` (crowd, claps, and "woo!"s), `trumpet()` (a royal
+  fanfare), `isMuted()`, `setMuted(on)`. Synthesized with Web Audio, no audio files.
   Mute is site-wide and remembered; the launcher has the toggle.
 - **storage.js:** `load(gameId, defaults)` returns the defaults overlaid with
   any saved fields; `save(gameId, data)`; `clear(gameId)`. One JSON object per
