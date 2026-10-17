@@ -55,6 +55,10 @@ cell turns green, and the trumpet plays each time a cell turns green. Red,
 orange, yellow, and white cover 5 s down to 3 s. This replaces the 5-try
 window and the white-to-orange colors above.
 
+Requested later the same day, verbatim:
+
+> Okay should be a clear button for the scores
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
@@ -94,6 +98,11 @@ window and the white-to-orange colors above.
   (crowd, claps, two "woo!"s, sparkles). A random animal (one of 24 Apple
   emoji) zips across on a wavy path in 1.4–1.8 s, trailing stars. If the
   same answer also turns a cell green, the cheer waits for the trumpet.
+- **Clearing:** "Hold to clear scores" sits on the start screen, not during
+  play. It takes a 2 s hold, with the button filling red, so a stray tap
+  can't wipe progress. Letting go early cancels. It clears every problem's
+  scores (both grid sizes share them) and the record marks, but keeps the
+  size choice. The label then reads "Scores cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
   the last 3 scores in seconds); and `best` (size → speed at the last cheer).
   Unreadable values are ignored.

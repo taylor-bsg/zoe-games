@@ -18,6 +18,7 @@ const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; /
 // 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
 const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
+const HOLD_TO_CLEAR = 2000; // ms; matches the fill animation in index.html
 
 // times: 'AxB' -> the last KEEP attempt scores in seconds, oldest first.
 // best: grid size -> the speed at the last cheer (lower is better).
@@ -48,6 +49,7 @@ let cells = {}; // 'AxB' -> grid cell
 let a = 0; // the current problem is a × b
 let b = 0;
 let shownAt = 0; // performance.now() when it appeared
+let clearTimer = 0;
 
 function pick(list) {
   return list[Math.floor(Math.random() * list.length)];
@@ -297,6 +299,34 @@ function wrong() {
   }, 500);
   setTimeout(next, 2300);
 }
+
+function stopHolding() {
+  clearTimeout(clearTimer);
+  $('clear-button').classList.remove('is-holding');
+}
+
+// Forgets every score, for both grid sizes, and the record marks.
+function clearScores() {
+  stopHolding();
+  saved.times = {};
+  saved.best = {};
+  storage.save(GAME_ID, saved);
+  buildGrid();
+  showSpeed();
+  $('clear-label').textContent = 'Scores cleared';
+  setTimeout(function () {
+    $('clear-label').textContent = 'Hold to clear scores';
+  }, 2000);
+}
+
+$('clear-button').addEventListener('pointerdown', function (event) {
+  event.preventDefault();
+  $('clear-button').classList.add('is-holding');
+  clearTimer = setTimeout(clearScores, HOLD_TO_CLEAR);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
+  $('clear-button').addEventListener(type, stopHolding);
+});
 
 sizeButtons.forEach(function (button) {
   button.addEventListener('click', function () {
