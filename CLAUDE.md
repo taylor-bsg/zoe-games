@@ -18,6 +18,14 @@ https://taylor-bsg.github.io/zoe-games/.
   so every URL is relative (`../shared/base.css`, `01-times-table/`), never
   starting with `/`.
 - `.nojekyll` (empty) makes Pages serve files as-is.
+- **Versioned URLs:** Pages lets browsers cache each file for 10 minutes,
+  each on its own clock, and a reload refreshes the page but not its
+  still-fresh scripts. So every reference to our own JS and CSS (`src`,
+  `href`, and every `import`, including the examples in comments) ends in
+  `?v=` plus the `version.js` version, and a page always loads scripts from
+  its own release. Keep them all identical: a module imported under two
+  URLs runs twice, so sound.js would end up with two separate states. See
+  Versions below.
 - **No service worker yet;** offline support comes later.
 - **Home Screen app:** every page links the root `manifest.webmanifest`
   (`display: standalone`, `start_url` and `scope` `"./"`) and
@@ -60,7 +68,8 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
      the title.
   4. Build the game.
   5. Register it in `games.js`.
-  6. Bump `version.js`: minor for a new game, patch for a fix.
+  6. Bump the version everywhere (see Versions): minor for a new game,
+     patch for a fix.
   7. Commit as `NN-skill: summary`.
 - For small presentation choices the spec doesn't cover (colors, emoji,
   wording, layout, timings), decide and list them under "Implementation notes"
@@ -79,6 +88,16 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
   `structuredClone`, view transitions.
 - **Test before committing** (see Testing): the game in portrait and
   landscape, `/template/` after any change to `shared/`, and the launcher.
+
+## Versions
+
+`version.js` holds the release number, shown on the launcher, and every
+internal URL repeats it as `?v=`. To go from 0.2.4 to 0.2.5:
+
+```
+grep -rl '0\.2\.4' --include='*.js' --include='*.html' . | xargs sed -i '' 's/0\.2\.4/0.2.5/g'
+grep -rhoE '\?v=[0-9.]+' --include='*.js' --include='*.html' . | sort | uniq -c   # one version only
+```
 
 ## How a game page works
 
@@ -151,6 +170,9 @@ python3 -m http.server
   Safari. On a Mac, `ipconfig getifaddr en0` prints the IP. Allow incoming
   connections if macOS asks.
 - `/template/` exercises every shared piece.
+- Touch can behave differently on an iPad than in a desktop browser,
+  especially long presses and swipes. Check those on the iPad, or in an iPad
+  simulator from Xcode.
 - After a push, Pages takes a minute or two to deploy, and the iPad may keep
   cached files for about 10 minutes. The version on the launcher shows which
   version it has.

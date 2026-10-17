@@ -1,12 +1,12 @@
 // Per-game save/load on localStorage.
 //
-//   import * as storage from '../shared/storage.js';
+//   import * as storage from '../shared/storage.js?v=0.2.4';
 //   const progress = storage.load('01-times-table', { stars: 0 });
 //   progress.stars += 1;
 //   storage.save('01-times-table', progress);
 //
 // Each game saves one plain object under its id (the folder name). Keys get a
-// "zoe-games:" prefix because every taylor-bsg.github.io site shares one
+// "zoe-games:" prefix because everything else on the same domain shares this
 // localStorage. Storage can be unavailable, full, or wiped at any time, so
 // nothing here throws: load() falls back to the defaults, and save() returns
 // false when it can't write.
