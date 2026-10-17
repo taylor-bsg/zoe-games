@@ -47,7 +47,7 @@
 
 html {
   height: 100%;
-  background: var(--blue);
+  background: var(--violet); /* the gradient's bottom color, for any strip below the page */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent; /* no gray flash on tap */
