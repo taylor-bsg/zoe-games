@@ -3,10 +3,10 @@
 // keypad, sound and celebration feedback, and progress saved between visits.
 // New games start as a copy of this folder; see CLAUDE.md.
 
-import { createKeypad } from '../shared/keypad.js?v=0.3.1';
-import * as sound from '../shared/sound.js?v=0.3.1';
-import * as storage from '../shared/storage.js?v=0.3.1';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.1';
+import { createKeypad } from '../shared/keypad.js?v=0.3.2';
+import * as sound from '../shared/sound.js?v=0.3.2';
+import * as storage from '../shared/storage.js?v=0.3.2';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.2';
 
 const GAME_ID = 'template'; // the folder name; also the save key
 const ROUND_LENGTH = 5; // right answers to finish a round

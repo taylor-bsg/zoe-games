@@ -2,11 +2,11 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.1';
-import * as speech from '../shared/speech.js?v=0.3.1';
-import * as storage from '../shared/storage.js?v=0.3.1';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.1';
-import { WORDS } from './words.js?v=0.3.1';
+import * as sound from '../shared/sound.js?v=0.3.2';
+import * as speech from '../shared/speech.js?v=0.3.2';
+import * as storage from '../shared/storage.js?v=0.3.2';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.2';
+import { WORDS } from './words.js?v=0.3.2';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0 (start), 1, 2 (gold)

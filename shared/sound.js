@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.3.1';
+//   import * as sound from '../shared/sound.js?v=0.3.2';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -19,7 +19,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.3.1';
+import * as storage from './storage.js?v=0.3.2';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -31,9 +31,18 @@ function context() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return null;
     ctx = new AudioContext();
-    output = ctx.createGain(); // master volume
-    output.gain.value = 1;
-    output.connect(ctx.destination);
+    // Master volume, loud enough to sit near the read-aloud voice, into a
+    // limiter so overlapping sounds don't distort.
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.15;
+    output = ctx.createGain();
+    output.gain.value = 2.5;
+    output.connect(limiter);
+    limiter.connect(ctx.destination);
   }
   return ctx;
 }
@@ -262,9 +271,37 @@ export function trumpet() {
   note(98, 0.4, 0.7, 'sine', 0.25, 82); // timpani
 }
 
-// An electric zap, e.g. for a lightning bolt: a crackle over a falling buzz.
+// A deep falling buzz through a closing low-pass filter: a thump. Small
+// speakers can't play true bass, but they can play this buzz's overtones,
+// which the ear hears as a low boom.
+function thump(start, length, from, to, volume) {
+  const t = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const tone = ctx.createBiquadFilter();
+  const env = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(from, t);
+  osc.frequency.exponentialRampToValueAtTime(to, t + length);
+  tone.type = 'lowpass';
+  tone.Q.value = 0.7;
+  tone.frequency.setValueAtTime(1200, t);
+  tone.frequency.exponentialRampToValueAtTime(320, t + length);
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(volume, t + 0.006);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  osc.connect(tone);
+  tone.connect(env);
+  env.connect(output);
+  osc.start(t);
+  osc.stop(t + length + 0.05);
+}
+
+// A lightning bolt: a sharp crackle and falling buzz over a deep thump and a
+// short rumble of thunder.
 export function zap() {
   if (!canPlay()) return;
-  hiss(0, 0.3, 3000, 0.7, 0.9, 0.005);
-  note(1400, 0, 0.32, 'square', 0.13, 110);
+  hiss(0, 0.3, 3000, 0.7, 1.25, 0.005);
+  note(1400, 0, 0.32, 'square', 0.18, 110);
+  thump(0, 0.5, 160, 45, 0.65);
+  hiss(0.03, 0.75, 160, 0.6, 0.7, 0.03); // rumble
 }
