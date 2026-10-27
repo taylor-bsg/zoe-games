@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.3.5';
+//   import * as sound from '../shared/sound.js?v=0.3.6';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -20,7 +20,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.3.5';
+import * as storage from './storage.js?v=0.3.6';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -272,68 +272,74 @@ export function trumpet() {
   note(98, 0.4, 0.7, 'sine', 0.25, 82); // timpani
 }
 
-// A deep falling buzz through a closing low-pass filter: a thump. Small
-// speakers can't play true bass, but they can play this buzz's overtones,
-// which the ear hears as a low boom.
-function thump(start, length, from, to, volume) {
-  const t = ctx.currentTime + start;
-  const osc = ctx.createOscillator();
-  const tone = ctx.createBiquadFilter();
-  const env = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(from, t);
-  osc.frequency.exponentialRampToValueAtTime(to, t + length);
-  tone.type = 'lowpass';
-  tone.Q.value = 0.7;
-  tone.frequency.setValueAtTime(1200, t);
-  tone.frequency.exponentialRampToValueAtTime(320, t + length);
-  env.gain.setValueAtTime(0.0001, t);
-  env.gain.exponentialRampToValueAtTime(volume, t + 0.006);
-  env.gain.exponentialRampToValueAtTime(0.0001, t + length);
-  osc.connect(tone);
-  tone.connect(env);
-  env.connect(output);
-  osc.start(t);
-  osc.stop(t + length + 0.05);
+// A soft-clipping curve for a WaveShaper: drive adds overtones.
+function grit(drive) {
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) {
+    const x = (i * 2) / curve.length - 1;
+    curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
+  }
+  return curve;
 }
 
-// One swell of thunder: low band-passed noise that rises, then fades slowly.
-function roll(start, length, freq, volume) {
+// Noise through a filter with a quick decay: a crack when bright and short.
+function burst(start, length, type, freq, volume) {
   const t = ctx.currentTime + start;
   const src = ctx.createBufferSource();
-  const band = ctx.createBiquadFilter();
+  const filter = ctx.createBiquadFilter();
   const env = ctx.createGain();
   src.buffer = noiseBuffer();
   src.loop = true;
-  band.type = 'bandpass';
-  band.frequency.value = freq;
-  band.Q.value = 0.5;
-  env.gain.setValueAtTime(0, t);
-  env.gain.linearRampToValueAtTime(volume, t + length * 0.35);
-  env.gain.linearRampToValueAtTime(0, t + length);
-  src.connect(band);
-  band.connect(env);
+  filter.type = type;
+  filter.frequency.value = freq;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(volume, t + 0.002);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  src.connect(filter);
+  filter.connect(env);
   env.connect(output);
   src.start(t, Math.random() * 0.9);
   src.stop(t + length + 0.05);
 }
 
-// A lightning bolt and its thunder: a sharp crack, a sizzle, and a deep boom,
-// then thunder rolling away as overlapping rumbles that swell and fade at
-// random, each softer than the last. About 2 s, different every time. The
-// rumbles sit around 160-420 Hz rather than lower, so small iPhone and iPad
-// speakers can still play them.
+// A lightning strike: a sharp crack, then a short boom that rattles as it
+// dies away, under a second. Close-up thunder crackles rather than whooshes,
+// and its lowest notes are too deep for small speakers, so the boom is
+// distorted to add overtones that iPhone and iPad speakers can play.
 export function zap() {
   if (!canPlay()) return;
-  hiss(0, 0.16, 3000, 0.6, 0.85, 0.004); // crack
-  note(1200, 0, 0.2, 'square', 0.085, 160); // sizzle
-  thump(0, 0.5, 150, 45, 0.42); // boom
-  let at = 0.08;
-  for (let i = 0; i < 7; i++) { // the roll: uneven gaps, each swell softer
-    roll(at, 0.35 + Math.random() * 0.4, 160 + Math.random() * 260,
-      (0.3 - i * 0.035) * (0.6 + Math.random() * 0.8));
-    at += 0.12 + Math.random() * 0.16;
+  const t = ctx.currentTime;
+  burst(0, 0.09, 'highpass', 1500, 0.9); // crack
+  const src = ctx.createBufferSource();
+  const low = ctx.createBiquadFilter();
+  const shaper = ctx.createWaveShaper();
+  const tame = ctx.createBiquadFilter();
+  const env = ctx.createGain();
+  src.buffer = noiseBuffer();
+  src.loop = true;
+  low.type = 'lowpass';
+  low.frequency.value = 220;
+  shaper.curve = grit(6);
+  tame.type = 'lowpass';
+  tame.frequency.value = 1400;
+  // The rattle: random levels every few hundredths of a second, fading out.
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(0.15, t + 0.012);
+  let at = t + 0.012;
+  while (at < t + 0.82) {
+    at += 0.025 + Math.random() * 0.04;
+    const fade = Math.pow(Math.max(0, 1 - (at - t) / 0.9), 1.6);
+    env.gain.linearRampToValueAtTime(0.15 * fade * (0.3 + Math.random() * 0.7), at);
   }
+  env.gain.linearRampToValueAtTime(0, t + 0.92);
+  src.connect(low);
+  low.connect(shaper);
+  shaper.connect(tame);
+  tame.connect(env);
+  env.connect(output);
+  src.start(t, Math.random() * 0.9);
+  src.stop(t + 0.95);
+  note(75, 0, 0.7, 'sine', 0.22, 38); // deep tone, for headphones and bigger speakers
 }
 
 // A springy "boing": a wobbling tone that jumps up and settles back down.

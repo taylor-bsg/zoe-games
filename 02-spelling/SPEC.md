@@ -65,6 +65,15 @@ and the trumpet (instead of the ding) when it turns gold. A miss gets no
 thunder, just a small crack and a springy "boing" as the bolt bounces off,
 then the soft "uh-oh".
 
+> Yeah the thunder does not sound good
+> The thunder sounds more like the ocean and lasts too long.
+
+The smooth swells of low noise sounded like waves. The thunder is now a
+sharp crack and a short boom that rattles at random every few hundredths
+of a second as it dies away, about 0.75 s in all. The boom is distorted so
+small speakers can play its overtones, with a deep tone underneath for
+headphones. The next word now comes 1.4 s after a right answer.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -83,10 +92,10 @@ then the soft "uh-oh".
   app, and the launcher's mute silences it too.
 - **Right answer:** the gap fills with the word in green and the button turns
   green. The wand flashes and a lightning bolt zaps the brick, with a
-  synthesized crack and rolling thunder. The ding follows 0.12 s later, or
-  the trumpet if the brick turns gold. 0.16 s later the brick pops up one color.
+  synthesized crack and a short rattling boom. The ding follows 0.12 s later
+  (3-5 dB above the boom), or the trumpet if the brick turns gold. 0.16 s later the brick pops up one color.
   Turning gold adds a star burst from the brick. The next word comes after
-  1.6 s.
+  1.4 s.
 - **Wrong answer:** the tapped button turns orange and wiggles, the gap shows
   the right word, and the right button glows green. The bolt hits the brick
   and a second bolt bounces off, up and away, with a small crack and a
