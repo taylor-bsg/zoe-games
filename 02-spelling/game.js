@@ -2,14 +2,15 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.2';
-import * as speech from '../shared/speech.js?v=0.3.2';
-import * as storage from '../shared/storage.js?v=0.3.2';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.2';
-import { WORDS } from './words.js?v=0.3.2';
+import * as sound from '../shared/sound.js?v=0.3.3';
+import * as speech from '../shared/speech.js?v=0.3.3';
+import * as storage from '../shared/storage.js?v=0.3.3';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.3';
+import { WORDS } from './words.js?v=0.3.3';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
-const TOP = 2; // brick levels: 0 (start), 1, 2 (gold)
+const TOP = 2; // brick levels: 0, 1, 2 (gold)
+const START = 1; // new bricks start in the middle: one right answer makes them gold
 const COLORS = ['#a7adbd', '#5aa9ff', '#ffd23f']; // gray stone, blue, gold
 const NEXT_AFTER_RIGHT = 1300; // ms before the next word
 const SHOW_ANSWER = 2000; // ms the right spelling glows after a wrong pick
@@ -27,7 +28,7 @@ const PER_ROW = 10;
 const ROWS = WORDS.length / PER_ROW;
 const WAND = { x: 316, y: 477 }; // center of the wand's star
 
-// levels: word -> 0..TOP. Words not in it are at 0.
+// levels: word -> 0..TOP. Words not in it are at START.
 const saved = storage.load(GAME_ID, { levels: {} });
 if (!isObject(saved.levels)) saved.levels = {};
 
@@ -68,7 +69,7 @@ function shuffle(list) {
 
 function level(word) {
   const value = saved.levels[word];
-  return value === 1 || value === 2 ? value : 0;
+  return value === 0 || value === 1 || value === 2 ? value : START;
 }
 
 function goldCount() {
@@ -337,7 +338,7 @@ function stopHolding() {
   clearLabel('Hold until the bar fills', 1500);
 }
 
-// Every brick back to gray, and the dragon back behind the wall.
+// Every brick back to the start (blue), and the dragon back behind the wall.
 function clearWall() {
   holding = false;
   $('clear-button').classList.remove('is-holding');

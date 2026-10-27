@@ -1,6 +1,6 @@
 // Star bursts and confetti, drawn on a temporary full-screen canvas.
 //
-//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.3.2';
+//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.3.3';
 //   stars(answerElement);  // small burst of stars, e.g. for a right answer
 //   confetti();            // big party, e.g. for finishing a round
 //   zip();                 // a cute animal zips across the screen

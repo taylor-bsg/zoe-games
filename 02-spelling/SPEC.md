@@ -39,6 +39,16 @@ Stated before building, with no objection:
   wall" is on the start screen. There's no timer, so no pause button or speed
   score.
 
+## Changes
+
+Requested by the user, verbatim (2026-10-27):
+
+> One more change, start the bricks at the middle setting so you only have to do it more than twice if you get it wrong
+
+Bricks now start at level 1 (blue). One right answer turns a brick gold
+(with the trumpet), and a wrong one drops it to gray, from where it takes
+two right answers. Clearing the wall puts every brick back to blue.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -71,7 +81,7 @@ Stated before building, with no objection:
   fanfare, confetti, and "The wall is all gold! The dragon flew away!". It
   stays away while the wall is all gold, and comes back if a gold brick
   slips.
-- **Clearing:** a 1.5 s hold, the same as Times Tables. Everything goes back
-  to gray and the dragon returns.
-- **Saved data:** under `zoe-games:02-spelling`: `levels` (word → 0–2). Unknown
-  values count as 0.
+- **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
+  to blue and the dragon returns.
+- **Saved data:** under `zoe-games:02-spelling`: `levels` (word → 0–2).
+  Unanswered words, and any unreadable values, count as 1.
