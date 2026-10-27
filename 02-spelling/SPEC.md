@@ -56,6 +56,15 @@ thunder rolling away for about 2 s in uneven swells, each softer than the
 last. The next word comes 1.6 s after a right answer (it was 1.3 s), so the
 thunder has died down before the voice reads the next sentence.
 
+> The current game plays the same sound when you go from 0->1 as 1->0. It should play the positive sound when going from 0 to 1
+
+The thunder played on every answer and drowned out the short ding and
+"uh-oh". Now only right answers get thunder, slightly softer. The positive
+sound comes just after the crack: the ding when a brick goes gray to blue,
+and the trumpet (instead of the ding) when it turns gold. A miss gets no
+thunder, just a small crack and a springy "boing" as the bolt bounces off,
+then the soft "uh-oh".
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -74,13 +83,14 @@ thunder has died down before the voice reads the next sentence.
   app, and the launcher's mute silences it too.
 - **Right answer:** the gap fills with the word in green and the button turns
   green. The wand flashes and a lightning bolt zaps the brick, with a
-  synthesized crack and rolling thunder plus the ding. 0.16 s later the brick pops up one color.
-  Turning gold adds the trumpet and a star burst from the brick. The next word
-  comes after 1.6 s.
+  synthesized crack and rolling thunder. The ding follows 0.12 s later, or
+  the trumpet if the brick turns gold. 0.16 s later the brick pops up one color.
+  Turning gold adds a star burst from the brick. The next word comes after
+  1.6 s.
 - **Wrong answer:** the tapped button turns orange and wiggles, the gap shows
   the right word, and the right button glows green. The bolt hits the brick
-  and a second bolt bounces off, up and away, with the zap and the soft
-  "uh-oh". The brick drops one color, but not below gray. The next word comes
+  and a second bolt bounces off, up and away, with a small crack and a
+  "boing" (no thunder), then the soft "uh-oh" 0.3 s later. The brick drops one color, but not below gray. The next word comes
   after 2 s.
 - **Tally:** "Gold bricks 12 / 100" in the top bar.
 - **Dragon:** waits with its horns showing between the battlements and peeks

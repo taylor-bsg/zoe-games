@@ -2,11 +2,11 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.4';
-import * as speech from '../shared/speech.js?v=0.3.4';
-import * as storage from '../shared/storage.js?v=0.3.4';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.4';
-import { WORDS } from './words.js?v=0.3.4';
+import * as sound from '../shared/sound.js?v=0.3.5';
+import * as speech from '../shared/speech.js?v=0.3.5';
+import * as storage from '../shared/storage.js?v=0.3.5';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.5';
+import { WORDS } from './words.js?v=0.3.5';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -233,23 +233,27 @@ function answer(button, text) {
   saved.levels[word] = after;
   storage.save(GAME_ID, saved);
 
+  const gold = before < TOP && after === TOP;
   const gap = $('gap');
   gap.textContent = word;
   gap.classList.add('is-filled');
-  sound.zap();
   cast(rect, right);
+  // Right answers get thunder, then a clearly happy sound just after the
+  // crack: the trumpet when the brick turns gold (played below), otherwise
+  // the ding. A miss bounces off with no thunder, then the soft "uh-oh".
   if (right) {
     button.classList.add('is-right');
-    sound.correct();
+    sound.zap();
+    if (!gold) setTimeout(sound.correct, 120);
   } else {
     button.classList.add('is-wrong');
-    sound.wrong();
+    sound.bounce();
+    setTimeout(sound.wrong, 300);
     Array.prototype.forEach.call($('choices').children, function (choice) {
       if (choice.textContent === word) choice.classList.add('is-answer');
     });
   }
 
-  const gold = before < TOP && after === TOP;
   const complete = !wasComplete && goldCount() === WORDS.length;
   setTimeout(function () {
     paint(word);

@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.3.4';
+//   import * as sound from '../shared/sound.js?v=0.3.5';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -8,6 +8,7 @@
 //   sound.cheer();
 //   sound.trumpet();
 //   sound.zap();
+//   sound.bounce();
 //
 // iOS keeps Web Audio silent until the page calls unlock() from a tap: use a
 // click handler (pointerdown doesn't count). After that, sounds can play at
@@ -19,7 +20,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.3.4';
+import * as storage from './storage.js?v=0.3.5';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -324,13 +325,47 @@ function roll(start, length, freq, volume) {
 // speakers can still play them.
 export function zap() {
   if (!canPlay()) return;
-  hiss(0, 0.16, 3000, 0.6, 1.2, 0.004); // crack
-  note(1200, 0, 0.2, 'square', 0.12, 160); // sizzle
-  thump(0, 0.5, 150, 45, 0.6); // boom
+  hiss(0, 0.16, 3000, 0.6, 0.85, 0.004); // crack
+  note(1200, 0, 0.2, 'square', 0.085, 160); // sizzle
+  thump(0, 0.5, 150, 45, 0.42); // boom
   let at = 0.08;
   for (let i = 0; i < 7; i++) { // the roll: uneven gaps, each swell softer
     roll(at, 0.35 + Math.random() * 0.4, 160 + Math.random() * 260,
-      (0.42 - i * 0.05) * (0.6 + Math.random() * 0.8));
+      (0.3 - i * 0.035) * (0.6 + Math.random() * 0.8));
     at += 0.12 + Math.random() * 0.16;
   }
+}
+
+// A springy "boing": a wobbling tone that jumps up and settles back down.
+function boing(start, length, volume) {
+  const t = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const wobble = ctx.createOscillator();
+  const depth = ctx.createGain();
+  const env = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(330, t);
+  osc.frequency.exponentialRampToValueAtTime(700, t + 0.07);
+  osc.frequency.exponentialRampToValueAtTime(350, t + length);
+  wobble.frequency.value = 13;
+  depth.gain.value = 45;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(volume, t + 0.01);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  wobble.connect(depth);
+  depth.connect(osc.frequency);
+  osc.connect(env);
+  env.connect(output);
+  osc.start(t);
+  wobble.start(t);
+  osc.stop(t + length + 0.05);
+  wobble.stop(t + length + 0.05);
+}
+
+// A lightning bolt bouncing off something: a small crack and a "boing", with
+// no thunder. Playful, for a miss.
+export function bounce() {
+  if (!canPlay()) return;
+  hiss(0, 0.12, 2500, 0.6, 0.6, 0.004);
+  boing(0.04, 0.45, 0.24);
 }
