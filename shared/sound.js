@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.3.3';
+//   import * as sound from '../shared/sound.js?v=0.3.4';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -19,7 +19,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.3.3';
+import * as storage from './storage.js?v=0.3.4';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -296,12 +296,41 @@ function thump(start, length, from, to, volume) {
   osc.stop(t + length + 0.05);
 }
 
-// A lightning bolt: a sharp crackle and falling buzz over a deep thump and a
-// short rumble of thunder.
+// One swell of thunder: low band-passed noise that rises, then fades slowly.
+function roll(start, length, freq, volume) {
+  const t = ctx.currentTime + start;
+  const src = ctx.createBufferSource();
+  const band = ctx.createBiquadFilter();
+  const env = ctx.createGain();
+  src.buffer = noiseBuffer();
+  src.loop = true;
+  band.type = 'bandpass';
+  band.frequency.value = freq;
+  band.Q.value = 0.5;
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(volume, t + length * 0.35);
+  env.gain.linearRampToValueAtTime(0, t + length);
+  src.connect(band);
+  band.connect(env);
+  env.connect(output);
+  src.start(t, Math.random() * 0.9);
+  src.stop(t + length + 0.05);
+}
+
+// A lightning bolt and its thunder: a sharp crack, a sizzle, and a deep boom,
+// then thunder rolling away as overlapping rumbles that swell and fade at
+// random, each softer than the last. About 2 s, different every time. The
+// rumbles sit around 160-420 Hz rather than lower, so small iPhone and iPad
+// speakers can still play them.
 export function zap() {
   if (!canPlay()) return;
-  hiss(0, 0.3, 3000, 0.7, 1.25, 0.005);
-  note(1400, 0, 0.32, 'square', 0.18, 110);
-  thump(0, 0.5, 160, 45, 0.65);
-  hiss(0.03, 0.75, 160, 0.6, 0.7, 0.03); // rumble
+  hiss(0, 0.16, 3000, 0.6, 1.2, 0.004); // crack
+  note(1200, 0, 0.2, 'square', 0.12, 160); // sizzle
+  thump(0, 0.5, 150, 45, 0.6); // boom
+  let at = 0.08;
+  for (let i = 0; i < 7; i++) { // the roll: uneven gaps, each swell softer
+    roll(at, 0.35 + Math.random() * 0.4, 160 + Math.random() * 260,
+      (0.42 - i * 0.05) * (0.6 + Math.random() * 0.8));
+    at += 0.12 + Math.random() * 0.16;
+  }
 }

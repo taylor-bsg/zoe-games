@@ -2,10 +2,10 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.3.3';
-import * as sound from '../shared/sound.js?v=0.3.3';
-import * as storage from '../shared/storage.js?v=0.3.3';
-import { stars, zip } from '../shared/celebrate.js?v=0.3.3';
+import { createKeypad } from '../shared/keypad.js?v=0.3.4';
+import * as sound from '../shared/sound.js?v=0.3.4';
+import * as storage from '../shared/storage.js?v=0.3.4';
+import { stars, zip } from '../shared/celebrate.js?v=0.3.4';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids

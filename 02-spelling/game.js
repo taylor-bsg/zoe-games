@@ -2,17 +2,17 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.3';
-import * as speech from '../shared/speech.js?v=0.3.3';
-import * as storage from '../shared/storage.js?v=0.3.3';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.3';
-import { WORDS } from './words.js?v=0.3.3';
+import * as sound from '../shared/sound.js?v=0.3.4';
+import * as speech from '../shared/speech.js?v=0.3.4';
+import * as storage from '../shared/storage.js?v=0.3.4';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.4';
+import { WORDS } from './words.js?v=0.3.4';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
 const START = 1; // new bricks start in the middle: one right answer makes them gold
 const COLORS = ['#a7adbd', '#5aa9ff', '#ffd23f']; // gray stone, blue, gold
-const NEXT_AFTER_RIGHT = 1300; // ms before the next word
+const NEXT_AFTER_RIGHT = 1600; // ms before the next word, once the thunder dies down
 const SHOW_ANSWER = 2000; // ms the right spelling glows after a wrong pick
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html

@@ -49,6 +49,13 @@ Bricks now start at level 1 (blue). One right answer turns a brick gold
 (with the trumpet), and a wrong one drops it to gray, from where it takes
 two right answers. Clearing the wall puts every brick back to blue.
 
+> How about make it more of a rolling thunder  sound
+
+The lightning's sound is now a crack, a sizzle, and a deep boom, then
+thunder rolling away for about 2 s in uneven swells, each softer than the
+last. The next word comes 1.6 s after a right answer (it was 1.3 s), so the
+thunder has died down before the voice reads the next sentence.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -67,9 +74,9 @@ two right answers. Clearing the wall puts every brick back to blue.
   app, and the launcher's mute silences it too.
 - **Right answer:** the gap fills with the word in green and the button turns
   green. The wand flashes and a lightning bolt zaps the brick, with a
-  synthesized zap and the ding. 0.16 s later the brick pops up one color.
+  synthesized crack and rolling thunder plus the ding. 0.16 s later the brick pops up one color.
   Turning gold adds the trumpet and a star burst from the brick. The next word
-  comes after 1.3 s.
+  comes after 1.6 s.
 - **Wrong answer:** the tapped button turns orange and wiggles, the gap shows
   the right word, and the right button glows green. The bolt hits the brick
   and a second bolt bounces off, up and away, with the zap and the soft
