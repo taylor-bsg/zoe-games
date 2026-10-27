@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.2.4';
+//   import * as sound from '../shared/sound.js?v=0.2.5';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -16,7 +16,7 @@
 // The mute setting is shared by every game and remembered on the device.
 // Sounds are also silent when the iPad itself is muted.
 
-import * as storage from './storage.js?v=0.2.4';
+import * as storage from './storage.js?v=0.2.5';
 
 const settings = storage.load('sound', { muted: false });
 

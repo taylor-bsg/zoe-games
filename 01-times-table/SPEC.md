@@ -65,6 +65,12 @@ With the pause button, leaving the app mid-game now pauses it too (see
 Implementation notes). This replaces "the clock restarts if the iPad
 leaves the game mid-problem" above.
 
+Requested 2026-10-26, verbatim:
+
+> Can you modify the game so that probability of a problem appearing is weighted by the square of the average time?
+
+This replaces "weighted by score" above.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
@@ -104,6 +110,10 @@ leaves the game mid-problem" above.
   (crowd, claps, two "woo!"s, sparkles). A random animal (one of 24 Apple
   emoji) zips across on a wavy path in 1.4–1.8 s, trailing stars. If the
   same answer also turns a cell green, the cheer waits for the trumpet.
+- **Picking problems:** each problem's weight is its score (average time)
+  squared, so a 5 s problem comes up 25 times as often as a 1 s one, and
+  6.25 times as often as a 2 s one. Before this change those ratios were 5
+  and 2.5. The same problem still never comes twice in a row.
 - **Pause:** ⏸️ at the right end of the top bar, shown only during play. It
   turns into ▶️ while paused. Pausing stops the clock and hides the
   problem, the keypad, and the grid's outline of the waiting problem, so a
