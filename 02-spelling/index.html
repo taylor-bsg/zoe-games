@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Zoe Spells · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css?v=0.3.0">
+  <style>
+    /* Gold-brick count, in the middle of the top bar. */
+    .tally {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 22px 6px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .tally-label {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.7;
+    }
+
+    .tally-value {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    /* As wide as the Home button, so the tally stays centered. */
+    .topbar-balance {
+      width: var(--tap);
+    }
+
+    .board {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas: "prompt" "scene" "panel";
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    @media (orientation: landscape) {
+      .board {
+        grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "scene prompt" "scene panel";
+      }
+    }
+
+    .scene {
+      grid-area: scene;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .scene svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .prompt {
+      grid-area: prompt;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      padding: 18px 24px;
+      text-align: center;
+    }
+
+    /* Room for the Say it again button. */
+    .prompt.is-playing {
+      padding-right: 84px;
+    }
+
+    .prompt h1 {
+      font-size: clamp(36px, 5.5vmin, 64px);
+      text-shadow: none;
+    }
+
+    .intro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sentence {
+      font-size: clamp(26px, 4.4vmin, 42px);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    /* The gap in the sentence; it shows the right word once answered. */
+    .gap {
+      display: inline-block;
+      min-width: 3.2em;
+      padding: 0 0.15em;
+      border-bottom: 0.12em solid var(--ink);
+      border-radius: 0.1em;
+      line-height: 1.1;
+    }
+
+    .gap.is-filled {
+      border-bottom-color: var(--good);
+      background: var(--good-bg);
+      color: var(--good);
+    }
+
+    .say-again {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      margin-top: calc(var(--tap) / -2);
+      box-shadow: inset 0 0 0 3px #d6ddf5;
+    }
+
+    .panel {
+      grid-area: panel;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .setup {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .setup .btn {
+      width: 100%;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (orientation: landscape) {
+      .choices {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .choice {
+      min-height: 84px;
+      border-radius: 22px;
+      background: var(--white);
+      font-size: clamp(28px, 4.6vmin, 44px);
+    }
+
+    .choice.is-right {
+      background: var(--good-bg);
+      color: var(--good);
+      box-shadow: 0 0 0 5px var(--good), var(--shadow);
+    }
+
+    .choice.is-wrong {
+      background: var(--oops-bg);
+      color: var(--oops);
+      animation: wiggle 0.45s ease;
+    }
+
+    /* After a wrong pick, the right spelling glows for 2 s. */
+    .choice.is-answer {
+      background: var(--good-bg);
+      color: var(--good);
+      animation: glow 0.7s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 0 4px var(--good), var(--shadow);
+      }
+      to {
+        box-shadow: 0 0 0 10px rgba(27, 138, 75, 0.35), var(--shadow);
+      }
+    }
+
+    /* Clearing takes a 1.5 s hold, so a stray tap can't wipe the wall. */
+    .clear-button,
+    .clear-button:active {
+      position: relative;
+      overflow: hidden;
+      background: transparent;
+      color: var(--white);
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.7);
+      font-size: 20px;
+      touch-action: none;
+    }
+
+    .clear-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      background: rgba(240, 62, 62, 0.85);
+    }
+
+    .clear-button.is-holding .clear-fill {
+      width: 100%;
+      transition: width 1.5s linear;
+    }
+
+    .clear-label {
+      position: relative;
+    }
+
+    /* The scene. */
+
+    .brick {
+      transition: fill 0.3s ease;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .brick.is-target {
+      stroke: var(--white);
+      stroke-width: 5;
+    }
+
+    .brick.is-hit {
+      animation: brick-pop 0.4s ease;
+    }
+
+    .brick.is-gold {
+      animation: brick-gold 0.8s ease;
+    }
+
+    @keyframes brick-pop {
+      40% {
+        transform: scale(1.18);
+      }
+    }
+
+    @keyframes brick-gold {
+      30% {
+        transform: scale(1.4);
+      }
+    }
+
+    .bolt {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      animation: bolt 0.5s ease-out forwards;
+    }
+
+    @keyframes bolt {
+      0%, 30% {
+        opacity: 1;
+      }
+      40% {
+        opacity: 0.4;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    #wand-star {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    #wand-star.is-casting {
+      animation: cast 0.4s ease;
+    }
+
+    @keyframes cast {
+      40% {
+        transform: scale(1.8) rotate(36deg);
+      }
+    }
+
+    /* The dragon waits behind the wall with its horns showing, peeks over
+       now and then, and flies away when every brick is gold. */
+    #dragon {
+      transform: translateY(120px);
+    }
+
+    #dragon.is-peeking {
+      animation: peek 2.6s ease-in-out;
+    }
+
+    @keyframes peek {
+      25%, 75% {
+        transform: translateY(0);
+      }
+    }
+
+    #dragon.is-leaving {
+      animation: fly-away 2.4s ease-in forwards;
+    }
+
+    @keyframes fly-away {
+      0% {
+        transform: translateY(120px);
+      }
+      30% {
+        transform: translateY(-20px);
+      }
+      100% {
+        transform: translate(520px, -620px) rotate(25deg);
+        opacity: 0;
+      }
+    }
+
+    #dragon.is-gone {
+      display: none;
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="tally">
+        <span class="tally-label">Gold bricks</span>
+        <span class="tally-value" id="tally"></span>
+      </div>
+      <div class="topbar-balance"></div>
+    </header>
+
+    <main class="board">
+      <div class="card prompt" id="prompt">
+        <div class="intro" id="intro">
+          <h1>Zoe Spells</h1>
+          <p>Tap the right spelling to zap a brick!</p>
+        </div>
+        <p class="sentence" id="sentence" hidden></p>
+        <button type="button" class="btn btn-icon say-again" id="say-again" aria-label="Say it again" hidden>🔊</button>
+      </div>
+
+      <div class="scene">
+        <svg id="scene" viewBox="0 120 1000 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g fill="#ffffff" opacity="0.85">
+            <ellipse cx="130" cy="190" rx="70" ry="26"/>
+            <ellipse cx="175" cy="172" rx="48" ry="30"/>
+            <ellipse cx="90" cy="180" rx="36" ry="22"/>
+            <ellipse cx="905" cy="170" rx="58" ry="22"/>
+            <ellipse cx="940" cy="154" rx="38" ry="24"/>
+          </g>
+          <path d="M0,714 C220,684 420,704 620,710 C780,716 900,704 1000,708 L1000,800 L0,800 Z" fill="#62c370"/>
+          <path d="M0,744 C260,730 520,746 760,740 C880,737 950,742 1000,744 L1000,800 L0,800 Z" fill="#4fae5d"/>
+
+          <g id="dragon">
+            <g transform="translate(675 336)">
+              <path d="M-80,-92 C-150,-152 -210,-142 -232,-112 C-202,-112 -192,-82 -162,-82 C-150,-62 -120,-62 -90,-62 Z" fill="#2f9e5b"/>
+              <path d="M80,-92 C150,-152 210,-142 232,-112 C202,-112 192,-82 162,-82 C150,-62 120,-62 90,-62 Z" fill="#2f9e5b"/>
+              <path d="M-50,-128 C-62,-150 -66,-170 -60,-192 C-44,-170 -34,-150 -28,-138 Z" fill="#ffe08a"/>
+              <path d="M50,-128 C62,-150 66,-170 60,-192 C44,-170 34,-150 28,-138 Z" fill="#ffe08a"/>
+              <path d="M-16,-150 L0,-178 L16,-150 Z" fill="#ffb84d"/>
+              <ellipse cx="0" cy="-90" rx="96" ry="66" fill="#3cbf6a"/>
+              <ellipse cx="0" cy="-52" rx="60" ry="34" fill="#8fe3a8"/>
+              <ellipse cx="-18" cy="-58" rx="7" ry="5" fill="#1f7a43"/>
+              <ellipse cx="18" cy="-58" rx="7" ry="5" fill="#1f7a43"/>
+              <ellipse cx="-38" cy="-108" rx="20" ry="22" fill="#ffffff"/>
+              <ellipse cx="38" cy="-108" rx="20" ry="22" fill="#ffffff"/>
+              <circle cx="-34" cy="-104" r="10" fill="#1d2b53"/>
+              <circle cx="42" cy="-104" r="10" fill="#1d2b53"/>
+              <circle cx="-31" cy="-108" r="3" fill="#ffffff"/>
+              <circle cx="45" cy="-108" r="3" fill="#ffffff"/>
+              <path d="M-22,-34 Q0,-24 22,-34" stroke="#1f7a43" stroke-width="4" stroke-linecap="round" fill="none"/>
+            </g>
+          </g>
+
+          <g id="wall"></g>
+
+          <g id="wizard" transform="translate(170 720)">
+            <ellipse cx="0" cy="0" rx="78" ry="12" fill="rgba(29,43,83,0.18)"/>
+            <path d="M-40,-178 C-62,-150 -60,-118 -48,-96" stroke="#8a5a2b" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M40,-178 C62,-150 60,-118 48,-96" stroke="#8a5a2b" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <circle cx="-48" cy="-92" r="7" fill="#ff6b9d"/>
+            <circle cx="48" cy="-92" r="7" fill="#ff6b9d"/>
+            <path d="M-34,-140 C-48,-90 -66,-40 -78,-6 Q0,12 78,-6 C66,-40 48,-90 34,-140 Z" fill="#7048e8"/>
+            <path d="M-34,-140 L34,-140 L22,-120 L-22,-120 Z" fill="#5f3dc4"/>
+            <path d="M-30,-60 l4,9 10,1 -7,7 2,10 -9,-5 -9,5 2,-10 -7,-7 10,-1 Z" fill="#ffd23f"/>
+            <path d="M22,-34 l3,7 8,1 -6,5 2,8 -7,-4 -7,4 2,-8 -6,-5 8,-1 Z" fill="#ffd23f"/>
+            <path d="M30,-98 l3,6 7,1 -5,5 1,7 -6,-3 -6,3 1,-7 -5,-5 7,-1 Z" fill="#ffd23f"/>
+            <ellipse cx="-24" cy="-3" rx="20" ry="9" fill="#3b2a6b"/>
+            <ellipse cx="24" cy="-3" rx="20" ry="9" fill="#3b2a6b"/>
+            <path d="M-30,-128 C-52,-108 -58,-90 -56,-74" stroke="#7048e8" stroke-width="20" stroke-linecap="round" fill="none"/>
+            <circle cx="-56" cy="-70" r="11" fill="#f6c9a3"/>
+            <path d="M28,-128 C58,-140 84,-160 100,-182" stroke="#7048e8" stroke-width="20" stroke-linecap="round" fill="none"/>
+            <line x1="102" y1="-186" x2="140" y2="-232" stroke="#6b4423" stroke-width="7" stroke-linecap="round"/>
+            <path id="wand-star" d="M146,-256 l4.7,9.5 10.5,1.5 -7.6,7.4 1.8,10.4 -9.4,-4.9 -9.4,4.9 1.8,-10.4 -7.6,-7.4 10.5,-1.5 Z" fill="#ffd23f" stroke="#fff3bf" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="102" cy="-186" r="11" fill="#f6c9a3"/>
+            <circle cx="0" cy="-180" r="40" fill="#f6c9a3"/>
+            <path d="M-41,-182 C-40,-215 -18,-226 0,-226 C18,-226 40,-215 41,-182 C30,-196 14,-200 0,-196 C-14,-200 -30,-196 -41,-182 Z" fill="#8a5a2b"/>
+            <ellipse cx="-14" cy="-176" rx="5" ry="7" fill="#1d2b53"/>
+            <ellipse cx="14" cy="-176" rx="5" ry="7" fill="#1d2b53"/>
+            <circle cx="-12" cy="-179" r="1.8" fill="#ffffff"/>
+            <circle cx="16" cy="-179" r="1.8" fill="#ffffff"/>
+            <circle cx="-25" cy="-162" r="7" fill="#ff8fab" opacity="0.55"/>
+            <circle cx="25" cy="-162" r="7" fill="#ff8fab" opacity="0.55"/>
+            <path d="M-10,-158 Q0,-149 10,-158" stroke="#1d2b53" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+            <path d="M-46,-212 C-30,-250 -8,-300 24,-338 C30,-300 38,-250 46,-212 Z" fill="#7048e8"/>
+            <path d="M-44,-224 L44,-224 L46,-212 L-46,-212 Z" fill="#ffd23f"/>
+            <ellipse cx="0" cy="-212" rx="74" ry="14" fill="#5f3dc4"/>
+            <path d="M6,-280 l3,6 7,1 -5,5 1,7 -6,-3 -6,3 1,-7 -5,-5 7,-1 Z" fill="#ffd23f"/>
+            <path d="M18,-316 l2,4 5,1 -4,3 1,5 -4,-2 -4,2 1,-5 -4,-3 5,-1 Z" fill="#ffd23f"/>
+          </g>
+
+          <g id="bolts"></g>
+        </svg>
+      </div>
+
+      <div class="panel">
+        <div class="setup" id="setup">
+          <button type="button" class="btn btn-big" id="start-button">Start</button>
+          <button type="button" class="btn clear-button" id="clear-button">
+            <span class="clear-fill"></span>
+            <span class="clear-label" id="clear-label">Hold to clear the wall</span>
+          </button>
+        </div>
+        <div class="choices" id="choices" hidden></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="game.js?v=0.3.0"></script>
+</body>
+</html>

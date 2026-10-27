@@ -47,6 +47,7 @@ icons/                apple-touch-icon.png (180), icon-192.png, icon-512.png
 shared/base.css       layout, type, buttons, keypad styles, iPad fixes
 shared/keypad.js      big on-screen number pad
 shared/sound.js       Web Audio effects, unlock, mute
+shared/speech.js      reads text aloud with the device's voice
 shared/storage.js     per-game save/load
 shared/celebrate.js   confetti/star burst
 template/             minimal working game to copy for new games; not in games.js
@@ -144,8 +145,11 @@ Each file's header comment documents its API. In brief:
   check key, for games that check answers in `onChange` as they're typed.
 - **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()` (a
   fanfare), `cheer()` (crowd, claps, and "woo!"s), `trumpet()` (a royal
-  fanfare), `isMuted()`, `setMuted(on)`. Synthesized with Web Audio, no audio files.
+  fanfare), `zap()` (a lightning crackle), `isMuted()`, `setMuted(on)`. Synthesized with Web Audio, no audio files.
   Mute is site-wide and remembered; the launcher has the toggle.
+- **speech.js:** `speak(text)` and `stop()`, using the Web Speech API's
+  built-in voices (US English, no network). The first `speak()` must come
+  from a tap, such as the Start button. It's silent while muted.
 - **storage.js:** `load(gameId, defaults)` returns the defaults overlaid with
   any saved fields; `save(gameId, data)`; `clear(gameId)`. One JSON object per
   game under `zoe-games:<gameId>` in localStorage, all inside try/catch. Games
