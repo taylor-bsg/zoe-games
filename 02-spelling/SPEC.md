@@ -74,6 +74,13 @@ of a second as it dies away, about 0.75 s in all. The boom is distorted so
 small speakers can play its overtones, with a deep tone underneath for
 headphones. The next word now comes 1.4 s after a right answer.
 
+> With the middle setting as default, it takes too long to get the unfinished answers. Let’s boost it to the 3rd power
+
+Words are now weighted by (3 − level)³ instead of squared: gray 27, blue
+8, gold 1. This replaces the 9 / 4 / 1 weights in Clarifications above.
+With 90 gold bricks and 10 blue, an unfinished word now comes up about
+47% of the time (31% when squared).
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".

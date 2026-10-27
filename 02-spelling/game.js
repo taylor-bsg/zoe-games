@@ -2,11 +2,11 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.6';
-import * as speech from '../shared/speech.js?v=0.3.6';
-import * as storage from '../shared/storage.js?v=0.3.6';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.6';
-import { WORDS } from './words.js?v=0.3.6';
+import * as sound from '../shared/sound.js?v=0.3.7';
+import * as speech from '../shared/speech.js?v=0.3.7';
+import * as storage from '../shared/storage.js?v=0.3.7';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.7';
+import { WORDS } from './words.js?v=0.3.7';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -115,15 +115,15 @@ function pop(element, kind) {
   element.classList.add(kind);
 }
 
-// A random word, weighted toward weaker bricks: (TOP + 1 - level)², so gray
-// bricks come up 9 times and blue ones 4 times as often as gold. Never the
+// A random word, weighted toward weaker bricks: (TOP + 1 - level)³, so gray
+// bricks come up 27 times and blue ones 8 times as often as gold. Never the
 // same word twice in a row.
 function choose() {
   const options = [];
   let total = 0;
   WORDS.forEach(function (entry) {
     if (entry === current) return;
-    const weight = Math.pow(TOP + 1 - level(entry.word), 2);
+    const weight = Math.pow(TOP + 1 - level(entry.word), 3);
     options.push({ entry: entry, weight: weight });
     total += weight;
   });
