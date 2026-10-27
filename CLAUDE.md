@@ -145,7 +145,10 @@ Each file's header comment documents its API. In brief:
   check key, for games that check answers in `onChange` as they're typed.
 - **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()` (a
   fanfare), `cheer()` (crowd, claps, and "woo!"s), `trumpet()` (a royal
-  fanfare), `zap()` (a lightning crackle), `isMuted()`, `setMuted(on)`. Synthesized with Web Audio, no audio files.
+  fanfare), `zap()` (a lightning crackle), `isMuted()`, `setMuted(on)`.
+  `unlock()` sets Safari's audio session to "playback" (iOS 17 and later),
+  so sounds play through the iPad's silent mode, like the read-aloud voice
+  does. The launcher's speaker button turns everything off. Synthesized with Web Audio, no audio files.
   Mute is site-wide and remembered; the launcher has the toggle.
 - **speech.js:** `speak(text)` and `stop()`, using the Web Speech API's
   built-in voices (US English, no network). The first `speak()` must come

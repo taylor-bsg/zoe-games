@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.3.0';
+//   import * as sound from '../shared/sound.js?v=0.3.1';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -15,9 +15,11 @@
 // background, so later taps resume it automatically.
 //
 // The mute setting is shared by every game and remembered on the device.
-// Sounds are also silent when the iPad itself is muted.
+// On iOS 17 and later, sounds play even when the iPad is in silent mode, just
+// like the read-aloud voice, so the launcher's speaker button is the way to
+// turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.3.0';
+import * as storage from './storage.js?v=0.3.1';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -38,6 +40,13 @@ function context() {
 
 // Call from a tap (click handler) before the first sound.
 export function unlock() {
+  if (navigator.audioSession) {
+    try {
+      navigator.audioSession.type = 'playback'; // play through silent mode
+    } catch (e) {
+      // Not allowed here: keep the default.
+    }
+  }
   const c = context();
   if (!c || c.state === 'running') return;
   try {
@@ -256,6 +265,6 @@ export function trumpet() {
 // An electric zap, e.g. for a lightning bolt: a crackle over a falling buzz.
 export function zap() {
   if (!canPlay()) return;
-  hiss(0, 0.22, 3200, 0.7, 0.3, 0.005);
-  note(1400, 0, 0.26, 'square', 0.07, 110);
+  hiss(0, 0.3, 3000, 0.7, 0.9, 0.005);
+  note(1400, 0, 0.32, 'square', 0.13, 110);
 }

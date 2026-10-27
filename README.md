@@ -16,8 +16,8 @@ JavaScript: no build step, and nothing loaded from other sites.
 Add it from the main page, not from inside a game, so the icon opens the game
 list. The Home Screen app keeps its own saved progress, separate from Safari's.
 
-Sound follows the iPad's volume and silent mode. The speaker button on the
-main page mutes every game.
+Sound follows the iPad's volume. On iPadOS 17 and later it plays even in
+silent mode, so use the speaker button on the main page to mute every game.
 
 ## Test locally
 
