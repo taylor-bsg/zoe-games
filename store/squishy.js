@@ -1,27 +1,54 @@
 // Squishy plush dragons in real 3D, drawn with WebGL and no library. Each
 // dragon is a few soft shapes (a round body, stubby feet, a tail, horns,
-// wings, and maybe spikes or a crown) melted together with signed distance
-// functions and ray-marched in a fragment shader, then lit like soft fabric.
-// The face and belly are painted on by position, so they turn with the body.
+// wings, and maybe spikes, a crown, or other flair) melted together with
+// signed distance functions and ray-marched in a fragment shader, then lit
+// like soft fabric. The face and belly are painted on by position, so they
+// turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.2';
+//   import { createSquishy } from './squishy.js?v=0.7.3';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
-// A look is colors (hex strings: body, belly, horn, wing, cheek, spike, eye)
-// and features (spikes, crown, stars: true or false). angle turns the dragon
-// (radians); squish squashes it toward the floor (up to about 1) or
-// stretches it up (negative, down to about -0.6). The picture fills the canvas's on-screen size, at up to
-// maxRatio pixels per CSS pixel (default 2), and the dragon is zoomed to be
-// as big as fits.
+// A look has colors (hex strings): body, belly, horn, wing, cheek, spike, eye,
+// and acc and acc2 for accessories. Everything else is optional:
+//   size        overall size, 1 = full (cheaper squishies are smaller)
+//   wings, tail size of the wings and tail, 1 = normal
+//   tailTip     a ball on the end of the tail (acc2)
+//   spikes, crown, stars
+//   glasses     'round' (acc frames) or 'sun' (acc frames, acc2 lenses)
+//   headphones  acc band, acc2 cups
+//   hat         a party hat striped acc and acc2, with a white pom-pom
+//   halo        a glowing ring above the head (acc)
+//   bowtie      acc2
+// angle turns the dragon (radians); squish squashes it toward the floor (up
+// to about 1) or stretches it up (negative, down to about -0.6). The picture
+// fills the canvas's on-screen size, at up to maxRatio pixels per CSS pixel
+// (default 2), with the same zoom for every squishy so that sizes compare.
 
 const VERTEX = 'attribute vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0, 1.0); }';
 
 const FRAGMENT = [
   'precision highp float;',
   'uniform vec2 uRes;',
-  'uniform float uFocal, uAngle, uSquish, uSpikes, uCrown, uStars;',
-  'uniform vec3 uBody, uBelly, uHorn, uWing, uCheek, uSpike, uEye;',
+  'uniform float uFocal, uAngle, uSquish;',
+  // Packed four to a vector, to stay within the 16 uniform vectors every
+  // WebGL device has.
+  'uniform vec4 uShape;', // size, wing size, tail size, tail tip
+  'uniform vec4 uExtras;', // spikes, crown, stars, bow tie
+  'uniform vec4 uGear;', // glasses (1 round, 2 sun), headphones, hat, halo
+  'uniform vec3 uBody, uBelly, uHorn, uWing, uCheek, uSpike, uEye, uAcc, uAcc2;',
+  '#define SIZE uShape.x',
+  '#define WINGS uShape.y',
+  '#define TAIL uShape.z',
+  '#define TAIL_TIP uShape.w',
+  '#define SPIKES uExtras.x',
+  '#define CROWN uExtras.y',
+  '#define STARS uExtras.z',
+  '#define BOWTIE uExtras.w',
+  '#define GLASSES uGear.x',
+  '#define HEADPHONES uGear.y',
+  '#define HAT uGear.z',
+  '#define HALO uGear.w',
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -52,6 +79,7 @@ const FRAGMENT = [
   '  return (sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;',
   '}',
 
+  // A ring lying flat (around the y axis); pass p.xzy for one facing forward.
   'float sdTorus(vec3 p, vec2 t) { return length(vec2(length(p.xz) - t.x, p.y)) - t.y; }',
 
   'float smin(float a, float b, float k) {',
@@ -62,16 +90,18 @@ const FRAGMENT = [
   // Melts a part into the shape so far; the closer one gives the material.
   'vec2 add(vec2 a, float d, float m, float k) { return vec2(smin(a.x, d, k), d < a.x ? m : a.y); }',
 
-  // From the world into the dragon's own space: turned, then squashed toward
-  // the floor and bulged out (or stretched up for a negative squish).
+  // From the world into the dragon's own space: turned, squashed toward the
+  // floor and bulged out (or stretched up for a negative squish), and scaled
+  // to its size, still standing on the floor.
   'vec3 local(vec3 p) {',
   '  p.xz = rot(uAngle) * p.xz;',
-  '  p.y = (p.y - FLOOR) / (1.0 - 0.3 * uSquish) + FLOOR;',
-  '  p.xz /= 1.0 + 0.18 * uSquish;',
+  '  p.y = (p.y - FLOOR) / ((1.0 - 0.3 * uSquish) * SIZE) + FLOOR;',
+  '  p.xz /= (1.0 + 0.18 * uSquish) * SIZE;',
   '  return p;',
   '}',
 
-  // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike.
+  // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
+  // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom.
   'vec2 map(vec3 world) {',
   '  vec3 p = local(world);',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
@@ -79,20 +109,26 @@ const FRAGMENT = [
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
   '  vec2 res = vec2(body, 1.0);',
   '  res.x = smin(res.x, sdEllipsoid(q - vec3(0.42, -0.72, 0.42), vec3(0.22, 0.13, 0.2)), 0.08);',
-  '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), vec3(0.0, -0.3, -1.1), 0.18, 0.06), 0.1);',
+  // The tail: a big one is longer and thicker, curving up behind (which also
+  // keeps it inside the view), maybe with a ball on the tip.
+  '  vec3 tip = vec3(0.0, -0.5, -0.66) + vec3(0.0, 0.2 + 0.6 * (TAIL - 1.0), -0.44 - 0.1 * (TAIL - 1.0));',
+  '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), tip, 0.18 * min(TAIL, 1.3), 0.06 * TAIL), 0.1);',
+  '  if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
   '  res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
-  '  vec3 w = q - vec3(0.74, 0.2, -0.44);',
-  '  w.xy = rot(-0.5) * w.xy;',
+  // Wings: bigger ones reach further up and out.
+  '  float big = WINGS - 1.0;',
+  '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big, -0.44 - 0.08 * big);',
+  '  w.xy = rot(-0.5 - 0.15 * big) * w.xy;',
   '  w.xz = rot(0.5) * w.xz;',
-  '  res = add(res, sdEllipsoid(w, vec3(0.08, 0.34, 0.26)), 3.0, 0.06);',
-  '  if (uSpikes > 0.5) {',
+  '  res = add(res, sdEllipsoid(w, vec3(0.08 + 0.03 * big, 0.34 * WINGS, 0.26 * WINGS)), 3.0, 0.06);',
+  '  if (SPIKES > 0.5) {',
   '    for (int i = 0; i < 3; i++) {',
   '      float t = float(i);',
   '      vec3 a = vec3(0.0, 0.76 - 0.22 * t, -0.2 - 0.27 * t);',
   '      res = add(res, sdRoundCone(p, a, a + vec3(0.0, 0.2, -0.1), 0.1, 0.03), 4.0, 0.04);',
   '    }',
   '  }',
-  '  if (uCrown > 0.5) {',
+  '  if (CROWN > 0.5) {',
   '    res = add(res, sdTorus(p - vec3(0.0, 0.83, 0.02), vec2(0.27, 0.05)), 4.0, 0.02);',
   '    for (int i = 0; i < 5; i++) {',
   '      float a = 6.2832 * float(i) / 5.0;',
@@ -100,9 +136,48 @@ const FRAGMENT = [
   '      res = add(res, sdRoundCone(p, c, c + vec3(0.0, 0.2, 0.0), 0.06, 0.02), 4.0, 0.02);',
   '    }',
   '  }',
-  // Squashing and stretching change distances; scale down to the smaller
-  // factor so the march never steps past the surface.
-  '  res.x *= min(1.0 - 0.3 * uSquish, 1.0 + 0.18 * uSquish);',
+  // Glasses: rings over the painted eyes, turned to follow the round head,
+  // with a bridge and arms that run back along the head. Away from the face,
+  // a sphere around them stands in (it's never farther than they are), which
+  // saves work on slower iPads.
+  '  if (GLASSES > 0.5) {',
+  '    float bound = length(p - vec3(0.0, 0.15, 0.62)) - 0.95;',
+  '    if (bound > 0.05) {',
+  '      res = add(res, bound, 5.0, 0.01);',
+  '    } else {',
+  '      vec3 l = q - vec3(0.31, 0.12, 0.84);',
+  '      l.xz = rot(0.35) * l.xz;',
+  '      float frame = sdTorus(l.xzy, vec2(0.155, 0.026));',
+  '      frame = min(frame, sdRoundCone(p, vec3(-0.165, 0.15, 0.885), vec3(0.165, 0.15, 0.885), 0.024, 0.024));',
+  '      frame = min(frame, sdRoundCone(q, vec3(0.455, 0.13, 0.79), vec3(0.66, 0.16, 0.66), 0.024, 0.024));',
+  '      frame = min(frame, sdRoundCone(q, vec3(0.66, 0.16, 0.66), vec3(0.82, 0.19, 0.45), 0.024, 0.024));',
+  '      res = add(res, frame, 5.0, 0.01);',
+  '      if (GLASSES > 1.5) res = add(res, sdEllipsoid(l, vec3(0.15, 0.15, 0.018)), 6.0, 0.005);',
+  '    }',
+  '  }',
+  // Headphones: a band over the top, in front of the horns, and two cups.
+  '  if (HEADPHONES > 0.5) {',
+  '    vec3 h = p - vec3(0.0, -0.12, 0.15);',
+  '    res = add(res, max(sdTorus(h.xzy, vec2(1.005, 0.05)), -0.02 - p.y), 5.0, 0.02);',
+  '    res = add(res, sdEllipsoid(q - vec3(1.0, -0.02, 0.15), vec3(0.11, 0.21, 0.21)), 6.0, 0.03);',
+  '  }',
+  // A party hat between the horns, tipped a little, with a pom-pom.
+  '  if (HAT > 0.5) {',
+  '    res = add(res, sdRoundCone(p, vec3(0.0, 0.75, 0.03), vec3(0.11, 1.33, 0.05), 0.26, 0.022), 8.0, 0.03);',
+  '    res = add(res, length(p - vec3(0.12, 1.37, 0.05)) - 0.09, 9.0, 0.02);',
+  '  }',
+  '  if (HALO > 0.5) {',
+  '    vec3 hl = p - vec3(0.0, 1.17, -0.05);',
+  '    hl.yz = rot(0.22) * hl.yz;',
+  '    res = add(res, sdTorus(hl, vec2(0.3, 0.035)), 7.0, 0.01);',
+  '  }',
+  '  if (BOWTIE > 0.5) {',
+  '    res = add(res, sdEllipsoid(q - vec3(0.1, -0.17, 0.84), vec3(0.1, 0.065, 0.045)), 6.0, 0.02);',
+  '    res = add(res, length(p - vec3(0.0, -0.17, 0.865)) - 0.042, 6.0, 0.02);',
+  '  }',
+  // Squashing, stretching, and size change distances; scale down to the
+  // smallest factor so the march never steps past the surface.
+  '  res.x *= SIZE * min(1.0 - 0.3 * uSquish, 1.0 + 0.18 * uSquish);',
   '  return res;',
   '}',
 
@@ -128,12 +203,21 @@ const FRAGMENT = [
 
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
+  '  if (m > 8.5) return vec3(1.0, 0.98, 0.95);',
+  '  if (m > 7.5) {',
+  '    vec3 p = local(world);',
+  '    float s = dot(p - vec3(0.0, 0.75, 0.03), vec3(0.186, 0.982, 0.034));', // along the hat
+  '    return mod(floor(s * 11.5), 2.0) < 1.0 ? uAcc : uAcc2;',
+  '  }',
+  '  if (m > 6.5) return uAcc;',
+  '  if (m > 5.5) return uAcc2;',
+  '  if (m > 4.5) return uAcc;',
   '  if (m > 3.5) return uSpike;',
   '  if (m > 2.5) return uWing;',
   '  if (m > 1.5) return uHorn;',
   '  vec3 p = local(world);',
   '  vec3 col = uBody;',
-  '  if (uStars > 0.5) {',
+  '  if (STARS > 0.5) {',
   '    vec3 f = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.55 && length(f) < 0.17) col = vec3(1.0, 0.96, 0.75);',
   '  }',
@@ -163,7 +247,7 @@ const FRAGMENT = [
   // Only march rays that hit a sphere around the dragon.
   '  vec3 oc = ro - vec3(0.0, 0.05, -0.05);',
   '  float b = dot(oc, rd);',
-  '  float disc = b * b - dot(oc, oc) + 1.6 * 1.6;',
+  '  float disc = b * b - dot(oc, oc) + 1.85 * 1.85;',
   '  if (disc > 0.0) {',
   '    float t = max(-b - sqrt(disc), 0.0);',
   '    float tmax = -b + sqrt(disc);',
@@ -184,15 +268,17 @@ const FRAGMENT = [
   '      float front = clamp(dot(n, -rd), 0.0, 1.0);',
   '      vec3 col = paint(p, m) * (0.36 + 0.55 * wrap + 0.3 * front) * (0.6 + 0.4 * occlusion(p, n));',
   '      col += vec3(0.16) * rim + vec3(0.09) * sheen;',
+  '      if (m > 6.5 && m < 7.5) col = mix(col, uAcc * 1.2 + 0.1, 0.7);', // the halo glows
   '      col *= 0.97 + 0.05 * hash(floor(p * 140.0));',
   '      gl_FragColor = vec4(col, 1.0);',
   '      return;',
   '    }',
   '  }',
-  // The floor: a soft round shadow (premultiplied black).
+  // The floor: a soft round shadow (premultiplied black), sized with the
+  // squishy and wider when squashed.
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    vec2 q = p.xz * vec2(1.0, 1.4) / (1.0 + 0.18 * uSquish);', // wider when squashed
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * uSquish) * SIZE);',
   '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
@@ -200,6 +286,8 @@ const FRAGMENT = [
   '  gl_FragColor = vec4(0.0);',
   '}',
 ].join('\n');
+
+const COLORS = ['body', 'belly', 'horn', 'wing', 'cheek', 'spike', 'eye', 'acc', 'acc2'];
 
 function compile(gl, type, source) {
   const shader = gl.createShader(type);
@@ -212,8 +300,12 @@ function compile(gl, type, source) {
 }
 
 function rgb(hex) {
-  const n = parseInt(hex.slice(1), 16);
+  const n = parseInt((hex || '#1d2b53').slice(1), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+function flag(on) {
+  return on ? 1 : 0;
 }
 
 export function createSquishy(canvas, options) {
@@ -242,11 +334,12 @@ export function createSquishy(canvas, options) {
   const aPos = gl.getAttribLocation(program, 'aPos');
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-  const names = ['uRes', 'uFocal', 'uAngle', 'uSquish', 'uSpikes', 'uCrown', 'uStars', 'uBody', 'uBelly',
-    'uHorn', 'uWing', 'uCheek', 'uSpike', 'uEye'];
   const u = {};
-  names.forEach(function (name) {
+  ['uRes', 'uFocal', 'uAngle', 'uSquish', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
     u[name] = gl.getUniformLocation(program, name);
+  });
+  COLORS.forEach(function (part) {
+    u[part] = gl.getUniformLocation(program, 'u' + part.charAt(0).toUpperCase() + part.slice(1));
   });
   const maxRatio = opts.maxRatio || 2;
 
@@ -260,20 +353,23 @@ export function createSquishy(canvas, options) {
     }
     gl.viewport(0, 0, width, height);
     gl.uniform2f(u.uRes, width, height);
-    // Zoom in as far as the dragon still fits, 3.7 units from the camera,
-    // at any turn, squash, or stretch: 1.48 units either side (the tail
-    // pointing sideways and a little forward in a full squash) and 1.52 above
-    // the aim (a horn turned toward the camera in a full stretch). Checked by
-    // rendering every squishy at full squash and stretch, every 3° of turn.
+    // The same zoom for every squishy, so smaller ones look smaller: as far
+    // in as the biggest still fits, 3.7 units from the camera, at any turn,
+    // squash, or stretch: 1.48 units either side (a tail pointing sideways
+    // and a little forward in a full squash) and 1.52 above the aim (a horn
+    // turned toward the camera in a full stretch). Each squishy's size in
+    // items.js keeps it inside that, checked by rendering every squishy at
+    // full squash and stretch, every 6° of turn.
     gl.uniform1f(u.uFocal, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48));
     gl.uniform1f(u.uAngle, (state && state.angle) || 0);
     gl.uniform1f(u.uSquish, (state && state.squish) || 0);
-    gl.uniform1f(u.uSpikes, look.spikes ? 1 : 0);
-    gl.uniform1f(u.uCrown, look.crown ? 1 : 0);
-    gl.uniform1f(u.uStars, look.stars ? 1 : 0);
-    ['body', 'belly', 'horn', 'wing', 'cheek', 'spike', 'eye'].forEach(function (part) {
+    gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
+    gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
+    gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),
+      flag(look.hat), flag(look.halo));
+    COLORS.forEach(function (part) {
       const c = rgb(look[part]);
-      gl.uniform3f(u['u' + part.charAt(0).toUpperCase() + part.slice(1)], c[0], c[1], c[2]);
+      gl.uniform3f(u[part], c[0], c[1], c[2]);
     });
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);

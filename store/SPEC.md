@@ -34,6 +34,13 @@ Swiping down squashes the squishy in step with the finger, and swiping up
 stretches it. Letting go springs it back with a jiggle. Sideways swipes
 still spin it.
 
+> I think you can add more diversity. The cheaper ones can be a little smaller. Give some random flair to the more expensive ones: glasses, a bigger tail, bigger wings , headphones, etc
+
+Squishies now come in sizes by price, and the pricier ones get flair:
+glasses, sunglasses, headphones, a party hat, a halo, a bow tie, bigger
+wings, and a big tail with a ball on the tip. Four new squishies show the
+flair off. The existing eight keep their names and prices.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -76,20 +83,26 @@ still spin it.
     button and says "Play games to earn more coins!".
   - Each squishy can be bought once. The store opens on the first one Zoe
     doesn't own yet.
-- **Squishies** (`items.js`):
+- **Squishies** (`items.js`). Size is relative to the largest.
 
-  | Squishy | Coins | Look |
-  | --- | --- | --- |
-  | Sprout | 50 | Green, like the level 1 dragon |
-  | Bubblegum | 75 | Pink |
-  | Sunny | 75 | Yellow |
-  | Frosty | 100 | Ice blue, like the level 2 dragon |
-  | Ember | 150 | Red with dark horns, like the level 3 dragon |
-  | Shade | 200 | Shadow purple with glowing eyes, like the level 4 dragon |
-  | Galaxy | 250 | Purple with gold stars |
-  | Dragon King | 400 | Gold, with a crown |
+  | Squishy | Coins | Size | Look and flair |
+  | --- | --- | --- | --- |
+  | Sprout | 50 | 82% | Green, like the level 1 dragon |
+  | Bubblegum | 75 | 85% | Pink |
+  | Sunny | 75 | 85% | Yellow |
+  | Frosty | 100 | 90% | Ice blue, like the level 2 dragon |
+  | Ember | 150 | 94% | Red, like the level 3 dragon; bigger wings |
+  | Shade | 200 | 96% | Shadow purple, like the level 4 dragon; pink sunglasses |
+  | Professor | 225 | 100% | Mint; round glasses and a red bow tie (new) |
+  | Galaxy | 250 | 90% | Purple with gold stars; big wings |
+  | DJ Bop | 275 | 100% | Cyan with pink spikes; headphones (new) |
+  | Party Puff | 300 | 87% | Orange; a striped party hat with a pom-pom (new) |
+  | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
+  | Dragon King | 400 | 90% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
 
-  All eight cost 1,300 coins. The four Zoe Spells walls pay 1,000.
+  - Squishies with big flair (wings, hats, tails) are a little smaller, so
+    the flair still fits the view; the flair makes them look grander anyway.
+  - All twelve cost 2,450 coins. The four Zoe Spells walls pay 1,000.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some.
@@ -107,6 +120,25 @@ still spin it.
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.
   - Without WebGL, a 🐉 stands in.
+  - Every squishy is drawn with the same zoom, so their sizes compare. The
+    zoom is set so the largest still fits; each squishy's size in
+    `items.js` keeps it inside. A big tail curves up behind, which keeps it
+    longer without pushing past the edges.
+  - **Flair parts:** glasses are rings over the painted eyes, turned to
+    follow the head, with a bridge and arms. Sunglasses add dark lenses that
+    hide the eyes. Headphones are a band over the top, in front of the
+    horns, and two cups. The party hat is striped, with a white pom-pom. The
+    halo is a tilted ring that glows. The bow tie is two bows and a knot
+    under the smile.
+  - **Draw cost:** the most elaborate squishy (Shade: sunglasses and spikes)
+    takes about 1.3× as long to draw as a plain one. The glasses are only
+    worked out near the face, which keeps that down on older iPads.
+  - **Fit check:** `fit-check.html` (in this folder, not linked from the
+    store) draws every squishy at full squash, full stretch, and rest, every
+    6° of turn, in every store layout, and reports how close each comes to
+    the edge. Run it after changing a size or adding flair. At this change,
+    the closest was 1.3% of the view's height (Professor and DJ Bop, fully
+    stretched).
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.

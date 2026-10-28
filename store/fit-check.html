@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Squishy fit check</title>
+  <style>
+    body {
+      margin: 16px;
+      font: 15px/1.4 -apple-system, system-ui, sans-serif;
+      color: #1d2b53;
+    }
+
+    canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      visibility: hidden;
+    }
+
+    .bad {
+      color: #c92a2a;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <h1>Squishy fit check</h1>
+  <p>
+    For developers, not linked from the store. Draws every squishy at full
+    squash, full stretch, and rest, every 6° of turn, at the size of the
+    store's 3D view in each layout from phone to 12.9-inch iPad. It reports
+    how close each squishy comes to the edge of the view, as a share of the
+    view's height. Every number must be above 0; if one isn't, make that
+    squishy's size in items.js smaller. Takes a few minutes.
+  </p>
+  <pre id="out">Starting…</pre>
+
+  <script type="module">
+    import { createSquishy } from './squishy.js?v=0.7.3';
+    import { ITEMS } from './items.js?v=0.7.3';
+
+    const SIZES = [[636, 610], [712, 641], [792, 662], [764, 797], [978, 866], [968, 983], [337, 454]];
+    const out = document.getElementById('out');
+    const closest = {};
+
+    function frame() {
+      return new Promise(function (resolve) {
+        requestAnimationFrame(resolve);
+      });
+    }
+
+    // How close the squishy (not its soft shadow) comes to each edge, in pixels.
+    function margins(px, w, h) {
+      let top = h;
+      let bottom = h;
+      let left = w;
+      let right = w;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (px[(y * w + x) * 4 + 3] > 200) {
+            top = Math.min(top, h - 1 - y);
+            bottom = Math.min(bottom, y);
+            left = Math.min(left, x);
+            right = Math.min(right, w - 1 - x);
+          }
+        }
+      }
+      return Math.min(top, bottom, left, right);
+    }
+
+    async function run() {
+      for (const size of SIZES) {
+        const w = size[0];
+        const h = size[1];
+        const canvas = document.createElement('canvas');
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        document.body.appendChild(canvas);
+        const view = createSquishy(canvas, { maxRatio: 1 });
+        if (!view) {
+          out.textContent = 'This browser has no WebGL.';
+          return;
+        }
+        const gl = canvas.getContext('webgl');
+        const px = new Uint8Array(w * h * 4);
+        for (const item of ITEMS) {
+          out.textContent = 'Checking ' + item.name + ' at ' + w + '×' + h + '…';
+          await frame();
+          for (const squish of [0.9, -0.6, 0]) {
+            for (let k = 0; k < 60; k++) {
+              const angle = (k / 60) * 2 * Math.PI;
+              view.draw(item.look, { angle: angle, squish: squish });
+              gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+              const share = margins(px, w, h) / h;
+              const was = closest[item.id];
+              if (!was || share < was.share) {
+                closest[item.id] = { share: share, where: w + '×' + h + ', squish ' + squish + ', ' +
+                  Math.round((angle * 180) / Math.PI) + '°' };
+              }
+            }
+          }
+        }
+        canvas.remove();
+      }
+      out.innerHTML = '';
+      ITEMS.forEach(function (item) {
+        const c = closest[item.id];
+        const line = document.createElement('div');
+        line.textContent = item.name + ' (size ' + (item.look.size || 1) + '): ' +
+          (100 * c.share).toFixed(1) + '% from the edge, at ' + c.where;
+        if (c.share <= 0) line.className = 'bad';
+        out.appendChild(line);
+      });
+    }
+
+    run();
+  </script>
+</body>
+</html>

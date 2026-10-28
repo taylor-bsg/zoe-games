@@ -77,7 +77,9 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
 - **Coins:** games pay through `coins.earn(GAME_ID, n)`. How much and for
   what is the user's call; record it in the game's `SPEC.md`. Store items
   live in `store/items.js`. Never change an item's id, since purchases are
-  saved by id.
+  saved by id. After adding a squishy or changing one's size or flair, open
+  `store/fit-check.html` (served locally) to confirm every squishy still
+  fits the view.
 - For small presentation choices the spec doesn't cover (colors, emoji,
   wording, layout, timings), decide and list them under "Implementation notes"
   at the end of that game's `SPEC.md`.

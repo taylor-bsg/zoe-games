@@ -4,11 +4,11 @@
 // up squashes or stretches it as far as the finger goes, and a tap squishes
 // it. The dots show which one this is, gold for the ones Zoe owns.
 
-import * as coins from '../shared/coins.js?v=0.7.2';
-import * as sound from '../shared/sound.js?v=0.7.2';
-import { confetti } from '../shared/celebrate.js?v=0.7.2';
-import { createSquishy } from './squishy.js?v=0.7.2';
-import { ITEMS } from './items.js?v=0.7.2';
+import * as coins from '../shared/coins.js?v=0.7.3';
+import * as sound from '../shared/sound.js?v=0.7.3';
+import { confetti } from '../shared/celebrate.js?v=0.7.3';
+import { createSquishy } from './squishy.js?v=0.7.3';
+import { ITEMS } from './items.js?v=0.7.3';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
