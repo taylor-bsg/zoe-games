@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.4.0">
+  <link rel="stylesheet" href="../shared/base.css?v=0.5.0">
   <style>
     /* Gold-brick count, in the middle of the top bar. */
     .tally {
@@ -150,14 +150,23 @@
     }
 
     .level-picker {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      align-items: center;
       gap: 12px;
     }
 
-    .level-button {
-      padding: 0 0.4em;
-      white-space: nowrap;
+    .level-caption {
+      font-size: 26px;
+      font-weight: 800;
+      text-shadow: 0 2px 0 rgba(29, 43, 83, 0.2);
+    }
+
+    .setup .level-button {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+      padding: 0;
+      font-size: 32px;
     }
 
     .level-button[aria-pressed="true"] {
@@ -351,23 +360,24 @@
       display: none;
     }
 
-    /* The ice dragon puffs snowflakes when it peeks over. */
-    .frost {
+    /* Dragons puff from their nostrils when they peek over: snowflakes for
+       the ice dragon, smoke and embers for the fire dragon. */
+    .puff {
       opacity: 0;
       transform-box: fill-box;
       transform-origin: center;
     }
 
     /* Out of the nostrils and away to each side, clear of the eyes. */
-    #dragon.is-peeking .frost-left {
-      animation: frost-left 2.6s ease-out;
+    #dragon.is-peeking .puff-left {
+      animation: puff-left 2.6s ease-out;
     }
 
-    #dragon.is-peeking .frost-right {
-      animation: frost-right 2.6s ease-out;
+    #dragon.is-peeking .puff-right {
+      animation: puff-right 2.6s ease-out;
     }
 
-    @keyframes frost-left {
+    @keyframes puff-left {
       0%, 30% {
         opacity: 0;
         transform: translate(0, 0) scale(0.4);
@@ -386,7 +396,7 @@
       }
     }
 
-    @keyframes frost-right {
+    @keyframes puff-right {
       0%, 30% {
         opacity: 0;
         transform: translate(0, 0) scale(0.4);
@@ -484,13 +494,53 @@
               <circle cx="45" cy="-109" r="3.5" fill="#ffffff"/>
               <path d="M-22,-32 Q0,-20 22,-32" stroke="#1971c2" stroke-width="4" stroke-linecap="round" fill="none"/>
               <path d="M8,-27 L12,-17 L16,-28 Z" fill="#ffffff"/>
-              <g class="frost frost-left" stroke-linecap="round" fill="none">
+              <g class="puff puff-left" stroke-linecap="round" fill="none">
                 <path d="M-34,-65 L-34,-35 M-47.0,-57.5 L-21.0,-42.5 M-47.0,-42.5 L-21.0,-57.5 M-58,-41 L-58,-19 M-67.5,-35.5 L-48.5,-24.5 M-67.5,-24.5 L-48.5,-35.5" stroke="#4dabf7" stroke-width="8.5"/>
                 <path d="M-34,-65 L-34,-35 M-47.0,-57.5 L-21.0,-42.5 M-47.0,-42.5 L-21.0,-57.5 M-58,-41 L-58,-19 M-67.5,-35.5 L-48.5,-24.5 M-67.5,-24.5 L-48.5,-35.5" stroke="#ffffff" stroke-width="4.5"/>
               </g>
-              <g class="frost frost-right" stroke-linecap="round" fill="none">
+              <g class="puff puff-right" stroke-linecap="round" fill="none">
                 <path d="M34,-67 L34,-37 M21.0,-59.5 L47.0,-44.5 M21.0,-44.5 L47.0,-59.5 M58,-43 L58,-21 M48.5,-37.5 L67.5,-26.5 M48.5,-26.5 L67.5,-37.5" stroke="#4dabf7" stroke-width="8.5"/>
                 <path d="M34,-67 L34,-37 M21.0,-59.5 L47.0,-44.5 M21.0,-44.5 L47.0,-59.5 M58,-43 L58,-21 M48.5,-37.5 L67.5,-26.5 M48.5,-26.5 L67.5,-37.5" stroke="#ffffff" stroke-width="4.5"/>
+              </g>
+            </g>
+            <g id="dragon-3" transform="translate(675 336)" display="none">
+              <path d="M-80,-94 C-150,-172 -216,-164 -242,-118 C-216,-124 -206,-102 -184,-104 C-178,-84 -152,-80 -138,-84 C-130,-68 -110,-64 -92,-62 Z" fill="#c92a2a"/>
+              <path d="M80,-94 C150,-172 216,-164 242,-118 C216,-124 206,-102 184,-104 C178,-84 152,-80 138,-84 C130,-68 110,-64 92,-62 Z" fill="#c92a2a"/>
+              <path d="M-90,-92 C-142,-148 -192,-146 -212,-122 C-192,-120 -186,-104 -170,-104 C-162,-90 -142,-88 -130,-90 C-122,-76 -106,-72 -96,-70 Z" fill="#ff922b"/>
+              <path d="M90,-92 C142,-148 192,-146 212,-122 C192,-120 186,-104 170,-104 C162,-90 142,-88 130,-90 C122,-76 106,-72 96,-70 Z" fill="#ff922b"/>
+              <path d="M-44,-136 C-60,-172 -90,-194 -122,-200 C-98,-178 -82,-158 -68,-128 Z" fill="#343a40"/>
+              <path d="M44,-136 C60,-172 90,-194 122,-200 C98,-178 82,-158 68,-128 Z" fill="#343a40"/>
+              <path d="M-32,-146 C-36,-170 -24,-182 -18,-198 C-12,-182 -6,-172 0,-160 C4,-178 14,-188 18,-204 C24,-186 32,-170 32,-146 Z" fill="#ffd43b" stroke="#f76707" stroke-width="3" stroke-linejoin="round"/>
+              <ellipse cx="0" cy="-90" rx="96" ry="66" fill="#fa5252"/>
+              <circle cx="-70" cy="-76" r="5" fill="#ff8787"/>
+              <circle cx="-60" cy="-64" r="4" fill="#ff8787"/>
+              <circle cx="-77" cy="-62" r="3" fill="#ff8787"/>
+              <circle cx="70" cy="-76" r="5" fill="#ff8787"/>
+              <circle cx="60" cy="-64" r="4" fill="#ff8787"/>
+              <circle cx="77" cy="-62" r="3" fill="#ff8787"/>
+              <ellipse cx="0" cy="-50" rx="60" ry="34" fill="#ffd8a8"/>
+              <ellipse cx="-18" cy="-56" rx="7" ry="5" fill="#c92a2a"/>
+              <ellipse cx="18" cy="-56" rx="7" ry="5" fill="#c92a2a"/>
+              <ellipse cx="-38" cy="-106" rx="21" ry="22" fill="#ffffff"/>
+              <ellipse cx="38" cy="-106" rx="21" ry="22" fill="#ffffff"/>
+              <circle cx="-35" cy="-102" r="11" fill="#fab005"/>
+              <circle cx="41" cy="-102" r="11" fill="#fab005"/>
+              <circle cx="-35" cy="-102" r="5.5" fill="#1d2b53"/>
+              <circle cx="41" cy="-102" r="5.5" fill="#1d2b53"/>
+              <circle cx="-31" cy="-107" r="3.5" fill="#ffffff"/>
+              <circle cx="45" cy="-107" r="3.5" fill="#ffffff"/>
+              <path d="M-60,-134 Q-40,-146 -20,-136" stroke="#862e2e" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <path d="M60,-134 Q40,-146 20,-136" stroke="#862e2e" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <path d="M-24,-32 Q0,-18 24,-32" stroke="#a61e4d" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <path d="M-16,-28 L-12,-18 L-8,-27 Z" fill="#ffffff"/>
+              <path d="M8,-27 L12,-18 L16,-28 Z" fill="#ffffff"/>
+              <g class="puff puff-left">
+                <g fill="#e9ecef" stroke="#adb5bd" stroke-width="2"><circle cx="-34" cy="-58" r="10"/><circle cx="-46" cy="-66" r="8"/><circle cx="-48" cy="-48" r="7"/></g>
+                <g fill="#ff922b"><circle cx="-30" cy="-40" r="3.5"/><circle cx="-58" cy="-74" r="3"/></g>
+              </g>
+              <g class="puff puff-right">
+                <g fill="#e9ecef" stroke="#adb5bd" stroke-width="2"><circle cx="34" cy="-58" r="10"/><circle cx="46" cy="-66" r="8"/><circle cx="48" cy="-48" r="7"/></g>
+                <g fill="#ff922b"><circle cx="30" cy="-40" r="3.5"/><circle cx="58" cy="-74" r="3"/></g>
               </g>
             </g>
           </g>
@@ -539,8 +589,10 @@
       <div class="panel">
         <div class="setup" id="setup">
           <div class="level-picker">
-            <button type="button" class="btn btn-white level-button" data-level="1">Level 1</button>
-            <button type="button" class="btn btn-white level-button" data-level="2">Level 2</button>
+            <span class="level-caption">Level</span>
+            <button type="button" class="btn btn-white level-button" data-level="1">1</button>
+            <button type="button" class="btn btn-white level-button" data-level="2">2</button>
+            <button type="button" class="btn btn-white level-button" data-level="3">3</button>
           </div>
           <button type="button" class="btn btn-big" id="start-button">Start</button>
           <button type="button" class="btn clear-button" id="clear-button">
@@ -553,6 +605,6 @@
     </main>
   </div>
 
-  <script type="module" src="game.js?v=0.4.0"></script>
+  <script type="module" src="game.js?v=0.5.0"></script>
 </body>
 </html>

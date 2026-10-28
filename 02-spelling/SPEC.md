@@ -123,6 +123,23 @@ Clarified:
 - **Dragon:** an ice dragon. Pale blue, with frosty white spikes, and it
   puffs snowflakes when it peeks over the wall.
 
+## Level 3
+
+Requested by the user, verbatim (2026-10-28):
+
+> Okay let’s add level 3, fire dragon. Use the next word list.
+
+- **Words:** "the next word list" is England's national curriculum word list
+  for years 5 and 6 (ages 9–11, same source and licence as level 2). Its one
+  word already in level 1, especially, is swapped for a second form the list
+  gives, immediately (from "immediate(ly)"). Five words get US spellings:
+  criticize, marvelous, neighbor, program, recognize. They're in `words-3.js`,
+  in the list's order. No wrong choice is a British spelling.
+- **Unlocking:** stated, with the same rule as level 2: level 3 opens when
+  level 2's wall is all gold.
+- **Dragon:** a fire dragon. Red, with dark horns, a flame-shaped crest,
+  red-and-orange wings, and smoke puffs when it peeks over the wall.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -160,31 +177,40 @@ Clarified:
   slips.
 - **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
   to blue and the dragon returns.
-- **Levels:** "Level 1" and "Level 2" buttons sit above Start; the one on
-  screen is dark. A locked level shows 🔒. Tapping it wiggles the button and
-  says "Make every brick in level 1 gold to open level 2!" for 3 s. The top
-  bar reads "Level 2 gold bricks", and the start line says "Level 2: keep
-  the ice dragon out!". The game reopens on the level last picked.
-- **Opening level 2:** the last gold brick of level 1 brings the usual
-  celebration with "The wall is all gold! The dragon flew away! Level 2 is
-  open!". 4.6 s later the start screen comes back with level 2 picked.
+- **Levels:** "Level" followed by one round button per level (1, 2, 3)
+  sits above Start; the level on screen is dark. A locked level shows 🔒.
+  Tapping it wiggles the button and says, for example, "Make every brick in
+  level 2 gold to open level 3!" for 3 s. The top bar reads "Level 3 gold
+  bricks", and the start line says "Level 3: keep the fire dragon out!". The
+  game reopens on the level last picked.
+- **Opening the next level:** the last gold brick of a level brings the usual
+  celebration with "The wall is all gold! The ice dragon flew away! Level 3
+  is open!". 4.6 s later the start screen comes back with the new level
+  picked. Finishing level 3, or re-finishing an earlier level, just carries
+  on with the next word.
 - **Ice dragon:** drawn in SVG like the first, so it peeks and flies away the
   same way. It has a pale blue head with white frost speckles on the cheeks,
   big blue eyes, a little fang, long white horns swept back, a crown of
   white spikes, and pale wings with icicle edges and white trim. When it
   peeks, outlined snowflakes puff from its nostrils and drift out to each
   side.
-- **Level 2 scenery:** the hill is snowy (white and pale blue). Bricks,
-  sounds, and everything else work as in level 1.
+- **Fire dragon:** drawn the same way. It has a red head with pink scales on
+  the cheeks, amber eyes under arched brows, a golden snout, a grin with two
+  little fangs, dark curved horns, a yellow flame-shaped crest, and dark red
+  wings with orange insides. When it peeks, gray smoke puffs and orange
+  embers drift out from its nostrils to each side.
+- **Scenery:** the hill is green for level 1, snowy (white and pale blue) for
+  level 2, and rusty volcanic rock for level 3. Bricks, sounds, and
+  everything else work the same on every level.
 - **Clearing:** on any level, clearing affects only that level's bricks. Open
   levels and the missed-word record stay.
-- **Testing:** in Safari, `…/02-spelling/?level=2` opens level 2 for that
-  visit, even when it's locked, without unlocking it.
+- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=3`) opens that
+  level for the visit, even when it's locked, without unlocking it.
 - **Saved data:** under `zoe-games:02-spelling`:
   - `levels`: word → 0–2, for the words of both levels (no word is in both).
     Unanswered words, and any unreadable values, count as 1.
-  - `unlocked`: the highest open level (1 or 2). A save from before level 2
-    existed with level 1 all gold opens level 2.
+  - `unlocked`: the highest open level (1–3). On load, a finished wall
+    opens the next level, for saves from before that level existed.
   - `wall`: the level last picked.
   - `missed`: word → `{ count, last, picked }`. That's the number of wrong
     picks, the time of the last one (ms since 1970), and how often each wrong

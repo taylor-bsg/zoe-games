@@ -1,14 +1,15 @@
 // Zoe Spells: pick the right spelling to zap a brick in the castle wall that
 // keeps the dragon out. Each level is a wall of 100 bricks, one per word, with
-// its own dragon; finishing level 1 opens level 2. See SPEC.md. Play never
+// its own dragon; finishing a level opens the next. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.4.0';
-import * as speech from '../shared/speech.js?v=0.4.0';
-import * as storage from '../shared/storage.js?v=0.4.0';
-import { stars, confetti } from '../shared/celebrate.js?v=0.4.0';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.4.0';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.4.0';
+import * as sound from '../shared/sound.js?v=0.5.0';
+import * as speech from '../shared/speech.js?v=0.5.0';
+import * as storage from '../shared/storage.js?v=0.5.0';
+import { stars, confetti } from '../shared/celebrate.js?v=0.5.0';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.5.0';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.5.0';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.5.0';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -26,6 +27,8 @@ const LEVELS = [
     intro: 'Tap the right spelling to zap a brick!' },
   { words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon', hill: ['#eef7ff', '#d3e8f8'],
     intro: 'Level 2: keep the ice dragon out!' },
+  { words: WORDS_3, dragon: 'dragon-3', name: 'fire dragon', hill: ['#c4623f', '#9c4329'],
+    intro: 'Level 3: keep the fire dragon out!' },
 ];
 
 // The wall, in the scene's SVG units: 10 rows of 10 bricks, laid like real
@@ -160,7 +163,8 @@ function showLevelButtons() {
   levelButtons.forEach(function (button) {
     const n = Number(button.getAttribute('data-level'));
     const open = isOpen(n);
-    button.textContent = 'Level ' + n + (open ? '' : ' 🔒');
+    button.textContent = open ? String(n) : '🔒';
+    button.setAttribute('aria-label', 'Level ' + n + (open ? '' : ', locked'));
     button.classList.toggle('is-locked', !open);
     button.setAttribute('aria-pressed', String(n === wall));
   });
@@ -528,9 +532,10 @@ document.addEventListener('visibilitychange', function () {
   if (document.hidden) speech.stop();
 });
 
-// Saved games from before level 2 existed: a finished level 1 opens it.
-if (saved.unlocked < 2 && goldCount(WORDS_1) === WORDS_1.length) {
-  saved.unlocked = 2;
+// Saved games from before a level existed: a finished wall opens the next.
+while (saved.unlocked < LEVELS.length &&
+    goldCount(LEVELS[saved.unlocked - 1].words) === LEVELS[saved.unlocked - 1].words.length) {
+  saved.unlocked += 1;
   storage.save(GAME_ID, saved);
 }
 showLevel(isLevel(preview) ? preview : saved.wall);

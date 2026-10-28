@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.4.0';
+//   import * as sound from '../shared/sound.js?v=0.5.0';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -20,7 +20,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.4.0';
+import * as storage from './storage.js?v=0.5.0';
 
 const settings = storage.load('sound', { muted: false });
 
