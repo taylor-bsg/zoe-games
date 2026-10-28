@@ -2,18 +2,17 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.7';
-import * as speech from '../shared/speech.js?v=0.3.7';
-import * as storage from '../shared/storage.js?v=0.3.7';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.7';
-import { WORDS } from './words.js?v=0.3.7';
+import * as sound from '../shared/sound.js?v=0.3.8';
+import * as speech from '../shared/speech.js?v=0.3.8';
+import * as storage from '../shared/storage.js?v=0.3.8';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.8';
+import { WORDS } from './words.js?v=0.3.8';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
 const START = 1; // new bricks start in the middle: one right answer makes them gold
 const COLORS = ['#a7adbd', '#5aa9ff', '#ffd23f']; // gray stone, blue, gold
 const NEXT_AFTER_RIGHT = 1400; // ms before the next word, once the sounds have finished
-const SHOW_ANSWER = 2000; // ms the right spelling glows after a wrong pick
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
@@ -29,8 +28,12 @@ const ROWS = WORDS.length / PER_ROW;
 const WAND = { x: 316, y: 477 }; // center of the wand's star
 
 // levels: word -> 0..TOP. Words not in it are at START.
-const saved = storage.load(GAME_ID, { levels: {} });
+// missed: word -> { count, last, picked } for every word ever missed: how many
+// wrong picks, when the last one was (ms since 1970), and which wrong
+// spellings were picked how often. Kept for a future level; never cleared.
+const saved = storage.load(GAME_ID, { levels: {}, missed: {} });
 if (!isObject(saved.levels)) saved.levels = {};
+if (!isObject(saved.missed)) saved.missed = {};
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -43,6 +46,7 @@ function $(id) {
 const bricks = {}; // word -> its <rect>
 let current = null; // the WORDS entry being asked
 let answering = false;
+let missedThisTime = false; // a wrong pick on the current word
 let clearTimer = 0;
 let labelTimer = 0;
 let holding = false;
@@ -173,6 +177,7 @@ function next() {
     choices.appendChild(button);
   });
   answering = true;
+  missedThisTime = false;
   say();
 }
 
@@ -220,41 +225,77 @@ function cast(rect, hits) {
   }
 }
 
-function answer(button, text) {
-  if (!answering) return;
-  answering = false;
-  speech.stop();
+// Remembers a wrong pick for the future level.
+function rememberMiss(word, picked) {
+  const entry = isObject(saved.missed[word]) ? saved.missed[word] : {};
+  entry.count = (typeof entry.count === 'number' ? entry.count : 0) + 1;
+  entry.last = Date.now();
+  entry.picked = isObject(entry.picked) ? entry.picked : {};
+  entry.picked[picked] = (typeof entry.picked[picked] === 'number' ? entry.picked[picked] : 0) + 1;
+  saved.missed[word] = entry;
+}
+
+// A wrong pick: the bolt bounces off, the brick steps down (never below
+// gray), and the button is crossed out. Zoe stays on the word until she
+// finds the right spelling.
+function miss(button, text) {
   const word = current.word;
   const rect = bricks[word];
   const before = level(word);
-  const right = text === word;
-  const after = right ? Math.min(TOP, before + 1) : Math.max(0, before - 1);
-  const wasComplete = goldCount() === WORDS.length;
-  saved.levels[word] = after;
+  missedThisTime = true;
+  saved.levels[word] = Math.max(0, before - 1);
+  rememberMiss(word, text);
   storage.save(GAME_ID, saved);
+  button.disabled = true;
+  button.classList.add('is-wrong');
+  setTimeout(function () {
+    button.classList.remove('is-wrong');
+    button.classList.add('is-out');
+  }, 500);
+  cast(rect, false);
+  sound.bounce();
+  setTimeout(sound.wrong, 300);
+  setTimeout(function () {
+    paint(word);
+    showTally();
+    pop(rect, 'is-hit');
+    if (before === TOP) $('dragon').classList.remove('is-gone'); // it's back
+  }, BOLT_HITS);
+}
 
-  const gold = before < TOP && after === TOP;
+function answer(button, text) {
+  if (!answering) return;
+  speech.stop();
+  if (text !== current.word) {
+    miss(button, text);
+    return;
+  }
+  answering = false;
+  const word = current.word;
+  const rect = bricks[word];
   const gap = $('gap');
   gap.textContent = word;
   gap.classList.add('is-filled');
-  cast(rect, right);
-  // Right answers get thunder, then a clearly happy sound just after the
-  // crack: the trumpet when the brick turns gold (played below), otherwise
-  // the ding. A miss bounces off with no thunder, then the soft "uh-oh".
-  if (right) {
-    button.classList.add('is-right');
-    sound.zap();
-    if (!gold) setTimeout(sound.correct, 120);
-  } else {
-    button.classList.add('is-wrong');
-    sound.bounce();
-    setTimeout(sound.wrong, 300);
-    Array.prototype.forEach.call($('choices').children, function (choice) {
-      if (choice.textContent === word) choice.classList.add('is-answer');
-    });
+  button.classList.add('is-right');
+  if (missedThisTime) {
+    // Found it after a miss: well done, but the brick only climbs on a first try.
+    sound.correct();
+    setTimeout(next, NEXT_AFTER_RIGHT);
+    return;
   }
 
+  const before = level(word);
+  const after = Math.min(TOP, before + 1);
+  const wasComplete = goldCount() === WORDS.length;
+  saved.levels[word] = after;
+  storage.save(GAME_ID, saved);
+  const gold = before < TOP && after === TOP;
   const complete = !wasComplete && goldCount() === WORDS.length;
+  // Thunder, then a clearly happy sound just after the crack: the trumpet
+  // when the brick turns gold (played below), otherwise the ding.
+  cast(rect, true);
+  sound.zap();
+  if (!gold) setTimeout(sound.correct, 120);
   setTimeout(function () {
     paint(word);
     showTally();
@@ -263,13 +304,12 @@ function answer(button, text) {
       sound.trumpet();
       stars(rect);
     }
-    if (before === TOP && after < TOP) $('dragon').classList.remove('is-gone'); // it's back
   }, BOLT_HITS);
   if (complete) {
     setTimeout(finishWall, 1400);
     setTimeout(next, 6000);
   } else {
-    setTimeout(next, right ? NEXT_AFTER_RIGHT : SHOW_ANSWER);
+    setTimeout(next, NEXT_AFTER_RIGHT);
   }
 }
 
@@ -343,6 +383,7 @@ function stopHolding() {
 }
 
 // Every brick back to the start (blue), and the dragon back behind the wall.
+// The missed-word record stays.
 function clearWall() {
   holding = false;
   $('clear-button').classList.remove('is-holding');

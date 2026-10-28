@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.3.7">
+  <link rel="stylesheet" href="../shared/base.css?v=0.3.8">
   <style>
     /* Gold-brick count, in the middle of the top bar. */
     .tally {
@@ -180,20 +180,12 @@
       animation: wiggle 0.45s ease;
     }
 
-    /* After a wrong pick, the right spelling glows for 2 s. */
-    .choice.is-answer {
-      background: var(--good-bg);
-      color: var(--good);
-      animation: glow 0.7s ease-in-out infinite alternate;
-    }
-
-    @keyframes glow {
-      from {
-        box-shadow: 0 0 0 4px var(--good), var(--shadow);
-      }
-      to {
-        box-shadow: 0 0 0 10px rgba(27, 138, 75, 0.35), var(--shadow);
-      }
+    /* A wrong pick, crossed out so she tries the others. */
+    .choice.is-out {
+      background: #dfe4f2;
+      color: #8a93ad;
+      text-decoration: line-through;
+      box-shadow: none;
     }
 
     /* Clearing takes a 1.5 s hold, so a stray tap can't wipe the wall. */
@@ -442,6 +434,6 @@
     </main>
   </div>
 
-  <script type="module" src="game.js?v=0.3.7"></script>
+  <script type="module" src="game.js?v=0.3.8"></script>
 </body>
 </html>

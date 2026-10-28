@@ -81,6 +81,21 @@ Words are now weighted by (3 − level)³ instead of squared: gray 27, blue
 With 90 gold bricks and 10 blue, an unfinished word now comes up about
 47% of the time (31% when squared).
 
+From player testing, verbatim:
+
+> Okay some feedback from player testing!
+> 1. Rather than pausing for 2 seconds, the game should require they select until they get it right.
+> 2. The game should maintain a set of wrong questions, so that in future, we can periodically re-ask them.
+
+Clarified:
+
+- **Wrong picks:** each one steps the brick down, never below gray. Finding
+  the right spelling afterwards doesn't raise it.
+- **Retries:** wrong picks are crossed out so they can't be tapped again.
+  There's no 2 s reveal of the answer any more.
+- **The missed set:** it's only kept for now, for a future level; nothing
+  re-asks it yet. Words never leave it.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -103,11 +118,13 @@ With 90 gold bricks and 10 blue, an unfinished word now comes up about
   (3-5 dB above the boom), or the trumpet if the brick turns gold. 0.16 s later the brick pops up one color.
   Turning gold adds a star burst from the brick. The next word comes after
   1.4 s.
-- **Wrong answer:** the tapped button turns orange and wiggles, the gap shows
-  the right word, and the right button glows green. The bolt hits the brick
-  and a second bolt bounces off, up and away, with a small crack and a
-  "boing" (no thunder), then the soft "uh-oh" 0.3 s later. The brick drops one color, but not below gray. The next word comes
-  after 2 s.
+- **Wrong pick:** the bolt hits the brick and bounces off, up and away, with
+  a small crack and a "boing" (no thunder), then the soft "uh-oh" 0.3 s
+  later. The brick drops one color, but not below gray. The tapped button
+  wiggles orange, then turns gray and crossed out, and can't be tapped
+  again. The word stays until Zoe taps the right spelling. Finding it after a
+  miss fills the gap in green and plays the ding, with no lightning since
+  the brick doesn't climb. The next word comes 1.4 s later.
 - **Tally:** "Gold bricks 12 / 100" in the top bar.
 - **Dragon:** waits with its horns showing between the battlements and peeks
   over every 8–16 s. When the last brick turns gold, it flies away with a
@@ -116,5 +133,10 @@ With 90 gold bricks and 10 blue, an unfinished word now comes up about
   slips.
 - **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
   to blue and the dragon returns.
-- **Saved data:** under `zoe-games:02-spelling`: `levels` (word → 0–2).
-  Unanswered words, and any unreadable values, count as 1.
+- **Saved data:** under `zoe-games:02-spelling`:
+  - `levels`: word → 0–2. Unanswered words, and any unreadable values, count
+    as 1.
+  - `missed`: word → `{ count, last, picked }`. That's the number of wrong
+    picks, the time of the last one (ms since 1970), and how often each wrong
+    spelling was picked. It's for the future level. "Hold to clear the wall"
+    keeps it, and nothing removes words from it.
