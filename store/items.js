@@ -2,8 +2,8 @@
 // the dragons in Zoe Spells; the rest are new. Cheaper squishies are a little
 // smaller, and the pricier ones get flair. Each look is what squishy.js
 // draws: colors, size, and parts (see its header). Until Zoe can afford a
-// squishy, the store shows a mystery egg in its colors; egg (optional) adds
-// parts to that egg, like Shade's sunglasses. The ids are saved with
+// squishy, the store shows a mystery egg in its size and colors; egg
+// (optional) adds parts to that egg, like Shade's sunglasses. The ids are saved with
 // purchases, so never change one; names, prices, and looks can change.
 // Every look must fit the view at full squash and stretch: after changing a
 // size or adding flair, check it as described in SPEC.md.

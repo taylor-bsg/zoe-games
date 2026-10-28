@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.6';
+//   import { createSquishy } from './squishy.js?v=0.7.7';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,10 +20,10 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-//   egg         draws a mystery egg instead of a dragon: body color, spots
-//               in the belly, wing, and spike colors (gold stars if stars),
-//               and a big question mark in the eye color. With glasses, it
-//               wears them instead of the question mark.
+//   egg         draws a mystery egg instead of a dragon, at the look's size:
+//               body color, spots in the belly, wing, and spike colors (gold
+//               stars if stars), and a big question mark in the eye color.
+//               With glasses, it wears them instead of the question mark.
 // angle turns the dragon (radians); tilt rocks it sideways about the spot
 // where it touches the floor (radians, small; used for eggs); squish squashes
 // it toward the floor (up to about 1) or stretches it up (negative, down to

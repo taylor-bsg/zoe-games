@@ -8,12 +8,12 @@
 // mystery egg in its colors. When she first has enough for one, its egg
 // wiggles until she taps it, and then it hatches.
 
-import * as coins from '../shared/coins.js?v=0.7.6';
-import * as sound from '../shared/sound.js?v=0.7.6';
-import * as storage from '../shared/storage.js?v=0.7.6';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.6';
-import { createSquishy } from './squishy.js?v=0.7.6';
-import { ITEMS } from './items.js?v=0.7.6';
+import * as coins from '../shared/coins.js?v=0.7.7';
+import * as sound from '../shared/sound.js?v=0.7.7';
+import * as storage from '../shared/storage.js?v=0.7.7';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.7';
+import { createSquishy } from './squishy.js?v=0.7.7';
+import { ITEMS } from './items.js?v=0.7.7';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -63,13 +63,13 @@ function brightness(hex) {
   return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
 }
 
-// A squishy's mystery egg: its body color, spots in its other colors (stars
-// on a starry one), a question mark that stands out (white on a dark egg),
-// and any egg parts from items.js.
+// A squishy's mystery egg: its size, its body color, spots in its other
+// colors (stars on a starry one), a question mark that stands out (white on
+// a dark egg), and any egg parts from items.js.
 const EGGS = ITEMS.map(function (item) {
   const look = item.look;
-  const egg = { egg: true, body: look.body, belly: look.belly, wing: look.wing, spike: look.spike,
-    eye: brightness(look.body) < 0.45 ? '#ffffff' : '#1d2b53', stars: look.stars,
+  const egg = { egg: true, size: look.size, body: look.body, belly: look.belly, wing: look.wing,
+    spike: look.spike, eye: brightness(look.body) < 0.45 ? '#ffffff' : '#1d2b53', stars: look.stars,
     acc: look.acc, acc2: look.acc2 };
   Object.keys(item.egg || {}).forEach(function (part) {
     egg[part] = item.egg[part];

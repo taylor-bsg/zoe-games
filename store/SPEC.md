@@ -53,6 +53,11 @@ Each egg now comes in its squishy's colors, so the colors hint at what's
 inside. Shade's egg wears Shade's pink sunglasses instead of the question
 mark.
 
+> Make the squisheggs sized according to how big the squishdragon is.
+
+Each egg is now scaled by its squishy's size, from 82% (Sprout's) to 100%
+(Professor's and DJ Bop's).
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -95,6 +100,8 @@ mark.
     "What’s inside? Earn coins to find out!". Tapping the egg squishes it;
     tapping the button wiggles it and says "Play games to earn more
     coins!". The egg's colors and the price are the clues.
+  - **Egg size:** each egg is drawn at its squishy's size from `items.js`
+    (see the table below), so a smaller squishy hatches from a smaller egg.
   - **Egg colors:** each egg is its squishy's body color, with spots in its
     belly, wing, and spike colors and a big ? on the front: navy, or white
     on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
@@ -171,8 +178,8 @@ mark.
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
-    each egg's look from its squishy's colors; `egg` in `items.js` adds
-    parts to it, like Shade's sunglasses.
+    each egg's look from its squishy's size and colors; `egg` in `items.js`
+    adds parts to it, like Shade's sunglasses.
   - **Egg glasses:** fitted to the egg's curve. Each lens faces straight
     out from the egg, leaning back with it, and the arms wrap back to its
     sides.
