@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Squishy Store · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css?v=0.7.0">
+  <style>
+    .purse {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 24px 6px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .purse-label {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.7;
+    }
+
+    .purse-value {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .purse.is-paid {
+      animation: pop 0.5s ease;
+    }
+
+    /* As wide as the Home button, so the purse stays centered. */
+    .topbar-balance {
+      width: var(--tap);
+    }
+
+    .shop {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    @media (orientation: landscape) {
+      .shop {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+      }
+    }
+
+    /* The big view of one squishy: drag to spin, tap to squish. */
+    .stage {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px 18px;
+      text-align: center;
+    }
+
+    .stage-canvas {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .stage-fallback {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 140px;
+    }
+
+    .stage-name {
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .stage-hint {
+      min-height: 1.3em;
+      font-size: 20px;
+      opacity: 0.75;
+    }
+
+    .stage .btn {
+      width: 100%;
+      font-size: clamp(28px, 4.4vmin, 40px);
+      white-space: nowrap;
+    }
+
+    .buy.is-short {
+      background: #e9ecef;
+      color: #59627d;
+    }
+
+    .buy.is-owned {
+      background: var(--good-bg);
+      color: var(--good);
+    }
+
+    .buy.is-nudged {
+      animation: wiggle 0.45s ease;
+    }
+
+    /* The squishies for sale. */
+    .shelf {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-content: center;
+    }
+
+    @media (orientation: landscape) {
+      .shelf {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-height: 0;
+      padding: 6px 6px 10px;
+      border-radius: 22px;
+      background: var(--white);
+      font-size: 20px;
+    }
+
+    .item.is-picked {
+      box-shadow: 0 0 0 5px var(--sun), var(--shadow);
+    }
+
+    .item img,
+    .item .item-fallback {
+      width: 100%;
+      max-width: 120px;
+      height: 84px;
+      object-fit: contain;
+      font-size: 56px;
+      line-height: 84px;
+    }
+
+    .item-name {
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .item-price {
+      font-size: 18px;
+      opacity: 0.8;
+    }
+
+    .item.is-owned .item-price {
+      color: var(--good);
+      opacity: 1;
+    }
+
+    /* Phone-sized screens: smaller shelf labels so long names fit. */
+    @media (max-width: 500px) {
+      .shelf {
+        gap: 8px;
+      }
+
+      .item {
+        padding: 4px 2px 8px;
+        font-size: 15px;
+      }
+
+      .item-price {
+        font-size: 14px;
+      }
+    }
+
+    .ledger {
+      margin-top: 8px;
+      font-size: 15px;
+      text-align: center;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="purse" id="purse">
+        <span class="purse-label">My coins</span>
+        <span class="purse-value" id="balance"></span>
+      </div>
+      <div class="topbar-balance"></div>
+    </header>
+
+    <main class="shop">
+      <section class="card stage">
+        <canvas class="stage-canvas" id="stage" aria-hidden="true"></canvas>
+        <p class="stage-name" id="stage-name"></p>
+        <p class="stage-hint" id="stage-hint">Drag to spin. Tap to squish!</p>
+        <button type="button" class="btn btn-big buy" id="buy"></button>
+      </section>
+      <section class="shelf" id="shelf"></section>
+    </main>
+    <p class="ledger" id="ledger"></p>
+  </div>
+
+  <script type="module" src="store.js?v=0.7.0"></script>
+</body>
+</html>

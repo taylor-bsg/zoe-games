@@ -78,6 +78,28 @@
       text-align: center;
     }
 
+    /* On narrow screens the store and mute buttons wrap under the title. */
+    .topbar {
+      flex-wrap: wrap;
+      row-gap: 12px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    /* The way to the store, with the coins to spend there. */
+    .store-button {
+      gap: 0.3em;
+      padding: 0 0.8em;
+      background: #ff8fab;
+      font-size: 26px;
+      white-space: nowrap;
+    }
+
     .version {
       position: fixed;
       right: calc(12px + env(safe-area-inset-right, 0px));
@@ -92,7 +114,10 @@
   <main class="page">
     <header class="topbar">
       <h1>Zoe's Games</h1>
-      <button type="button" class="btn btn-icon" id="mute" aria-label="Mute"></button>
+      <div class="topbar-right">
+        <a class="btn store-button" href="store/">🛍️ Store <span id="coins"></span></a>
+        <button type="button" class="btn btn-icon" id="mute" aria-label="Mute"></button>
+      </div>
     </header>
     <div class="tiles" id="tiles"></div>
     <div class="card empty" id="empty" hidden>
@@ -106,6 +131,7 @@
     import { games } from './games.js?v=0.7.0';
     import { VERSION } from './version.js?v=0.7.0';
     import * as sound from './shared/sound.js?v=0.7.0';
+    import * as coins from './shared/coins.js?v=0.7.0';
 
     const tiles = document.getElementById('tiles');
     games.forEach(function (game) {
@@ -139,6 +165,7 @@
     });
     showMute();
 
+    document.getElementById('coins').innerHTML = coins.ICON + ' ' + coins.balance();
     document.getElementById('version').textContent = 'v' + VERSION;
   </script>
 </body>
