@@ -28,6 +28,12 @@ Requested by the user, verbatim (2026-10-28):
 The shelf of all eight is gone. One squishy fills the store, with ◀ ▶ arrows
 to the others, and it's drawn about twice as tall as before.
 
+> Make it so the swiping down on it stretches/compresses it proportionally to the swipe distance
+
+Swiping down squashes the squishy in step with the finger, and swiping up
+stretches it. Letting go springs it back with a jiggle. Sideways swipes
+still spin it.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -40,20 +46,29 @@ to the others, and it's drawn about twice as tall as before.
     celebration, plays a "ching", and says "You won 200 coins!".
   - Zoe Spells' start screen shows the level's prize: "Finish the wall to
     win 200" or "Wall prize won: 200 ✓".
-- **Store layout:** one squishy at a time, as big as fits, between round
-  yellow ◀ ▶ arrows (80px). The arrows wrap around from the last squishy to
+- **Store layout:** one squishy at a time, as big as fits, with round
+  yellow ◀ ▶ arrows (80px; 64px on phones) floating over the left and right
+  edges of the view. The arrows wrap around from the last squishy to
   the first, and the left and right arrow keys work too, for a laptop.
   - Under the squishy (beside it in landscape): the name, a dot for each of
     the eight (the one on screen is ringed, owned ones are gold), a hint,
     and the buy button.
-  - On phone-sized screens the arrows float over the edges of the view.
   - "My coins" is in the top bar, and "Earned … · Spent …" sits at the
     bottom.
   - A new squishy hops in with a little wobble, facing three-quarters
     forward.
-- **Big view:** the squishy spins slowly. A drag turns it, and it starts
-  spinning again 2.5 s after the drag ends. A tap squishes it: a wobbly
-  squash that bounces back, with a squeaky-toy sound.
+- **Big view:** the squishy spins slowly, and these work on it:
+  - **Sideways swipe:** turns it. It starts spinning again 2.5 s after the
+    swipe ends.
+  - **Swipe down:** squashes it in step with the finger. Swiping half the
+    view's height squashes it fully, to about 0.75× tall and wider, and it
+    goes no further.
+  - **Swipe up:** stretches it the same way, to at most about 1.17× tall.
+  - **Letting go:** it springs back with a wobbly jiggle, and squeaks if it
+    was squashed or stretched more than a little.
+  - **Tap:** a quick squish that bounces back, with the squeak.
+  - **Which gesture:** the first 10px of a swipe decide whether it spins or
+    squashes. The hint reads "Swipe sideways to spin, down to squish!".
 - **Buying:** "Buy for 75" when there are enough coins, then a "ching",
   the fanfare, confetti, a squish, and "You got Bubblegum! 🎉". The button
   then reads "💖 It’s yours!", and tapping it squishes.
@@ -82,8 +97,12 @@ to the others, and it's drawn about twice as tall as before.
     and a faint fuzz.
   - The face (eyes, cheeks, a smile) and the belly are painted on, so they
     turn with the body.
-  - The camera zooms in as far as the squishy still fits the view's shape,
-    wings and tail included.
+  - The camera zooms in as far as the squishy still fits the view's shape
+    at any turn, even fully squashed or stretched.
+  - Checked: every squishy at full squash, full stretch, and rest, every 6°
+    of turn, in every store layout from phone to 12.9-inch iPad. Nothing
+    reaches the edge; the closest is 7px, on a phone.
+  - Squashing and stretching keep the 3D surface exact, with no holes.
   - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.

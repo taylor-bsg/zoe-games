@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.7.1">
+  <link rel="stylesheet" href="../shared/base.css?v=0.7.2">
   <style>
     .purse {
       display: flex;
@@ -67,13 +67,14 @@
       }
     }
 
+    /* The arrows float over the view's edges, so the squishy gets the whole
+       width, with room to squash wide and stretch tall. */
     .stage-row {
       flex: 1;
       min-width: 0;
       min-height: 0;
+      position: relative;
       display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
     /* The canvas sits in a box and never sizes itself, so drawing at the
@@ -107,11 +108,22 @@
     }
 
     .arrow {
-      flex: none;
+      position: absolute;
+      z-index: 1;
+      top: 50%;
       width: 80px;
       height: 80px;
+      margin-top: -40px;
       padding: 0;
       border-radius: 50%;
+    }
+
+    #prev {
+      left: 0;
+    }
+
+    #next {
+      right: 0;
     }
 
     .arrow svg {
@@ -170,6 +182,10 @@
       opacity: 0.75;
     }
 
+    .stage-hint span {
+      display: inline-block;
+    }
+
     .buy {
       width: 100%;
       font-size: clamp(28px, 4.4vmin, 40px);
@@ -190,32 +206,21 @@
       animation: wiggle 0.45s ease;
     }
 
-    /* Phone-sized screens: the arrows float over the edges of the view, so
-       the squishy keeps the whole width. */
+    /* Phone-sized screens: smaller arrows and name. */
     @media (max-width: 500px) {
-      .stage-row {
-        position: relative;
-      }
-
       .arrow {
-        position: absolute;
-        z-index: 1;
-        top: 50%;
         width: var(--tap);
         height: var(--tap);
         margin-top: calc(var(--tap) / -2);
       }
 
-      #prev {
-        left: 0;
-      }
-
-      #next {
-        right: 0;
-      }
-
       .stage-name {
         font-size: 32px;
+      }
+
+      /* Room for the two-line hint, so the view doesn't jump when it changes. */
+      .stage-hint {
+        min-height: 2.6em;
       }
     }
 
@@ -255,13 +260,13 @@
       <div class="info">
         <p class="stage-name" id="stage-name"></p>
         <div class="dots" id="dots" aria-hidden="true"></div>
-        <p class="stage-hint" id="stage-hint">Drag to spin. Tap to squish!</p>
+        <p class="stage-hint" id="stage-hint"></p>
         <button type="button" class="btn btn-big buy" id="buy"></button>
       </div>
     </main>
     <p class="ledger" id="ledger"></p>
   </div>
 
-  <script type="module" src="store.js?v=0.7.1"></script>
+  <script type="module" src="store.js?v=0.7.2"></script>
 </body>
 </html>

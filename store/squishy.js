@@ -4,14 +4,14 @@
 // functions and ray-marched in a fragment shader, then lit like soft fabric.
 // The face and belly are painted on by position, so they turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.1';
+//   import { createSquishy } from './squishy.js?v=0.7.2';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
 // A look is colors (hex strings: body, belly, horn, wing, cheek, spike, eye)
 // and features (spikes, crown, stars: true or false). angle turns the dragon
-// (radians); squish squashes it toward the floor (0 to 0.6) or stretches it
-// up (negative). The picture fills the canvas's on-screen size, at up to
+// (radians); squish squashes it toward the floor (up to about 1) or
+// stretches it up (negative, down to about -0.6). The picture fills the canvas's on-screen size, at up to
 // maxRatio pixels per CSS pixel (default 2), and the dragon is zoomed to be
 // as big as fits.
 
@@ -100,6 +100,9 @@ const FRAGMENT = [
   '      res = add(res, sdRoundCone(p, c, c + vec3(0.0, 0.2, 0.0), 0.06, 0.02), 4.0, 0.02);',
   '    }',
   '  }',
+  // Squashing and stretching change distances; scale down to the smaller
+  // factor so the march never steps past the surface.
+  '  res.x *= min(1.0 - 0.3 * uSquish, 1.0 + 0.18 * uSquish);',
   '  return res;',
   '}',
 
@@ -151,8 +154,9 @@ const FRAGMENT = [
 
   'void main() {',
   '  vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;',
-  '  vec3 ro = vec3(0.0, 0.32, 3.7);',
-  '  vec3 ww = normalize(vec3(0.0, 0.02, 0.0) - ro);',
+  // Aimed a little above the middle, leaving headroom for a stretch.
+  '  vec3 ro = vec3(0.0, 0.42, 3.7);',
+  '  vec3 ww = normalize(vec3(0.0, 0.12, 0.0) - ro);',
   '  vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));',
   '  vec3 vv = cross(uu, ww);',
   '  vec3 rd = normalize(uv.x * uu + uv.y * vv + uFocal * ww);',
@@ -188,7 +192,8 @@ const FRAGMENT = [
   // The floor: a soft round shadow (premultiplied black).
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(p.xz * vec2(1.0, 1.4))));',
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / (1.0 + 0.18 * uSquish);', // wider when squashed
+  '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
   '  }',
@@ -255,9 +260,12 @@ export function createSquishy(canvas, options) {
     }
     gl.viewport(0, 0, width, height);
     gl.uniform2f(u.uRes, width, height);
-    // Zoom in as far as the dragon still fits: about 1.2 units either side
-    // of center (wings and tail as it turns), and 3.7 units from the camera.
-    gl.uniform1f(u.uFocal, Math.min(3.1, (3.7 * width) / height / 1.2));
+    // Zoom in as far as the dragon still fits, 3.7 units from the camera,
+    // at any turn, squash, or stretch: 1.48 units either side (the tail
+    // pointing sideways and a little forward in a full squash) and 1.52 above
+    // the aim (a horn turned toward the camera in a full stretch). Checked by
+    // rendering every squishy at full squash and stretch, every 3° of turn.
+    gl.uniform1f(u.uFocal, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48));
     gl.uniform1f(u.uAngle, (state && state.angle) || 0);
     gl.uniform1f(u.uSquish, (state && state.squish) || 0);
     gl.uniform1f(u.uSpikes, look.spikes ? 1 : 0);

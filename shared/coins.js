@@ -1,7 +1,7 @@
 // Coins: earned by playing games, spent in the store (store/). Shared by
 // every page.
 //
-//   import * as coins from '../shared/coins.js?v=0.7.1';
+//   import * as coins from '../shared/coins.js?v=0.7.2';
 //   coins.earn('01-times-table', 2);  // returns the new balance
 //   coins.balance();                  // earned minus spent
 //   coins.spend('sprout', 50);        // false if it's owned or she can't afford it
@@ -14,7 +14,7 @@
 // coins came from and went. Everything is under one storage key and re-read
 // before every change, so pages never overwrite each other's coins.
 
-import * as storage from './storage.js?v=0.7.1';
+import * as storage from './storage.js?v=0.7.2';
 
 const KEY = 'coins';
 
