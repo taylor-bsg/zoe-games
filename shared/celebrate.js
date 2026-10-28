@@ -1,9 +1,10 @@
 // Star bursts and confetti, drawn on a temporary full-screen canvas.
 //
-//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.6.1';
+//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.7.0';
 //   stars(answerElement);  // small burst of stars, e.g. for a right answer
 //   confetti();            // big party, e.g. for finishing a round
 //   zip();                 // a cute animal zips across the screen
+//   coins(element, 5);     // "+5" and a gold coin float up from an element
 //
 // stars() bursts from the center of an element, from a point {x, y} in CSS
 // pixels, or from the middle of the screen if given nothing. zip() picks a
@@ -12,6 +13,8 @@
 
 // Animals for zip(). Apple draws these facing left, so they're flipped when
 // flying right. (Its snail faces right, so it's left out.)
+import { ICON } from './coins.js?v=0.7.0';
+
 const CRITTERS = ['🐕', '🐈', '🐇', '🐢', '🦖', '🦕', '🐳', '🐬', '🐠', '🦔', '🦦', '🐘',
   '🦄', '🐤', '🐝', '🦭', '🐧', '🦆', '🐿️', '🐁', '🐖', '🦘', '🐉', '🦓'];
 const COLORS = ['#ffd23f', '#ff6b6b', '#4cc9f0', '#80ed99', '#c77dff', '#ff9f1c', '#ff8fab'];
@@ -198,4 +201,27 @@ export function zip(emoji) {
     else critter.parentNode.removeChild(critter);
   }
   requestAnimationFrame(step);
+}
+
+// "+5" and a gold coin floating up from an element (or point), then fading.
+export function coins(from, count) {
+  const at = centerOf(from);
+  const label = document.createElement('div');
+  label.innerHTML = '+' + Number(count) + ' ' + ICON;
+  label.setAttribute('aria-hidden', 'true');
+  label.style.cssText = 'position:fixed;z-index:1002;pointer-events:none;white-space:nowrap;' +
+    'font:900 30px ui-rounded,system-ui,sans-serif;color:#f59f00;' +
+    'text-shadow:0 2px 0 #fff,0 -2px 0 #fff,2px 0 0 #fff,-2px 0 0 #fff;' +
+    'transition:transform 1s ease-out,opacity 1s ease-in;left:' + at.x + 'px;top:' + at.y + 'px;' +
+    'transform:translate(-50%,-50%)';
+  document.body.appendChild(label);
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      label.style.transform = 'translate(-50%,-150%)';
+      label.style.opacity = '0';
+    });
+  });
+  setTimeout(function () {
+    if (label.parentNode) label.parentNode.removeChild(label);
+  }, 1100);
 }

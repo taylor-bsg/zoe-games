@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.6.1';
+//   import * as sound from '../shared/sound.js?v=0.7.0';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -9,6 +9,8 @@
 //   sound.trumpet();
 //   sound.zap();
 //   sound.bounce();
+//   sound.coin();
+//   sound.squeak();
 //
 // iOS keeps Web Audio silent until the page calls unlock() from a tap: use a
 // click handler (pointerdown doesn't count). After that, sounds can play at
@@ -20,7 +22,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.6.1';
+import * as storage from './storage.js?v=0.7.0';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -374,4 +376,19 @@ export function bounce() {
   if (!canPlay()) return;
   hiss(0, 0.12, 2500, 0.6, 0.6, 0.004);
   boing(0.04, 0.45, 0.24);
+}
+
+// Coins: a bright two-note "ching", e.g. for earning or buying.
+export function coin() {
+  if (!canPlay()) return;
+  note(988, 0, 0.09, 'triangle', 0.3); // B5
+  note(1319, 0.07, 0.4, 'triangle', 0.3); // E6
+  note(2637, 0.07, 0.3, 'sine', 0.06);
+}
+
+// A squeaky-toy chirp, e.g. when a plush is squeezed.
+export function squeak() {
+  if (!canPlay()) return;
+  note(560, 0, 0.13, 'triangle', 0.25, 930);
+  note(760, 0.1, 0.1, 'triangle', 0.15, 1120);
 }
