@@ -3,14 +3,14 @@
 // its own dragon; finishing a level opens the next. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.6.0';
-import * as speech from '../shared/speech.js?v=0.6.0';
-import * as storage from '../shared/storage.js?v=0.6.0';
-import { stars, confetti } from '../shared/celebrate.js?v=0.6.0';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.6.0';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.6.0';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.6.0';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.6.0';
+import * as sound from '../shared/sound.js?v=0.6.1';
+import * as speech from '../shared/speech.js?v=0.6.1';
+import * as storage from '../shared/storage.js?v=0.6.1';
+import { stars, confetti } from '../shared/celebrate.js?v=0.6.1';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.6.1';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.6.1';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.6.1';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.6.1';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -24,7 +24,8 @@ const CLEAR_LABEL = 'Hold to clear the wall';
 
 // The levels, in order: their words, dragon, hill colors, start-screen line,
 // and what a finished brick is (with a non-breaking hyphen, so lines don't
-// break inside see-through). Level 4's finished bricks are see-through
+// break inside see-through). Level 4's middle bricks are green, not blue, so
+// they can't be mistaken for see-through panes showing the blue sky. Level 4's finished bricks are see-through
 // glass, with no mortar behind them, so they show the dragon lurking behind
 // the wall; its words are sound-alikes, so the voice reads just the sentence.
 const LEVELS = [
@@ -36,7 +37,7 @@ const LEVELS = [
     intro: 'Level 3: keep the fire dragon out!', top: 'gold' },
   { words: WORDS_4, dragon: 'dragon-4', name: 'shadow dragon', hill: ['#7183a3', '#5b6b8a'],
     intro: 'Level 4: turn the wall see‑through!', top: 'see‑through', glass: true,
-    colors: ['#a7adbd', '#5aa9ff', 'rgba(255, 255, 255, 0.12)'], sentenceOnly: true },
+    colors: ['#a7adbd', '#2f9e44', 'rgba(255, 255, 255, 0.12)'], sentenceOnly: true },
 ];
 
 // The wall, in the scene's SVG units: 10 rows of 10 bricks, laid like real
@@ -510,7 +511,8 @@ function stopHolding() {
   clearLabel('Hold until the bar fills', 1500);
 }
 
-// Every brick of this level back to the start (blue), and the dragon back
+// Every brick of this level back to the start (blue, or green in level 4),
+// and the dragon back
 // behind the wall. Other levels, the open levels, and the missed-word record
 // stay.
 function clearWall() {

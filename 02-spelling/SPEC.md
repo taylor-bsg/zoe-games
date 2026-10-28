@@ -155,12 +155,27 @@ from the options offered:
   further, precede. Those can still appear as wrong choices. Each sentence
   decides which sound-alike is right, and the word's sound-alike partner is
   always among the wrong choices. They're in `words-4.js`.
-- **Bricks:** they go gray → blue → see-through, instead of gold.
+- **Bricks:** they go gray → green → see-through, instead of gold (green
+  since the change below; it was blue at first).
 - **Unlocking (stated):** level 4 opens when level 3's wall is all gold.
 - **Speech (stated):** sound-alikes sound the same on their own, so the voice
   reads just the sentence, without the word first.
 - **The final level** will be a review of Zoe's missed words, after more
   levels.
+
+## Later changes
+
+Requested by the user, verbatim (2026-10-28):
+
+> The brick color is the same as the background color. Maybe fix that.
+>
+> Only change it in level 4.  Let’s make it green.
+
+Level 4's middle bricks, where new bricks start, were blue, nearly the same
+as the page's blue sky that see-through bricks show. They're now green,
+`#2f9e44`, so level 4 goes gray → green → see-through. Levels 1–3 keep
+blue. The green is darker than the gray stone, so the two stay apart even
+for color-blind eyes.
 
 ## Implementation notes
 
@@ -191,14 +206,17 @@ from the options offered:
   again. The word stays until Zoe taps the right spelling. Finding it after a
   miss fills the gap in green and plays the ding, with no lightning since
   the brick doesn't climb. The next word comes 3 s later.
-- **Tally:** "Gold bricks 12 / 100" in the top bar.
+- **Bricks:** gray stone (missed, level 0), blue (start, level 1; green in
+  level 4), gold (level 2; see-through in level 4), with dark mortar between
+  them.
+- **Tally:** "Level 1 gold bricks 12 / 100" in the top bar.
 - **Dragon:** waits with its horns showing between the battlements and peeks
   over every 8–16 s. When the last brick turns gold, it flies away with a
   fanfare, confetti, and "The wall is all gold! The dragon flew away!". It
   stays away while the wall is all gold, and comes back if a gold brick
   slips.
 - **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
-  to blue and the dragon returns.
+  to blue (green in level 4) and the dragon returns.
 - **Levels:** "Level" followed by one round button per level sits above
   Start; the level on screen is dark. The buttons are at least 64px wide and
   wrap to a new row when more levels don't fit. In landscape, "Level" sits
