@@ -5,7 +5,7 @@ list below.
 
 > Okay let’s start with that. For the game, let’s have a girl wizard with a wand. She has a castle wall with a hundred bricks, each corresponds to a word. There is a dragon behind the wall. Each time she gets it right, a lightning bolt shoots out and hits one brick and increments its color.  If she gets it wrong the lightning bolt bounces off the brick and the correct answer is highlighted for 2 seconds, and the brick color is decremented.  For the game, it should display the correct spelling and the wrong spellings in random order, and she should try to hit the button with the correct spelling.  A trumpet sound should appear when a brick is at the maximum increment. Let’s have the brick value start at 0 and go to 2. Any questions?
 
-Word list: "100 Most Frequently Misspelled Words Across Eight Grade Levels"
+Level 1 word list: "100 Most Frequently Misspelled Words Across Eight Grade Levels"
 (Cramer and Cipielewski, 1995, from 18,599 compositions by children in
 grades 1–8), as distributed by Read Naturally:
 https://files.readnaturally.com/about-us/blog/a-strategy-for-frequently-misspelled-words-free-resources
@@ -27,7 +27,8 @@ Stated before building, with no objection:
 
 - **Wrong choices:** realistic kid mistakes. For sound-alike words they're
   the other real words, and words that need a capital get lowercase
-  versions. They're all in `words.js`, to review and edit.
+  versions. They're all in `words-1.js` (and `words-2.js` for level 2), to
+  review and edit.
 - **The wall:** 10 rows of 10 bricks in staggered brickwork. The bricks
   don't show their words, and the current word's brick is outlined. Colors:
   0 gray stone, 1 blue, 2 gold.
@@ -102,6 +103,26 @@ After a miss, once Zoe taps the right spelling, the next word now comes 3 s
 later (it was 1.4 s), so there's time to look at the right spelling.
 First-try right answers still move on after 1.4 s.
 
+## Level 2
+
+Requested by the user, verbatim (2026-10-27):
+
+> Okay let’s add the next level. In the next level, it should be a different looking dragon. And we need to pick another set of 100 words.
+
+Clarified:
+
+- **Words:** England's national curriculum word list for years 3 and 4
+  (ages 7–9, Department for Education, English Appendix 1: Spelling, Open
+  Government Licence). Its 8 words already in level 1 (believe, caught,
+  different, favourite, heard, probably, thought, through) are swapped for 8
+  second forms the list gives with other headwords (accidentally, actually,
+  business, eighth, occasionally, possession, although, women). centre is
+  spelled center. They're in `words-2.js`, in the list's order.
+- **Unlocking:** level 2 opens when level 1's wall is all gold. After that,
+  Zoe can switch between the levels.
+- **Dragon:** an ice dragon. Pale blue, with frosty white spikes, and it
+  puffs snowflakes when it peeks over the wall.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -139,10 +160,34 @@ First-try right answers still move on after 1.4 s.
   slips.
 - **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
   to blue and the dragon returns.
+- **Levels:** "Level 1" and "Level 2" buttons sit above Start; the one on
+  screen is dark. A locked level shows 🔒. Tapping it wiggles the button and
+  says "Make every brick in level 1 gold to open level 2!" for 3 s. The top
+  bar reads "Level 2 gold bricks", and the start line says "Level 2: keep
+  the ice dragon out!". The game reopens on the level last picked.
+- **Opening level 2:** the last gold brick of level 1 brings the usual
+  celebration with "The wall is all gold! The dragon flew away! Level 2 is
+  open!". 4.6 s later the start screen comes back with level 2 picked.
+- **Ice dragon:** drawn in SVG like the first, so it peeks and flies away the
+  same way. It has a pale blue head with white frost speckles on the cheeks,
+  big blue eyes, a little fang, long white horns swept back, a crown of
+  white spikes, and pale wings with icicle edges and white trim. When it
+  peeks, outlined snowflakes puff from its nostrils and drift out to each
+  side.
+- **Level 2 scenery:** the hill is snowy (white and pale blue). Bricks,
+  sounds, and everything else work as in level 1.
+- **Clearing:** on any level, clearing affects only that level's bricks. Open
+  levels and the missed-word record stay.
+- **Testing:** in Safari, `…/02-spelling/?level=2` opens level 2 for that
+  visit, even when it's locked, without unlocking it.
 - **Saved data:** under `zoe-games:02-spelling`:
-  - `levels`: word → 0–2. Unanswered words, and any unreadable values, count
-    as 1.
+  - `levels`: word → 0–2, for the words of both levels (no word is in both).
+    Unanswered words, and any unreadable values, count as 1.
+  - `unlocked`: the highest open level (1 or 2). A save from before level 2
+    existed with level 1 all gold opens level 2.
+  - `wall`: the level last picked.
   - `missed`: word → `{ count, last, picked }`. That's the number of wrong
     picks, the time of the last one (ms since 1970), and how often each wrong
-    spelling was picked. It's for the future level. "Hold to clear the wall"
-    keeps it, and nothing removes words from it.
+    spelling was picked. It covers both levels' words and is for the future
+    review level. "Hold to clear the wall" keeps it, and nothing removes words
+    from it.

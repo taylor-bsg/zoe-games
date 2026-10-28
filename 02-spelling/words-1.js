@@ -1,5 +1,6 @@
-// The 100 words children misspell most often in their writing (Cramer and
-// Cipielewski, 1995: 18,599 compositions, grades 1–8), in the study's order.
+// Level 1: the 100 words children misspell most often in their writing
+// (Cramer and Cipielewski, 1995: 18,599 compositions, grades 1–8), in the
+// study's order.
 // Each has a sentence, where ___ marks the gap, and three wrong spellings:
 // common slips, or the sound-alike real words, missing apostrophes, or
 // missing capitals that are the usual mistakes for that word. The sentence

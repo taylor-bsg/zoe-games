@@ -1,12 +1,14 @@
 // Zoe Spells: pick the right spelling to zap a brick in the castle wall that
-// keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
-// never ends; the Home button is the way out.
+// keeps the dragon out. Each level is a wall of 100 bricks, one per word, with
+// its own dragon; finishing level 1 opens level 2. See SPEC.md. Play never
+// ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.9';
-import * as speech from '../shared/speech.js?v=0.3.9';
-import * as storage from '../shared/storage.js?v=0.3.9';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.9';
-import { WORDS } from './words.js?v=0.3.9';
+import * as sound from '../shared/sound.js?v=0.4.0';
+import * as speech from '../shared/speech.js?v=0.4.0';
+import * as storage from '../shared/storage.js?v=0.4.0';
+import { stars, confetti } from '../shared/celebrate.js?v=0.4.0';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.4.0';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.4.0';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -18,6 +20,14 @@ const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
 
+// The levels, in order: their words, dragon, hill colors, and start-screen line.
+const LEVELS = [
+  { words: WORDS_1, dragon: 'dragon-1', name: 'dragon', hill: ['#62c370', '#4fae5d'],
+    intro: 'Tap the right spelling to zap a brick!' },
+  { words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon', hill: ['#eef7ff', '#d3e8f8'],
+    intro: 'Level 2: keep the ice dragon out!' },
+];
+
 // The wall, in the scene's SVG units: 10 rows of 10 bricks, laid like real
 // brickwork with a half brick finishing each row.
 const WALL_X = 360;
@@ -25,16 +35,27 @@ const WALL_BOTTOM = 720;
 const BRICK_W = 60;
 const BRICK_H = 38;
 const PER_ROW = 10;
-const ROWS = WORDS.length / PER_ROW;
+const ROWS = 10;
 const WAND = { x: 316, y: 477 }; // center of the wand's star
 
-// levels: word -> 0..TOP. Words not in it are at START.
+// levels: word -> 0..TOP, for the words of every level (no word is in two
+// levels). Words not in it are at START.
 // missed: word -> { count, last, picked } for every word ever missed: how many
 // wrong picks, when the last one was (ms since 1970), and which wrong
 // spellings were picked how often. Kept for a future level; never cleared.
-const saved = storage.load(GAME_ID, { levels: {}, missed: {} });
+// unlocked: the highest level that's open. wall: the level last chosen.
+const saved = storage.load(GAME_ID, { levels: {}, missed: {}, unlocked: 1, wall: 1 });
 if (!isObject(saved.levels)) saved.levels = {};
 if (!isObject(saved.missed)) saved.missed = {};
+if (!isLevel(saved.unlocked)) saved.unlocked = 1;
+if (!isLevel(saved.wall) || saved.wall > saved.unlocked) saved.wall = 1;
+
+// For testing, game/?level=2 opens that level for this visit, locked or not.
+const preview = Number((/[?&]level=(\d+)/.exec(location.search) || [])[1]);
+
+function isLevel(value) {
+  return typeof value === 'number' && value >= 1 && value <= LEVELS.length && value % 1 === 0;
+}
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -44,8 +65,10 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const bricks = {}; // word -> its <rect>
-let current = null; // the WORDS entry being asked
+let bricks = {}; // word -> its <rect>, for the level on screen
+let wall = 1; // the level on screen
+let words = WORDS_1; // its words
+let current = null; // the entry being asked
 let answering = false;
 let missedThisTime = false; // a wrong pick on the current word
 let clearTimer = 0;
@@ -77,33 +100,87 @@ function level(word) {
   return value === 0 || value === 1 || value === 2 ? value : START;
 }
 
-function goldCount() {
-  return WORDS.filter(function (entry) {
+function goldCount(list) {
+  return (list || words).filter(function (entry) {
     return level(entry.word) === TOP;
   }).length;
 }
 
 function buildWall() {
-  const wall = $('wall');
+  const group = $('wall');
+  while (group.firstChild) group.removeChild(group.firstChild);
+  bricks = {};
   const top = WALL_BOTTOM - ROWS * BRICK_H;
   svg('rect', { x: WALL_X, y: top, width: (PER_ROW + 0.5) * BRICK_W, height: ROWS * BRICK_H,
-    rx: 6, fill: '#5d6273' }, wall);
+    rx: 6, fill: '#5d6273' }, group);
   for (let k = 0; k < 5; k++) { // battlements
     svg('rect', { x: WALL_X + k * 140, y: top - 42, width: 70, height: 46, rx: 6,
-      fill: '#8a8fa0', stroke: '#5d6273', 'stroke-width': 4 }, wall);
+      fill: '#8a8fa0', stroke: '#5d6273', 'stroke-width': 4 }, group);
   }
   for (let row = 0; row < ROWS; row++) { // row 0 is at the bottom
     const y = WALL_BOTTOM - (row + 1) * BRICK_H + 2;
     const shift = row % 2 ? BRICK_W / 2 : 0;
     svg('rect', { x: row % 2 ? WALL_X + 2 : WALL_X + PER_ROW * BRICK_W + 2, y: y,
-      width: BRICK_W / 2 - 4, height: BRICK_H - 4, rx: 5, fill: '#8a8fa0' }, wall);
+      width: BRICK_W / 2 - 4, height: BRICK_H - 4, rx: 5, fill: '#8a8fa0' }, group);
     for (let col = 0; col < PER_ROW; col++) {
-      const word = WORDS[row * PER_ROW + col].word;
+      const word = words[row * PER_ROW + col].word;
       bricks[word] = svg('rect', { x: WALL_X + shift + col * BRICK_W + 2, y: y,
-        width: BRICK_W - 4, height: BRICK_H - 4, rx: 5, class: 'brick' }, wall);
+        width: BRICK_W - 4, height: BRICK_H - 4, rx: 5, class: 'brick' }, group);
       paint(word);
     }
   }
+}
+
+function isOpen(n) {
+  return n <= saved.unlocked || n === preview;
+}
+
+// Shows a level: its wall, dragon, hill, and the start-screen line.
+function showLevel(n) {
+  const info = LEVELS[n - 1];
+  wall = n;
+  words = info.words;
+  current = null;
+  buildWall();
+  showTally();
+  LEVELS.forEach(function (other) {
+    $(other.dragon).setAttribute('display', other === info ? 'inline' : 'none');
+  });
+  const dragon = $('dragon');
+  dragon.classList.remove('is-peeking', 'is-leaving');
+  dragon.classList.toggle('is-gone', goldCount() === words.length);
+  $('hill-back').setAttribute('fill', info.hill[0]);
+  $('hill-front').setAttribute('fill', info.hill[1]);
+  $('intro-text').textContent = info.intro;
+  $('tally-label').textContent = 'Level ' + n + ' gold bricks';
+  showLevelButtons();
+}
+
+function showLevelButtons() {
+  levelButtons.forEach(function (button) {
+    const n = Number(button.getAttribute('data-level'));
+    const open = isOpen(n);
+    button.textContent = 'Level ' + n + (open ? '' : ' 🔒');
+    button.classList.toggle('is-locked', !open);
+    button.setAttribute('aria-pressed', String(n === wall));
+  });
+}
+
+function pickLevel(button) {
+  const n = Number(button.getAttribute('data-level'));
+  if (!isOpen(n)) { // locked: say how to open it
+    pop(button, 'is-nudged');
+    $('intro-text').textContent = 'Make every brick in level ' + (n - 1) + ' gold to open level ' + n + '!';
+    setTimeout(function () {
+      $('intro-text').textContent = LEVELS[wall - 1].intro;
+    }, 3000);
+    return;
+  }
+  if (n !== preview) {
+    saved.wall = n;
+    storage.save(GAME_ID, saved);
+  }
+  showLevel(n);
 }
 
 function paint(word) {
@@ -111,7 +188,7 @@ function paint(word) {
 }
 
 function showTally() {
-  $('tally').textContent = goldCount() + ' / ' + WORDS.length;
+  $('tally').textContent = goldCount() + ' / ' + words.length;
 }
 
 function pop(element, kind) {
@@ -126,7 +203,7 @@ function pop(element, kind) {
 function choose() {
   const options = [];
   let total = 0;
-  WORDS.forEach(function (entry) {
+  words.forEach(function (entry) {
     if (entry === current) return;
     const weight = Math.pow(TOP + 1 - level(entry.word), 3);
     options.push({ entry: entry, weight: weight });
@@ -159,7 +236,7 @@ function showSentence() {
 }
 
 function next() {
-  if (current) bricks[current.word].classList.remove('is-target');
+  if (current && bricks[current.word]) bricks[current.word].classList.remove('is-target');
   current = choose();
   const target = bricks[current.word];
   target.classList.add('is-target');
@@ -287,11 +364,11 @@ function answer(button, text) {
 
   const before = level(word);
   const after = Math.min(TOP, before + 1);
-  const wasComplete = goldCount() === WORDS.length;
+  const wasComplete = goldCount() === words.length;
   saved.levels[word] = after;
   storage.save(GAME_ID, saved);
   const gold = before < TOP && after === TOP;
-  const complete = !wasComplete && goldCount() === WORDS.length;
+  const complete = !wasComplete && goldCount() === words.length;
   // Thunder, then a clearly happy sound just after the crack: the trumpet
   // when the brick turns gold (played below), otherwise the ding.
   cast(rect, true);
@@ -308,15 +385,22 @@ function answer(button, text) {
   }, BOLT_HITS);
   if (complete) {
     setTimeout(finishWall, 1400);
-    setTimeout(next, 6000);
   } else {
     setTimeout(next, NEXT_AFTER_RIGHT);
   }
 }
 
-// Every brick is gold: the dragon gives up and flies away.
+// Every brick is gold: the dragon gives up and flies away. Finishing a level
+// for the first time opens the next one, and goes to its start screen.
 function finishWall() {
-  $('sentence').textContent = 'The wall is all gold! The dragon flew away!';
+  const opens = wall < LEVELS.length && saved.unlocked === wall ? wall + 1 : 0;
+  if (opens) {
+    saved.unlocked = opens;
+    saved.wall = opens;
+    storage.save(GAME_ID, saved);
+  }
+  $('sentence').textContent = 'The wall is all gold! The ' + LEVELS[wall - 1].name + ' flew away!' +
+    (opens ? ' Level ' + opens + ' is open!' : '');
   $('choices').innerHTML = '';
   sound.celebrate();
   confetti();
@@ -327,6 +411,14 @@ function finishWall() {
     dragon.classList.remove('is-leaving');
     dragon.classList.add('is-gone');
   }, 2500);
+  setTimeout(function () {
+    if (opens) {
+      showStart();
+      showLevel(opens);
+    } else {
+      next();
+    }
+  }, 4600);
 }
 
 // Now and then the dragon peeks over the wall.
@@ -341,6 +433,20 @@ function peekLater() {
     }
     peekLater();
   }, 8000 + Math.random() * 8000);
+}
+
+// Back to the start screen: the level picker, Start, and clearing.
+function showStart() {
+  answering = false;
+  speech.stop();
+  if (current && bricks[current.word]) bricks[current.word].classList.remove('is-target');
+  current = null;
+  $('intro').hidden = false;
+  $('setup').hidden = false;
+  $('sentence').hidden = true;
+  $('say-again').hidden = true;
+  $('choices').hidden = true;
+  $('prompt').classList.remove('is-playing');
 }
 
 function start() {
@@ -383,14 +489,17 @@ function stopHolding() {
   clearLabel('Hold until the bar fills', 1500);
 }
 
-// Every brick back to the start (blue), and the dragon back behind the wall.
-// The missed-word record stays.
+// Every brick of this level back to the start (blue), and the dragon back
+// behind the wall. Other levels, the open levels, and the missed-word record
+// stay.
 function clearWall() {
   holding = false;
   $('clear-button').classList.remove('is-holding');
-  saved.levels = {};
+  words.forEach(function (entry) {
+    delete saved.levels[entry.word];
+  });
   storage.save(GAME_ID, saved);
-  WORDS.forEach(function (entry) {
+  words.forEach(function (entry) {
     paint(entry.word);
   });
   showTally();
@@ -398,6 +507,12 @@ function clearWall() {
   clearLabel('Wall cleared', 2000);
 }
 
+const levelButtons = Array.prototype.slice.call(document.querySelectorAll('.level-button'));
+levelButtons.forEach(function (button) {
+  button.addEventListener('click', function () {
+    pickLevel(button);
+  });
+});
 $('start-button').addEventListener('click', start);
 $('say-again').addEventListener('click', say);
 $('clear-button').addEventListener('pointerdown', startHolding);
@@ -413,7 +528,10 @@ document.addEventListener('visibilitychange', function () {
   if (document.hidden) speech.stop();
 });
 
-buildWall();
-showTally();
-if (goldCount() === WORDS.length) $('dragon').classList.add('is-gone');
+// Saved games from before level 2 existed: a finished level 1 opens it.
+if (saved.unlocked < 2 && goldCount(WORDS_1) === WORDS_1.length) {
+  saved.unlocked = 2;
+  storage.save(GAME_ID, saved);
+}
+showLevel(isLevel(preview) ? preview : saved.wall);
 peekLater();
