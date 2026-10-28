@@ -3,13 +3,14 @@
 // its own dragon; finishing a level opens the next. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.5.0';
-import * as speech from '../shared/speech.js?v=0.5.0';
-import * as storage from '../shared/storage.js?v=0.5.0';
-import { stars, confetti } from '../shared/celebrate.js?v=0.5.0';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.5.0';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.5.0';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.5.0';
+import * as sound from '../shared/sound.js?v=0.6.0';
+import * as speech from '../shared/speech.js?v=0.6.0';
+import * as storage from '../shared/storage.js?v=0.6.0';
+import { stars, confetti } from '../shared/celebrate.js?v=0.6.0';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.6.0';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.6.0';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.6.0';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.6.0';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -21,14 +22,21 @@ const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
 
-// The levels, in order: their words, dragon, hill colors, and start-screen line.
+// The levels, in order: their words, dragon, hill colors, start-screen line,
+// and what a finished brick is (with a non-breaking hyphen, so lines don't
+// break inside see-through). Level 4's finished bricks are see-through
+// glass, with no mortar behind them, so they show the dragon lurking behind
+// the wall; its words are sound-alikes, so the voice reads just the sentence.
 const LEVELS = [
   { words: WORDS_1, dragon: 'dragon-1', name: 'dragon', hill: ['#62c370', '#4fae5d'],
-    intro: 'Tap the right spelling to zap a brick!' },
+    intro: 'Tap the right spelling to zap a brick!', top: 'gold' },
   { words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon', hill: ['#eef7ff', '#d3e8f8'],
-    intro: 'Level 2: keep the ice dragon out!' },
+    intro: 'Level 2: keep the ice dragon out!', top: 'gold' },
   { words: WORDS_3, dragon: 'dragon-3', name: 'fire dragon', hill: ['#c4623f', '#9c4329'],
-    intro: 'Level 3: keep the fire dragon out!' },
+    intro: 'Level 3: keep the fire dragon out!', top: 'gold' },
+  { words: WORDS_4, dragon: 'dragon-4', name: 'shadow dragon', hill: ['#7183a3', '#5b6b8a'],
+    intro: 'Level 4: turn the wall see‑through!', top: 'see‑through', glass: true,
+    colors: ['#a7adbd', '#5aa9ff', 'rgba(255, 255, 255, 0.12)'], sentenceOnly: true },
 ];
 
 // The wall, in the scene's SVG units: 10 rows of 10 bricks, laid like real
@@ -111,11 +119,14 @@ function goldCount(list) {
 
 function buildWall() {
   const group = $('wall');
+  const glass = LEVELS[wall - 1].glass;
   while (group.firstChild) group.removeChild(group.firstChild);
   bricks = {};
   const top = WALL_BOTTOM - ROWS * BRICK_H;
-  svg('rect', { x: WALL_X, y: top, width: (PER_ROW + 0.5) * BRICK_W, height: ROWS * BRICK_H,
-    rx: 6, fill: '#5d6273' }, group);
+  if (!glass) { // the mortar behind the bricks
+    svg('rect', { x: WALL_X, y: top, width: (PER_ROW + 0.5) * BRICK_W, height: ROWS * BRICK_H,
+      rx: 6, fill: '#5d6273' }, group);
+  }
   for (let k = 0; k < 5; k++) { // battlements
     svg('rect', { x: WALL_X + k * 140, y: top - 42, width: 70, height: 46, rx: 6,
       fill: '#8a8fa0', stroke: '#5d6273', 'stroke-width': 4 }, group);
@@ -123,12 +134,13 @@ function buildWall() {
   for (let row = 0; row < ROWS; row++) { // row 0 is at the bottom
     const y = WALL_BOTTOM - (row + 1) * BRICK_H + 2;
     const shift = row % 2 ? BRICK_W / 2 : 0;
-    svg('rect', { x: row % 2 ? WALL_X + 2 : WALL_X + PER_ROW * BRICK_W + 2, y: y,
+    const half = svg('rect', { x: row % 2 ? WALL_X + 2 : WALL_X + PER_ROW * BRICK_W + 2, y: y,
       width: BRICK_W / 2 - 4, height: BRICK_H - 4, rx: 5, fill: '#8a8fa0' }, group);
+    if (glass) half.setAttribute('class', 'brick glass');
     for (let col = 0; col < PER_ROW; col++) {
       const word = words[row * PER_ROW + col].word;
       bricks[word] = svg('rect', { x: WALL_X + shift + col * BRICK_W + 2, y: y,
-        width: BRICK_W - 4, height: BRICK_H - 4, rx: 5, class: 'brick' }, group);
+        width: BRICK_W - 4, height: BRICK_H - 4, rx: 5, class: glass ? 'brick glass' : 'brick' }, group);
       paint(word);
     }
   }
@@ -155,7 +167,7 @@ function showLevel(n) {
   $('hill-back').setAttribute('fill', info.hill[0]);
   $('hill-front').setAttribute('fill', info.hill[1]);
   $('intro-text').textContent = info.intro;
-  $('tally-label').textContent = 'Level ' + n + ' gold bricks';
+  $('tally-label').textContent = 'Level ' + n + ' ' + info.top + ' bricks';
   showLevelButtons();
 }
 
@@ -174,7 +186,8 @@ function pickLevel(button) {
   const n = Number(button.getAttribute('data-level'));
   if (!isOpen(n)) { // locked: say how to open it
     pop(button, 'is-nudged');
-    $('intro-text').textContent = 'Make every brick in level ' + (n - 1) + ' gold to open level ' + n + '!';
+    $('intro-text').textContent = 'Make every brick in level ' + (n - 1) + ' ' + LEVELS[n - 2].top +
+      ' to open level ' + n + '!';
     setTimeout(function () {
       $('intro-text').textContent = LEVELS[wall - 1].intro;
     }, 3000);
@@ -188,7 +201,9 @@ function pickLevel(button) {
 }
 
 function paint(word) {
-  bricks[word].style.fill = COLORS[level(word)];
+  const info = LEVELS[wall - 1];
+  bricks[word].style.fill = (info.colors || COLORS)[level(word)];
+  if (info.glass) bricks[word].classList.toggle('is-clear', level(word) === TOP);
 }
 
 function showTally() {
@@ -221,9 +236,11 @@ function choose() {
   return options[options.length - 1].entry;
 }
 
-// Says the word, then the sentence with the word in it.
+// Says the word, then the sentence with the word in it. Sound-alikes sound
+// the same alone, so for them it's just the sentence.
 function say() {
-  speech.speak(current.word + '. ' + current.sentence.replace('___', current.word));
+  const sentence = current.sentence.replace('___', current.word);
+  speech.speak(LEVELS[wall - 1].sentenceOnly ? sentence : current.word + '. ' + sentence);
 }
 
 function showSentence() {
@@ -403,8 +420,8 @@ function finishWall() {
     saved.wall = opens;
     storage.save(GAME_ID, saved);
   }
-  $('sentence').textContent = 'The wall is all gold! The ' + LEVELS[wall - 1].name + ' flew away!' +
-    (opens ? ' Level ' + opens + ' is open!' : '');
+  $('sentence').textContent = 'The wall is all ' + LEVELS[wall - 1].top + '! The ' + LEVELS[wall - 1].name +
+    ' flew away!' + (opens ? ' Level ' + opens + ' is open!' : '');
   $('choices').innerHTML = '';
   sound.celebrate();
   confetti();

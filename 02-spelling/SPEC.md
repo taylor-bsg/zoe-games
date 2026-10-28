@@ -140,6 +140,28 @@ Requested by the user, verbatim (2026-10-28):
 - **Dragon:** a fire dragon. Red, with dark horns, a flame-shaped crest,
   red-and-orange wings, and smoke puffs when it peeks over the wall.
 
+## Level 4
+
+Requested by the user, verbatim (2026-10-28), after choosing sound-alikes
+from the options offered:
+
+> Shadow dragon, this time, instead of going gold, the tiles should turn see-thru. Sound alikes is good. Yes final level is review but we have more levels to go.
+
+- **Words:** sound-alikes from the homophone lists in England's national
+  curriculum for ages 6–7, 7–9, and 9–11 (same source and licence). They
+  hold 107 words not already in levels 1–3. The British-only pairs
+  (licence/license, practice/practise, draft/draught) are left out, and so
+  are the 7 most obscure: prophecy, prophesy, assent, dissent, farther,
+  further, precede. Those can still appear as wrong choices. Each sentence
+  decides which sound-alike is right, and the word's sound-alike partner is
+  always among the wrong choices. They're in `words-4.js`.
+- **Bricks:** they go gray → blue → see-through, instead of gold.
+- **Unlocking (stated):** level 4 opens when level 3's wall is all gold.
+- **Speech (stated):** sound-alikes sound the same on their own, so the voice
+  reads just the sentence, without the word first.
+- **The final level** will be a review of Zoe's missed words, after more
+  levels.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -177,8 +199,10 @@ Requested by the user, verbatim (2026-10-28):
   slips.
 - **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
   to blue and the dragon returns.
-- **Levels:** "Level" followed by one round button per level (1, 2, 3)
-  sits above Start; the level on screen is dark. A locked level shows 🔒.
+- **Levels:** "Level" followed by one round button per level sits above
+  Start; the level on screen is dark. The buttons are at least 64px wide and
+  wrap to a new row when more levels don't fit. In landscape, "Level" sits
+  above them. A locked level shows 🔒.
   Tapping it wiggles the button and says, for example, "Make every brick in
   level 2 gold to open level 3!" for 3 s. The top bar reads "Level 3 gold
   bricks", and the start line says "Level 3: keep the fire dragon out!". The
@@ -199,17 +223,31 @@ Requested by the user, verbatim (2026-10-28):
   little fangs, dark curved horns, a yellow flame-shaped crest, and dark red
   wings with orange insides. When it peeks, gray smoke puffs and orange
   embers drift out from its nostrils to each side.
+- **Shadow dragon:** drawn the same way. It has a dark purple head with
+  big lavender eyes that glow, a soft purple smile, sharp dark horns with
+  purple edges, and tattered dark wings with purple trim. When it peeks,
+  purple shadow wisps puff from its nostrils. Unlike the others, it has a
+  whole body (with a curled tail) hidden behind the wall, so see-through
+  bricks show it lurking there. The more bricks clear, the more of it shows.
+- **See-through bricks:** glass panes with a faint white tint and a light
+  edge. Level 4's wall has no mortar backing, and each solid brick carries
+  its own mortar edge, so the sky and the dragon show through. Turning a
+  brick see-through plays the trumpet and bursts stars, like turning gold.
+  The top bar reads "Level 4 see-through bricks". When all 100 are clear:
+  "The wall is all see-through! The shadow dragon flew away!", and the
+  empty sky shows through the glass. "see-through" uses a non-breaking
+  hyphen so lines don't break inside it.
 - **Scenery:** the hill is green for level 1, snowy (white and pale blue) for
-  level 2, and rusty volcanic rock for level 3. Bricks, sounds, and
-  everything else work the same on every level.
+  level 2, rusty volcanic rock for level 3, and moonlit slate blue for
+  level 4. Sounds and everything else work the same on every level.
 - **Clearing:** on any level, clearing affects only that level's bricks. Open
   levels and the missed-word record stay.
-- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=3`) opens that
-  level for the visit, even when it's locked, without unlocking it.
+- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=3`, `=4`) opens
+  that level for the visit, even when it's locked, without unlocking it.
 - **Saved data:** under `zoe-games:02-spelling`:
   - `levels`: word → 0–2, for the words of both levels (no word is in both).
     Unanswered words, and any unreadable values, count as 1.
-  - `unlocked`: the highest open level (1–3). On load, a finished wall
+  - `unlocked`: the highest open level (1–4). On load, a finished wall
     opens the next level, for saves from before that level existed.
   - `wall`: the level last picked.
   - `missed`: word → `{ count, last, picked }`. That's the number of wrong
