@@ -47,6 +47,12 @@ A squishy Zoe doesn't own and can't afford is now a mystery egg. When she
 first has enough coins for one, its egg is ready to hatch: tapping it
 reveals the squishy, which can then be bought.
 
+> The color of the egg should match the inside squishiness. The shade one should have sunglasses.
+
+Each egg now comes in its squishy's colors, so the colors hint at what's
+inside. Shade's egg wears Shade's pink sunglasses instead of the question
+mark.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -84,12 +90,15 @@ reveals the squishy, which can then be bought.
     squashes. The hint reads "Swipe sideways to spin, down to squish!".
 - **Mystery eggs:** what the store shows for each squishy depends on its
   state.
-  - **Locked** (not owned, not enough coins): a 3D cream egg with pastel
-    spots and a big purple ? that rocks gently. The name reads "Mystery
-    egg", the button "Need 25 more", and the hint "What’s inside? Earn coins
-    to find out!". Tapping the egg squishes it; tapping the button wiggles
-    it and says "Play games to earn more coins!". The price is the only
-    clue.
+  - **Locked** (not owned, not enough coins): a 3D egg that rocks gently.
+    The name reads "Mystery egg", the button "Need 25 more", and the hint
+    "What’s inside? Earn coins to find out!". Tapping the egg squishes it;
+    tapping the button wiggles it and says "Play games to earn more
+    coins!". The egg's colors and the price are the clues.
+  - **Egg colors:** each egg is its squishy's body color, with spots in its
+    belly, wing, and spike colors and a big ? on the front: navy, or white
+    on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
+    egg wears Shade's pink sunglasses instead of the ?.
   - **Ready** (enough coins, never hatched): the egg wiggles excitedly every
     1.6 s. The button reads "🥚 Hatch it!" and the hint "It’s ready to hatch!
     Tap it!". The store opens on a ready egg if there is one.
@@ -160,14 +169,19 @@ reveals the squishy, which can then be bought.
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads.
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
-    question mark painted on so it turns with the egg. A tilt rocks it about
-    the spot where it touches the floor.
+    spots and question mark painted on so they turn with the egg. A tilt
+    rocks it about the spot where it touches the floor. `store.js` makes
+    each egg's look from its squishy's colors; `egg` in `items.js` adds
+    parts to it, like Shade's sunglasses.
+  - **Egg glasses:** fitted to the egg's curve. Each lens faces straight
+    out from the egg, leaning back with it, and the arms wrap back to its
+    sides.
   - **Fit check:** `fit-check.html` (in this folder, not linked from the
-    store) draws every squishy and the egg at full squash, full stretch, and
-    rest, every 6° of turn, in every store layout, and reports how close
-    each comes to the edge. Run it after changing a size or adding flair. At this change,
-    the closest was 1.3% of the view's height (Professor and DJ Bop, fully
-    stretched).
+    store) draws every squishy, and an egg with sunglasses, at full squash,
+    full stretch, and rest, every 6° of turn, in every store layout, and
+    reports how close each comes to the edge. Run it after changing a size
+    or adding flair. At this change, the closest was 1.3% of the view's
+    height (Professor and DJ Bop, fully stretched), and the egg 16.2%.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.

@@ -5,15 +5,15 @@
 // it. The dots show which one this is, gold for the ones Zoe owns.
 //
 // Zoe only sees a squishy she owns or has enough coins for. Any other is a
-// mystery egg. When she first has enough for one, its egg wiggles until she
-// taps it, and then it hatches.
+// mystery egg in its colors. When she first has enough for one, its egg
+// wiggles until she taps it, and then it hatches.
 
-import * as coins from '../shared/coins.js?v=0.7.4';
-import * as sound from '../shared/sound.js?v=0.7.4';
-import * as storage from '../shared/storage.js?v=0.7.4';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.4';
-import { createSquishy } from './squishy.js?v=0.7.4';
-import { ITEMS } from './items.js?v=0.7.4';
+import * as coins from '../shared/coins.js?v=0.7.5';
+import * as sound from '../shared/sound.js?v=0.7.5';
+import * as storage from '../shared/storage.js?v=0.7.5';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.5';
+import { createSquishy } from './squishy.js?v=0.7.5';
+import { ITEMS } from './items.js?v=0.7.5';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -27,7 +27,6 @@ const MAX_SQUASH = 0.9;
 const MAX_STRETCH = -0.6;
 const DECIDE = 10; // px a swipe goes before it counts as sideways or up and down
 const HATCH_MS = 1100; // how long an egg shakes before it hatches
-const EGG = { egg: true };
 // Lines in halves that wrap as units, so a narrow panel breaks between them.
 const HINT = '<span>Swipe sideways to spin,</span> <span>down to squish!</span>';
 const READY_HINT = '<span>It’s ready to hatch!</span> <span>Tap it!</span>';
@@ -58,6 +57,25 @@ const stage = createSquishy($('stage'), { maxRatio: 1.25 });
 function picked() {
   return ITEMS[index];
 }
+
+function brightness(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+}
+
+// A squishy's mystery egg: its body color, spots in its other colors (stars
+// on a starry one), a question mark that stands out (white on a dark egg),
+// and any egg parts from items.js.
+const EGGS = ITEMS.map(function (item) {
+  const look = item.look;
+  const egg = { egg: true, body: look.body, belly: look.belly, wing: look.wing, spike: look.spike,
+    eye: brightness(look.body) < 0.45 ? '#ffffff' : '#1d2b53', stars: look.stars,
+    acc: look.acc, acc2: look.acc2 };
+  Object.keys(item.egg || {}).forEach(function (part) {
+    egg[part] = item.egg[part];
+  });
+  return egg;
+});
 
 // Reads the coins and purchases again, after buying.
 function refresh() {
@@ -126,7 +144,7 @@ function frame(now) {
   const idle = !shaking && state !== 'ready' && held === null && now - touchedAt > IDLE_AFTER &&
     now - squishAt > 1600; // still moving, but slowly enough for fewer pictures
   if (stage && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
-    stage.draw(egg ? EGG : picked().look, { angle: angle, tilt: tilt, squish: squash });
+    stage.draw(egg ? EGGS[index] : picked().look, { angle: angle, tilt: tilt, squish: squash });
     lastDraw = now;
   }
   requestAnimationFrame(frame);

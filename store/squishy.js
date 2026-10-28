@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.4';
+//   import { createSquishy } from './squishy.js?v=0.7.5';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,8 +20,10 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-//   egg         draws a mystery egg (cream with pastel spots and a big
-//               question mark) instead of a dragon; nothing else is needed
+//   egg         draws a mystery egg instead of a dragon: body color, spots
+//               in the belly, wing, and spike colors (gold stars if stars),
+//               and a big question mark in the eye color. With glasses, it
+//               wears them instead of the question mark.
 // angle turns the dragon (radians); tilt rocks it sideways about the spot
 // where it touches the floor (radians, small; used for eggs); squish squashes
 // it toward the floor (up to about 1) or stretches it up (negative, down to
@@ -119,8 +121,23 @@ const FRAGMENT = [
   '  if (EGG > 0.5) {',
   '    float y = p.y + 0.06;',
   '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
-  '    float egg = 0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64));',
-  '    return vec2(egg * SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH), 10.0);',
+  '    vec2 egg = vec2(0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64)), 10.0);',
+  // Glasses on an egg, fitted to its curve: each lens faces out from the
+  // egg's face, leaning back with it, and the arms wrap back to its sides.
+  '    if (GLASSES > 0.5) {',
+  '      vec3 q = vec3(abs(p.x), p.y, p.z);',
+  '      vec3 l = q - vec3(0.251, 0.214, 0.562);',
+  '      l.xz = rot(0.42) * l.xz;',
+  '      l.yz = rot(0.35) * l.yz;',
+  '      float frame = sdTorus(l.xzy, vec2(0.135, 0.021));',
+  '      frame = min(frame, sdRoundCone(p, vec3(-0.127, 0.242, 0.606), vec3(0.127, 0.242, 0.606), 0.02, 0.02));',
+  '      frame = min(frame, sdRoundCone(q, vec3(0.374, 0.214, 0.507), vec3(0.536, 0.214, 0.287), 0.02, 0.02));',
+  '      frame = min(frame, sdRoundCone(q, vec3(0.536, 0.214, 0.287), vec3(0.615, 0.214, -0.018), 0.02, 0.02));',
+  '      egg = add(egg, frame, 5.0, 0.006);',
+  '      if (GLASSES > 1.5) egg = add(egg, sdEllipsoid(l, vec3(0.13, 0.13, 0.012)), 6.0, 0.003);',
+  '    }',
+  '    egg.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
+  '    return egg;',
   '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
@@ -225,13 +242,19 @@ const FRAGMENT = [
   '  return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));',
   '}',
 
-  // The egg: cream with pastel spots, and a big question mark on the front.
+  // The egg: in the squishy's colors, with a big question mark on the front
+  // (unless it wears glasses).
   'vec3 eggPaint(vec3 p) {',
-  '  vec3 col = vec3(1.0, 0.96, 0.88);',
-  '  vec3 f = fract(p * 3.2) - 0.5;',
-  '  float h = hash(floor(p * 3.2));',
-  '  if (length(f) < 0.2) col = h > 0.66 ? vec3(0.66, 0.85, 1.0) : (h > 0.33 ? vec3(1.0, 0.78, 0.86) : vec3(0.75, 0.93, 0.78));',
-  '  if (p.z > 0.25) {',
+  '  vec3 col = uBody;',
+  '  if (STARS > 0.5) {',
+  '    vec3 s = fract(p * 5.0) - 0.5;',
+  '    if (hash(floor(p * 5.0)) > 0.5 && length(s) < 0.22) col = vec3(1.0, 0.96, 0.75);',
+  '  } else {',
+  '    vec3 f = fract(p * 3.2) - 0.5;',
+  '    float h = hash(floor(p * 3.2));',
+  '    if (length(f) < 0.26) col = h > 0.66 ? uBelly : (h > 0.33 ? uWing : uSpike);',
+  '  }',
+  '  if (p.z > 0.25 && GLASSES < 0.5) {',
   '    vec2 g = p.xy;',
   '    vec2 c = vec2(0.0, 0.22);',
   '    float a = atan(g.y - c.y, g.x - c.x);',
@@ -240,7 +263,7 @@ const FRAGMENT = [
   '    d = min(d, sdSegment(g, vec2(0.087, 0.098), vec2(0.0, 0.02)) - 0.055);',
   '    d = min(d, sdSegment(g, vec2(0.0, 0.02), vec2(0.0, -0.06)) - 0.055);', // the stem
   '    d = min(d, length(g - vec2(0.0, -0.21)) - 0.06);', // the dot
-  '    if (d < 0.0) col = vec3(0.44, 0.28, 0.91);',
+  '    if (d < 0.0) col = uEye;',
   '  }',
   '  return col;',
   '}',
