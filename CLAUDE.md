@@ -50,6 +50,8 @@ shared/sound.js       Web Audio effects, unlock, mute
 shared/speech.js      reads text aloud with the device's voice
 shared/storage.js     per-game save/load
 shared/celebrate.js   confetti/star burst
+shared/coins.js       coins: earned by games, spent in the store
+store/                Squishy Store: plush dragons in 3D, bought with coins (SPEC.md)
 template/             minimal working game to copy for new games; not in games.js
 NN-skill/             one folder per game: SPEC.md, index.html, game.js
 ```
@@ -72,6 +74,10 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
   6. Bump the version everywhere (see Versions): minor for a new game,
      patch for a fix.
   7. Commit as `NN-skill: summary`.
+- **Coins:** games pay through `coins.earn(GAME_ID, n)`. How much and for
+  what is the user's call; record it in the game's `SPEC.md`. Store items
+  live in `store/items.js`. Never change an item's id, since purchases are
+  saved by id.
 - For small presentation choices the spec doesn't cover (colors, emoji,
   wording, layout, timings), decide and list them under "Implementation notes"
   at the end of that game's `SPEC.md`.
@@ -146,7 +152,8 @@ Each file's header comment documents its API. In brief:
 - **sound.js:** `unlock()`, `correct()`, `wrong()`, `celebrate()` (a
   fanfare), `cheer()` (crowd, claps, and "woo!"s), `trumpet()` (a royal
   fanfare), `zap()` (lightning: a sharp crack and a short, rattling boom), `bounce()`
-  (a crack and a "boing", for a bolt that bounces off), `isMuted()`, `setMuted(on)`.
+  (a crack and a "boing", for a bolt that bounces off), `coin()` (a "ching"),
+  `squeak()` (a squeaky toy), `isMuted()`, `setMuted(on)`.
   `unlock()` sets Safari's audio session to "playback" (iOS 17 and later),
   so sounds play through the iPad's silent mode, like the read-aloud voice
   does. The launcher's speaker button turns everything off. Synthesized with Web Audio, no audio files.
@@ -159,7 +166,13 @@ Each file's header comment documents its API. In brief:
   game under `zoe-games:<gameId>` in localStorage, all inside try/catch. Games
   must work when nothing is saved, and saved data can vanish. Also, the Home
   Screen app and Safari keep separate storage.
-- **celebrate.js:** `stars(elementOrPoint)` for a small burst, `confetti()`
+- **coins.js:** `earn(source, n)`, `balance()`, `spend(item, price)`,
+  `owns(item)`, `totals()` (earned, spent, balance), and `ICON`, a gold coin
+  SVG to show next to amounts (not the 🪙 emoji, which is silver). Earned
+  coins are kept per source (a game id) and purchases as a list, under
+  `zoe-games:coins`.
+- **celebrate.js:** `coins(elementOrPoint, n)` floats "+n" and a coin. Also
+  `stars(elementOrPoint)` for a small burst, `confetti()`
   for a big party, and `zip(emoji?)`, which sends a random cute animal
   zipping across the screen. All three are overlays that ignore taps and
   remove themselves.
