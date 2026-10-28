@@ -2,17 +2,18 @@
 // keeps the dragon out. Each of the 100 words is one brick. See SPEC.md. Play
 // never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.3.8';
-import * as speech from '../shared/speech.js?v=0.3.8';
-import * as storage from '../shared/storage.js?v=0.3.8';
-import { stars, confetti } from '../shared/celebrate.js?v=0.3.8';
-import { WORDS } from './words.js?v=0.3.8';
+import * as sound from '../shared/sound.js?v=0.3.9';
+import * as speech from '../shared/speech.js?v=0.3.9';
+import * as storage from '../shared/storage.js?v=0.3.9';
+import { stars, confetti } from '../shared/celebrate.js?v=0.3.9';
+import { WORDS } from './words.js?v=0.3.9';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
 const START = 1; // new bricks start in the middle: one right answer makes them gold
 const COLORS = ['#a7adbd', '#5aa9ff', '#ffd23f']; // gray stone, blue, gold
 const NEXT_AFTER_RIGHT = 1400; // ms before the next word, once the sounds have finished
+const NEXT_AFTER_FOUND = 3000; // ms to look at the right spelling, when found after a miss
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
@@ -280,7 +281,7 @@ function answer(button, text) {
   if (missedThisTime) {
     // Found it after a miss: well done, but the brick only climbs on a first try.
     sound.correct();
-    setTimeout(next, NEXT_AFTER_RIGHT);
+    setTimeout(next, NEXT_AFTER_FOUND);
     return;
   }
 

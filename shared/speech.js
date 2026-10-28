@@ -1,7 +1,7 @@
 // Reads text aloud with the device's built-in voice (the Web Speech API), so
 // there are no recordings and no network.
 //
-//   import * as speech from '../shared/speech.js?v=0.3.8';
+//   import * as speech from '../shared/speech.js?v=0.3.9';
 //   startButton.addEventListener('click', () => { speech.speak('Hello!'); });
 //   speech.stop();
 //
@@ -9,7 +9,7 @@
 // handler (the Start button); later calls work any time. Speech is quiet
 // while sounds are muted (the launcher's speaker button).
 
-import * as sound from './sound.js?v=0.3.8';
+import * as sound from './sound.js?v=0.3.9';
 
 export function isSupported() {
   return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;

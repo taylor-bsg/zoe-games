@@ -96,6 +96,12 @@ Clarified:
 - **The missed set:** it's only kept for now, for a future level; nothing
   re-asks it yet. Words never leave it.
 
+> Have it wait for three seconds after the right answer is selected after a wrong answer, before continuing
+
+After a miss, once Zoe taps the right spelling, the next word now comes 3 s
+later (it was 1.4 s), so there's time to look at the right spelling.
+First-try right answers still move on after 1.4 s.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -124,7 +130,7 @@ Clarified:
   wiggles orange, then turns gray and crossed out, and can't be tapped
   again. The word stays until Zoe taps the right spelling. Finding it after a
   miss fills the gap in green and plays the ding, with no lightning since
-  the brick doesn't climb. The next word comes 1.4 s later.
+  the brick doesn't climb. The next word comes 3 s later.
 - **Tally:** "Gold bricks 12 / 100" in the top bar.
 - **Dragon:** waits with its horns showing between the battlements and peeks
   over every 8–16 s. When the last brick turns gold, it flies away with a
