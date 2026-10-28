@@ -6,7 +6,8 @@
 import * as sound from '../shared/sound.js?v=0.7.0';
 import * as speech from '../shared/speech.js?v=0.7.0';
 import * as storage from '../shared/storage.js?v=0.7.0';
-import { stars, confetti } from '../shared/celebrate.js?v=0.7.0';
+import * as coins from '../shared/coins.js?v=0.7.0';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.0';
 import { WORDS as WORDS_1 } from './words-1.js?v=0.7.0';
 import { WORDS as WORDS_2 } from './words-2.js?v=0.7.0';
 import { WORDS as WORDS_3 } from './words-3.js?v=0.7.0';
@@ -21,6 +22,7 @@ const NEXT_AFTER_FOUND = 3000; // ms to look at the right spelling, when found a
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
+const PRIZE = 100; // coins for finishing a wall, times the level
 
 // The levels, in order: their words, dragon, hill colors, start-screen line,
 // and what a finished brick is (with a non-breaking hyphen, so lines don't
@@ -56,11 +58,17 @@ const WAND = { x: 316, y: 477 }; // center of the wand's star
 // wrong picks, when the last one was (ms since 1970), and which wrong
 // spellings were picked how often. Kept for a future level; never cleared.
 // unlocked: the highest level that's open. wall: the level last chosen.
+// paid: level -> true once its wall prize is paid; clearing the wall resets
+// it, so a wall that slips and comes back can't pay twice.
 const saved = storage.load(GAME_ID, { levels: {}, missed: {}, unlocked: 1, wall: 1 });
 if (!isObject(saved.levels)) saved.levels = {};
 if (!isObject(saved.missed)) saved.missed = {};
 if (!isLevel(saved.unlocked)) saved.unlocked = 1;
 if (!isLevel(saved.wall) || saved.wall > saved.unlocked) saved.wall = 1;
+if (!isObject(saved.paid)) { // walls finished before coins existed were paid by the head start
+  saved.paid = {};
+  for (let n = 1; n < saved.unlocked; n++) saved.paid[n] = true;
+}
 
 // For testing, game/?level=2 opens that level for this visit, locked or not.
 const preview = Number((/[?&]level=(\d+)/.exec(location.search) || [])[1]);
@@ -169,7 +177,13 @@ function showLevel(n) {
   $('hill-front').setAttribute('fill', info.hill[1]);
   $('intro-text').textContent = info.intro;
   $('tally-label').textContent = 'Level ' + n + ' ' + info.top + ' bricks';
+  showPrize();
   showLevelButtons();
+}
+
+function showPrize() {
+  $('prize').innerHTML = saved.paid[wall] ? 'Wall prize won: ' + PRIZE * wall + ' ' + coins.ICON + ' ✓' :
+    'Finish the wall to win ' + PRIZE * wall + ' ' + coins.ICON;
 }
 
 function showLevelButtons() {
@@ -416,13 +430,23 @@ function answer(button, text) {
 // for the first time opens the next one, and goes to its start screen.
 function finishWall() {
   const opens = wall < LEVELS.length && saved.unlocked === wall ? wall + 1 : 0;
+  const prize = saved.paid[wall] ? 0 : PRIZE * wall;
   if (opens) {
     saved.unlocked = opens;
     saved.wall = opens;
-    storage.save(GAME_ID, saved);
   }
+  if (prize) {
+    saved.paid[wall] = true;
+    coins.earn(GAME_ID, prize);
+    setTimeout(function () {
+      sound.coin();
+      floatCoins($('tally'), prize);
+    }, 1300);
+  }
+  storage.save(GAME_ID, saved);
   $('sentence').textContent = 'The wall is all ' + LEVELS[wall - 1].top + '! The ' + LEVELS[wall - 1].name +
-    ' flew away!' + (opens ? ' Level ' + opens + ' is open!' : '');
+    ' flew away!' + (prize ? ' You won ' + prize + ' coins!' : '') +
+    (opens ? ' Level ' + opens + ' is open!' : '');
   $('choices').innerHTML = '';
   sound.celebrate();
   confetti();
@@ -521,7 +545,9 @@ function clearWall() {
   words.forEach(function (entry) {
     delete saved.levels[entry.word];
   });
+  delete saved.paid[wall]; // finishing it all over again wins the prize again
   storage.save(GAME_ID, saved);
+  showPrize();
   words.forEach(function (entry) {
     paint(entry.word);
   });

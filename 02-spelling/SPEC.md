@@ -177,6 +177,22 @@ as the page's blue sky that see-through bricks show. They're now green,
 blue. The green is darker than the gray stone, so the two stay apart even
 for color-blind eyes.
 
+## Coins
+
+Added with the Squishy Store (see `store/SPEC.md`), by the user's choice:
+coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
+
+- **Paying:** the prize is paid once per finished wall, and recorded in
+  `paid` (level → true) in the saved data. A wall that slips and is
+  finished again doesn't pay twice. Clearing a wall makes its prize
+  winnable again.
+- **Finishing:** the celebration says "You won 200 coins!", and the prize
+  floats up from the tally with a "ching".
+- **Start screen:** shows "Finish the wall to win 200" or "Wall prize won:
+  200 ✓".
+- **Old saves:** walls finished before coins existed are marked paid. The
+  store's one-time head start covered them.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
