@@ -3,12 +3,17 @@
 // time: arrows go to the others, a sideways swipe spins it, a swipe down or
 // up squashes or stretches it as far as the finger goes, and a tap squishes
 // it. The dots show which one this is, gold for the ones Zoe owns.
+//
+// Zoe only sees a squishy she owns or has enough coins for. Any other is a
+// mystery egg. When she first has enough for one, its egg wiggles until she
+// taps it, and then it hatches.
 
-import * as coins from '../shared/coins.js?v=0.7.3';
-import * as sound from '../shared/sound.js?v=0.7.3';
-import { confetti } from '../shared/celebrate.js?v=0.7.3';
-import { createSquishy } from './squishy.js?v=0.7.3';
-import { ITEMS } from './items.js?v=0.7.3';
+import * as coins from '../shared/coins.js?v=0.7.4';
+import * as sound from '../shared/sound.js?v=0.7.4';
+import * as storage from '../shared/storage.js?v=0.7.4';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.4';
+import { createSquishy } from './squishy.js?v=0.7.4';
+import { ITEMS } from './items.js?v=0.7.4';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -16,16 +21,25 @@ const DRAG = 0.012; // radians per pixel dragged
 const IDLE_FRAME = 33; // ms between pictures while just spinning: 30 a second, easy on older iPads
 const SQUISH = 0.55; // how hard a tap squishes
 const HOP = 0.3; // how much a squishy wobbles when it appears
+const POP = -0.55; // the stretch a squishy hatches with
 const PULL = 1.8; // squish per view height swiped: half the height squashes it fully
 const MAX_SQUASH = 0.9;
 const MAX_STRETCH = -0.6;
 const DECIDE = 10; // px a swipe goes before it counts as sideways or up and down
-// Two halves that wrap as units, so a narrow panel breaks the line between them.
+const HATCH_MS = 1100; // how long an egg shakes before it hatches
+const EGG = { egg: true };
+// Lines in halves that wrap as units, so a narrow panel breaks between them.
 const HINT = '<span>Swipe sideways to spin,</span> <span>down to squish!</span>';
+const READY_HINT = '<span>It’s ready to hatch!</span> <span>Tap it!</span>';
+const LOCKED_HINT = '<span>What’s inside?</span> <span>Earn coins to find out!</span>';
 
 function $(id) {
   return document.getElementById(id);
 }
+
+// hatched: ids of squishies whose eggs Zoe has hatched.
+const saved = storage.load('store', { hatched: [] });
+if (!Array.isArray(saved.hatched)) saved.hatched = [];
 
 let index = 0; // which squishy is showing
 let angle = 0.5;
@@ -33,18 +47,45 @@ let squishAt = -1e9; // when the last squish started (ms)
 let squishBy = SQUISH;
 let held = null; // the squish while a finger is pulling it up or down
 let touchedAt = -1e9; // when the stage was last dragged
+let hatchAt = -1e9; // when the egg on screen started hatching
+let popping = false; // it hasn't popped open yet
 let lastFrame = 0;
 let lastDraw = 0;
+let wallet = coins.totals();
+const owned = {}; // id -> true
 const stage = createSquishy($('stage'), { maxRatio: 1.25 });
 
 function picked() {
   return ITEMS[index];
 }
 
+// Reads the coins and purchases again, after buying.
+function refresh() {
+  wallet = coins.totals();
+  ITEMS.forEach(function (item) {
+    owned[item.id] = coins.owns(item.id);
+  });
+}
+
+// What the store shows for a squishy:
+//   owned    hers, always visible
+//   visible  she has enough coins and has hatched it
+//   ready    she has enough coins but hasn't hatched it yet: a wiggling egg
+//   locked   she doesn't have enough coins: a calm egg
+function stateOf(item) {
+  if (owned[item.id]) return 'owned';
+  if (wallet.balance < item.price) return 'locked';
+  return saved.hatched.indexOf(item.id) >= 0 ? 'visible' : 'ready';
+}
+
+function isEgg(state) {
+  return state === 'ready' || state === 'locked';
+}
+
 function showBalance() {
-  const t = coins.totals();
-  $('balance').innerHTML = coins.ICON + ' ' + t.balance;
-  $('ledger').innerHTML = 'Earned ' + t.earned + ' ' + coins.ICON + ' · Spent ' + t.spent + ' ' + coins.ICON;
+  $('balance').innerHTML = coins.ICON + ' ' + wallet.balance;
+  $('ledger').innerHTML = 'Earned ' + wallet.earned + ' ' + coins.ICON + ' · Spent ' + wallet.spent +
+    ' ' + coins.ICON;
 }
 
 // A wobbly squash: squished at first, then bouncing back.
@@ -53,13 +94,39 @@ function squishAmount(now) {
   return t < 1.6 ? squishBy * Math.exp(-4.5 * t) * Math.cos(14 * t) : 0;
 }
 
+// How an egg rocks side to side: gently when locked, in excited wiggles every
+// so often when ready to hatch.
+function eggTilt(now, ready) {
+  if (!ready) return 0.1 * Math.sin(now / 700);
+  const t = (now % 1600) / 1000;
+  return t < 0.6 ? 0.22 * Math.sin(t * 26) * (1 - t / 0.6) : 0;
+}
+
 function frame(now) {
   const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0;
   lastFrame = now;
-  const idle = held === null && now - touchedAt > IDLE_AFTER && now - squishAt > 1600;
-  if (now - touchedAt > IDLE_AFTER) angle += SPIN * dt;
+  const state = stateOf(picked());
+  const shaking = now - hatchAt < HATCH_MS;
+  if (popping && !shaking) pop();
+  const egg = shaking || isEgg(state);
+  let tilt = 0;
+  let squash = held !== null ? held : squishAmount(now);
+  if (shaking) { // rocking harder and harder, about to hatch
+    const t = (now - hatchAt) / HATCH_MS;
+    tilt = 0.3 * t * Math.sin(now / 30);
+    squash = 0.1 * t * Math.sin(now / 41);
+  } else {
+    if (now - touchedAt > IDLE_AFTER) {
+      // Eggs turn back to face the front; squishies spin.
+      if (egg) angle += (0.25 * Math.sin(now / 1300) - angle) * Math.min(1, dt * 4);
+      else angle += SPIN * dt;
+    }
+    if (egg) tilt = eggTilt(now, state === 'ready');
+  }
+  const idle = !shaking && state !== 'ready' && held === null && now - touchedAt > IDLE_AFTER &&
+    now - squishAt > 1600; // still moving, but slowly enough for fewer pictures
   if (stage && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
-    stage.draw(picked().look, { angle: angle, squish: held !== null ? held : squishAmount(now) });
+    stage.draw(egg ? EGG : picked().look, { angle: angle, tilt: tilt, squish: squash });
     lastDraw = now;
   }
   requestAnimationFrame(frame);
@@ -73,45 +140,81 @@ function squish() {
 
 function showPicked() {
   const item = picked();
-  const owned = coins.owns(item.id);
-  const short = item.price - coins.balance();
+  const state = stateOf(item);
   const buy = $('buy');
-  $('stage-name').textContent = item.name;
-  buy.classList.toggle('is-owned', owned);
-  buy.classList.toggle('is-short', !owned && short > 0);
-  if (owned) buy.textContent = '💖 It’s yours!';
-  else if (short > 0) buy.innerHTML = 'Need ' + short + ' more ' + coins.ICON;
+  $('stage-name').textContent = isEgg(state) ? 'Mystery egg' : item.name;
+  buy.classList.toggle('is-owned', state === 'owned');
+  buy.classList.toggle('is-short', state === 'locked');
+  if (state === 'owned') buy.textContent = '💖 It’s yours!';
+  else if (state === 'ready') buy.textContent = '🥚 Hatch it!';
+  else if (state === 'locked') buy.innerHTML = 'Need ' + (item.price - wallet.balance) + ' more ' + coins.ICON;
   else buy.innerHTML = 'Buy for ' + item.price + ' ' + coins.ICON;
+  $('stage-hint').innerHTML = state === 'ready' ? READY_HINT : state === 'locked' ? LOCKED_HINT : HINT;
+  const fallback = document.querySelector('.stage-fallback'); // without WebGL
+  if (fallback) fallback.textContent = isEgg(state) ? '🥚' : '🐉';
   Array.prototype.forEach.call($('dots').children, function (dot, i) {
     dot.classList.toggle('is-here', i === index);
-    dot.classList.toggle('is-owned', coins.owns(ITEMS[i].id));
+    dot.classList.toggle('is-owned', !!owned[ITEMS[i].id]);
   });
+}
+
+// The egg on screen shakes and peeps, then pops open (see pop).
+function hatch() {
+  const item = picked();
+  if (stateOf(item) !== 'ready') return;
+  saved.hatched.push(item.id);
+  storage.save('store', saved);
+  hatchAt = performance.now();
+  popping = true;
+  sound.squeak();
+  setTimeout(sound.squeak, 400);
+  setTimeout(sound.squeak, 750);
+  $('buy').textContent = '🐣 Hatching…';
+  $('stage-hint').textContent = 'It’s hatching!';
+}
+
+function pop() {
+  popping = false;
+  angle = 0.5;
+  touchedAt = -1e9;
+  squishAt = performance.now();
+  squishBy = POP;
+  sound.celebrate();
+  if (stage) stars($('stage'));
+  showPicked();
+  $('stage-hint').textContent = 'Meet ' + picked().name + '! 🎉';
 }
 
 function buy() {
   const item = picked();
+  const state = stateOf(item);
   const button = $('buy');
-  if (coins.owns(item.id)) {
+  if (state === 'ready') {
+    hatch();
+    return;
+  }
+  if (state === 'owned') {
     squish();
     return;
   }
-  if (!coins.spend(item.id, item.price)) {
+  if (state === 'locked' || !coins.spend(item.id, item.price)) {
     button.classList.remove('is-nudged');
     void button.offsetWidth; // restarts the wiggle
     button.classList.add('is-nudged');
     $('stage-hint').textContent = 'Play games to earn more coins!';
     return;
   }
+  refresh();
   sound.coin();
   setTimeout(sound.celebrate, 250);
   confetti();
   squish();
-  $('stage-hint').textContent = 'You got ' + item.name + '! 🎉';
   $('purse').classList.remove('is-paid');
   void $('purse').offsetWidth;
   $('purse').classList.add('is-paid');
   showBalance();
   showPicked();
+  $('stage-hint').textContent = 'You got ' + item.name + '! 🎉';
 }
 
 // Shows another squishy, which hops in with a little wobble.
@@ -122,7 +225,8 @@ function show(n) {
   squishAt = performance.now();
   squishBy = HOP;
   held = null;
-  $('stage-hint').innerHTML = HINT;
+  hatchAt = -1e9;
+  popping = false;
   showPicked();
 }
 
@@ -135,8 +239,14 @@ function letGo() {
   held = null;
 }
 
+// A tap hatches an egg that's ready, and squishes anything else.
+function tapStage() {
+  if (stateOf(picked()) === 'ready') hatch();
+  else squish();
+}
+
 // A swipe's first few pixels decide what it does: sideways spins, up or down
-// stretches or squashes in step with the finger. A tap squishes.
+// stretches or squashes in step with the finger.
 function watchStage() {
   const canvas = $('stage');
   let startX = 0;
@@ -172,7 +282,7 @@ function watchStage() {
     touchedAt = performance.now();
   });
   canvas.addEventListener('pointerup', function () {
-    if (down && moved < 8) squish();
+    if (down && moved < 8) tapStage();
     else letGo();
     down = false;
   });
@@ -209,20 +319,23 @@ document.addEventListener('keydown', function (event) {
 });
 $('buy').addEventListener('click', buy);
 
-// Start on the first squishy Zoe doesn't own yet (or the first one).
-const firstNew = ITEMS.filter(function (item) {
-  return !coins.owns(item.id);
-})[0];
-show(firstNew ? ITEMS.indexOf(firstNew) : 0);
+refresh();
+if (!stage) {
+  const canvas = $('stage');
+  const fallback = document.createElement('div');
+  fallback.className = 'stage-fallback';
+  canvas.parentNode.replaceChild(fallback, canvas);
+}
+// Start on an egg that's ready to hatch, if there is one, then on the first
+// squishy Zoe doesn't own, then on the first.
+const first = ITEMS.filter(function (item) {
+  return stateOf(item) === 'ready';
+})[0] || ITEMS.filter(function (item) {
+  return !owned[item.id];
+})[0] || ITEMS[0];
+show(ITEMS.indexOf(first));
 showBalance();
 if (stage) {
   watchStage();
   requestAnimationFrame(frame);
-} else {
-  const canvas = $('stage');
-  const fallback = document.createElement('div');
-  fallback.className = 'stage-fallback';
-  fallback.textContent = '🐉';
-  canvas.parentNode.replaceChild(fallback, canvas);
-  $('stage-hint').textContent = '';
 }

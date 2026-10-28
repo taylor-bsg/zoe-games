@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.3';
+//   import { createSquishy } from './squishy.js?v=0.7.4';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,8 +20,12 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-// angle turns the dragon (radians); squish squashes it toward the floor (up
-// to about 1) or stretches it up (negative, down to about -0.6). The picture
+//   egg         draws a mystery egg (cream with pastel spots and a big
+//               question mark) instead of a dragon; nothing else is needed
+// angle turns the dragon (radians); tilt rocks it sideways about the spot
+// where it touches the floor (radians, small; used for eggs); squish squashes
+// it toward the floor (up to about 1) or stretches it up (negative, down to
+// about -0.6). The picture
 // fills the canvas's on-screen size, at up to maxRatio pixels per CSS pixel
 // (default 2), with the same zoom for every squishy so that sizes compare.
 
@@ -30,13 +34,18 @@ const VERTEX = 'attribute vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0,
 const FRAGMENT = [
   'precision highp float;',
   'uniform vec2 uRes;',
-  'uniform float uFocal, uAngle, uSquish;',
   // Packed four to a vector, to stay within the 16 uniform vectors every
   // WebGL device has.
+  'uniform vec4 uView;', // zoom, turn, squish, egg
+  'uniform float uTilt;',
   'uniform vec4 uShape;', // size, wing size, tail size, tail tip
   'uniform vec4 uExtras;', // spikes, crown, stars, bow tie
   'uniform vec4 uGear;', // glasses (1 round, 2 sun), headphones, hat, halo
   'uniform vec3 uBody, uBelly, uHorn, uWing, uCheek, uSpike, uEye, uAcc, uAcc2;',
+  '#define FOCAL uView.x',
+  '#define ANGLE uView.y',
+  '#define SQUISH uView.z',
+  '#define EGG uView.w',
   '#define SIZE uShape.x',
   '#define WINGS uShape.y',
   '#define TAIL uShape.z',
@@ -90,20 +99,29 @@ const FRAGMENT = [
   // Melts a part into the shape so far; the closer one gives the material.
   'vec2 add(vec2 a, float d, float m, float k) { return vec2(smin(a.x, d, k), d < a.x ? m : a.y); }',
 
-  // From the world into the dragon's own space: turned, squashed toward the
-  // floor and bulged out (or stretched up for a negative squish), and scaled
-  // to its size, still standing on the floor.
+  // From the world into the dragon's own space: rocked, turned, squashed
+  // toward the floor and bulged out (or stretched up for a negative squish),
+  // and scaled to its size, still standing on the floor.
   'vec3 local(vec3 p) {',
-  '  p.xz = rot(uAngle) * p.xz;',
-  '  p.y = (p.y - FLOOR) / ((1.0 - 0.3 * uSquish) * SIZE) + FLOOR;',
-  '  p.xz /= (1.0 + 0.18 * uSquish) * SIZE;',
+  '  p.xy = rot(uTilt) * (p.xy - vec2(0.0, FLOOR)) + vec2(0.0, FLOOR);',
+  '  p.xz = rot(ANGLE) * p.xz;',
+  '  p.y = (p.y - FLOOR) / ((1.0 - 0.3 * SQUISH) * SIZE) + FLOOR;',
+  '  p.xz /= (1.0 + 0.18 * SQUISH) * SIZE;',
   '  return p;',
   '}',
 
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
-  // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom.
+  // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg.
   'vec2 map(vec3 world) {',
   '  vec3 p = local(world);',
+  // The mystery egg: rounder and wider at the bottom, resting on the floor.
+  // Its taper bends distances a little, so they're scaled down to be safe.
+  '  if (EGG > 0.5) {',
+  '    float y = p.y + 0.06;',
+  '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
+  '    float egg = 0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64));',
+  '    return vec2(egg * SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH), 10.0);',
+  '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
@@ -177,7 +195,7 @@ const FRAGMENT = [
   '  }',
   // Squashing, stretching, and size change distances; scale down to the
   // smallest factor so the march never steps past the surface.
-  '  res.x *= SIZE * min(1.0 - 0.3 * uSquish, 1.0 + 0.18 * uSquish);',
+  '  res.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
   '  return res;',
   '}',
 
@@ -201,8 +219,35 @@ const FRAGMENT = [
 
   'float hash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }',
 
+  'float sdSegment(vec2 p, vec2 a, vec2 b) {',
+  '  vec2 pa = p - a;',
+  '  vec2 ba = b - a;',
+  '  return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));',
+  '}',
+
+  // The egg: cream with pastel spots, and a big question mark on the front.
+  'vec3 eggPaint(vec3 p) {',
+  '  vec3 col = vec3(1.0, 0.96, 0.88);',
+  '  vec3 f = fract(p * 3.2) - 0.5;',
+  '  float h = hash(floor(p * 3.2));',
+  '  if (length(f) < 0.2) col = h > 0.66 ? vec3(0.66, 0.85, 1.0) : (h > 0.33 ? vec3(1.0, 0.78, 0.86) : vec3(0.75, 0.93, 0.78));',
+  '  if (p.z > 0.25) {',
+  '    vec2 g = p.xy;',
+  '    vec2 c = vec2(0.0, 0.22);',
+  '    float a = atan(g.y - c.y, g.x - c.x);',
+  '    float d = (a > 2.75 || a < -0.95) ? 1.0 : abs(length(g - c) - 0.15) - 0.055;', // the hook
+  '    d = min(d, length(g - vec2(-0.139, 0.277)) - 0.055);',
+  '    d = min(d, sdSegment(g, vec2(0.087, 0.098), vec2(0.0, 0.02)) - 0.055);',
+  '    d = min(d, sdSegment(g, vec2(0.0, 0.02), vec2(0.0, -0.06)) - 0.055);', // the stem
+  '    d = min(d, length(g - vec2(0.0, -0.21)) - 0.06);', // the dot
+  '    if (d < 0.0) col = vec3(0.44, 0.28, 0.91);',
+  '  }',
+  '  return col;',
+  '}',
+
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
+  '  if (m > 9.5) return eggPaint(local(world));',
   '  if (m > 8.5) return vec3(1.0, 0.98, 0.95);',
   '  if (m > 7.5) {',
   '    vec3 p = local(world);',
@@ -243,7 +288,7 @@ const FRAGMENT = [
   '  vec3 ww = normalize(vec3(0.0, 0.12, 0.0) - ro);',
   '  vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));',
   '  vec3 vv = cross(uu, ww);',
-  '  vec3 rd = normalize(uv.x * uu + uv.y * vv + uFocal * ww);',
+  '  vec3 rd = normalize(uv.x * uu + uv.y * vv + FOCAL * ww);',
   // Only march rays that hit a sphere around the dragon.
   '  vec3 oc = ro - vec3(0.0, 0.05, -0.05);',
   '  float b = dot(oc, rd);',
@@ -275,10 +320,10 @@ const FRAGMENT = [
   '    }',
   '  }',
   // The floor: a soft round shadow (premultiplied black), sized with the
-  // squishy and wider when squashed.
+  // squishy (smaller under an egg) and wider when squashed.
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * uSquish) * SIZE);',
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? 0.62 : 1.0));',
   '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
@@ -335,7 +380,7 @@ export function createSquishy(canvas, options) {
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   const u = {};
-  ['uRes', 'uFocal', 'uAngle', 'uSquish', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
+  ['uRes', 'uView', 'uTilt', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
     u[name] = gl.getUniformLocation(program, name);
   });
   COLORS.forEach(function (part) {
@@ -360,9 +405,9 @@ export function createSquishy(canvas, options) {
     // turned toward the camera in a full stretch). Each squishy's size in
     // items.js keeps it inside that, checked by rendering every squishy at
     // full squash and stretch, every 6° of turn.
-    gl.uniform1f(u.uFocal, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48));
-    gl.uniform1f(u.uAngle, (state && state.angle) || 0);
-    gl.uniform1f(u.uSquish, (state && state.squish) || 0);
+    gl.uniform4f(u.uView, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48),
+      (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
+    gl.uniform1f(u.uTilt, (state && state.tilt) || 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),

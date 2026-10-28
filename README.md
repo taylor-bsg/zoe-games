@@ -24,7 +24,9 @@ silent mode, so use the speaker button on the main page to mute every game.
 Times Tables and Zoe Spells pay coins: 1 or 2 per right answer in Times
 Tables, and 100–400 for each finished Zoe Spells wall. The Store button on
 the main page shows the coins and leads to the Squishy Store. There, Zoe
-can spin, squish, and buy squishy plush dragons drawn in 3D. The bottom of
+can spin, squish, and buy squishy plush dragons drawn in 3D. Each one stays
+a mystery egg until she has enough coins for it, and then she gets to hatch
+it. The bottom of
 the store shows the coins earned and spent.
 
 ## Test locally

@@ -41,6 +41,12 @@ glasses, sunglasses, headphones, a party hat, a halo, a bow tie, bigger
 wings, and a big tail with a ball on the tip. Four new squishies show the
 flair off. The existing eight keep their names and prices.
 
+> Make it so you can’t see the squish unless you have enough money or you own it
+
+A squishy Zoe doesn't own and can't afford is now a mystery egg. When she
+first has enough coins for one, its egg is ready to hatch: tapping it
+reveals the squishy, which can then be bought.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -76,6 +82,26 @@ flair off. The existing eight keep their names and prices.
   - **Tap:** a quick squish that bounces back, with the squeak.
   - **Which gesture:** the first 10px of a swipe decide whether it spins or
     squashes. The hint reads "Swipe sideways to spin, down to squish!".
+- **Mystery eggs:** what the store shows for each squishy depends on its
+  state.
+  - **Locked** (not owned, not enough coins): a 3D cream egg with pastel
+    spots and a big purple ? that rocks gently. The name reads "Mystery
+    egg", the button "Need 25 more", and the hint "What’s inside? Earn coins
+    to find out!". Tapping the egg squishes it; tapping the button wiggles
+    it and says "Play games to earn more coins!". The price is the only
+    clue.
+  - **Ready** (enough coins, never hatched): the egg wiggles excitedly every
+    1.6 s. The button reads "🥚 Hatch it!" and the hint "It’s ready to hatch!
+    Tap it!". The store opens on a ready egg if there is one.
+  - **Hatching:** a tap on the egg or the button makes it rock harder and
+    harder, peeping three times, for 1.1 s. Then it pops open: the squishy
+    appears with a stretch and a bounce, a fanfare, and stars, and the hint
+    reads "Meet Sprout! 🎉". Hatching waits for a tap partly because iOS
+    only plays sound after one.
+  - **Hatched** (enough coins): the squishy shows as usual and can be bought.
+    If spending later leaves too few coins, it's a locked egg again (as
+    asked). When there are enough again, it shows without hatching.
+  - **Owned:** always visible.
 - **Buying:** "Buy for 75" when there are enough coins, then a "ching",
   the fanfare, confetti, a squish, and "You got Bubblegum! 🎉". The button
   then reads "💖 It’s yours!", and tapping it squishes.
@@ -119,7 +145,7 @@ flair off. The existing eight keep their names and prices.
   - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.
-  - Without WebGL, a 🐉 stands in.
+  - Without WebGL, a 🐉 stands in (a 🥚 for a mystery egg).
   - Every squishy is drawn with the same zoom, so their sizes compare. The
     zoom is set so the largest still fits; each squishy's size in
     `items.js` keeps it inside. A big tail curves up behind, which keeps it
@@ -133,10 +159,13 @@ flair off. The existing eight keep their names and prices.
   - **Draw cost:** the most elaborate squishy (Shade: sunglasses and spikes)
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads.
+  - **The egg:** drawn by the same renderer (`egg` in a look), with the
+    question mark painted on so it turns with the egg. A tilt rocks it about
+    the spot where it touches the floor.
   - **Fit check:** `fit-check.html` (in this folder, not linked from the
-    store) draws every squishy at full squash, full stretch, and rest, every
-    6° of turn, in every store layout, and reports how close each comes to
-    the edge. Run it after changing a size or adding flair. At this change,
+    store) draws every squishy and the egg at full squash, full stretch, and
+    rest, every 6° of turn, in every store layout, and reports how close
+    each comes to the edge. Run it after changing a size or adding flair. At this change,
     the closest was 1.3% of the view's height (Professor and DJ Bop, fully
     stretched).
 - **Head start:** given once, the first time any page loads after the
@@ -144,7 +173,8 @@ flair off. The existing eight keep their names and prices.
   - Zoe Spells: the wall prize for every level below the highest open one.
   - Times Tables: 1 or 2 coins for each saved try under 5 s. Only the last 3
     tries per problem are saved, and wrong tries are saved as 5 s.
-- **Saved data:** under `zoe-games:coins`:
+- **Saved data:** under `zoe-games:store`: `hatched`, the ids of the
+  squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,
     `02-spelling`, and `head start`.
   - `spent`: one `{ item, price, at }` per purchase.
