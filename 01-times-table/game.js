@@ -5,7 +5,8 @@
 import { createKeypad } from '../shared/keypad.js?v=0.7.0';
 import * as sound from '../shared/sound.js?v=0.7.0';
 import * as storage from '../shared/storage.js?v=0.7.0';
-import { stars, zip } from '../shared/celebrate.js?v=0.7.0';
+import * as coins from '../shared/coins.js?v=0.7.0';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.0';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -18,6 +19,7 @@ const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; /
 // 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
 const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
+const PAY = { 10: 1, 15: 2 }; // coins per right answer, by grid size
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear scores';
 
@@ -317,6 +319,9 @@ function right() {
   mark('is-correct');
   sound.correct();
   stars(pad.display);
+  coins.earn(GAME_ID, PAY[saved.size]);
+  const box = pad.display.getBoundingClientRect();
+  floatCoins({ x: box.right, y: box.top }, PAY[saved.size]);
   if (record) say('New record! ' + time, 'record');
   else if (crowned) say('👑 Mastered! ' + time, 'good');
   else say(pick(PRAISE) + ' ' + time, 'good');

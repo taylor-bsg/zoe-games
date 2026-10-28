@@ -71,6 +71,12 @@ Requested 2026-10-26, verbatim:
 
 This replaces "weighted by score" above.
 
+## Coins
+
+Added with the Squishy Store (see `store/SPEC.md`). Every right answer
+earns 1 coin on 10×10 and 2 on 15×15. A "+1" and a gold coin float up from
+the answer box.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
