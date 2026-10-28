@@ -231,8 +231,8 @@ coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
   fanfare, confetti, and "The wall is all gold! The dragon flew away!". It
   stays away while the wall is all gold, and comes back if a gold brick
   slips.
-- **Clearing:** a 1.5 s hold, the same as Times Tables. Every brick goes back
-  to blue (green in level 4) and the dragon returns.
+- **Clearing:** a 1.5 s hold, the same as Zoe Multiplies. Every brick goes
+  back to blue (green in level 4) and the dragon returns.
 - **Levels:** "Level" followed by one round button per level sits above
   Start; the level on screen is dark. The buttons are at least 64px wide and
   wrap to a new row when more levels don't fit. In landscape, "Level" sits

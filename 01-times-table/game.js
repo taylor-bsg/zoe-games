@@ -1,12 +1,12 @@
-// Times Tables: multiplication facts against the clock, on a 10×10 or 15×15
+// Zoe Multiplies: multiplication facts against the clock, on a 10×10 or 15×15
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.5';
-import * as sound from '../shared/sound.js?v=0.7.5';
-import * as storage from '../shared/storage.js?v=0.7.5';
-import * as coins from '../shared/coins.js?v=0.7.5';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.5';
+import { createKeypad } from '../shared/keypad.js?v=0.7.6';
+import * as sound from '../shared/sound.js?v=0.7.6';
+import * as storage from '../shared/storage.js?v=0.7.6';
+import * as coins from '../shared/coins.js?v=0.7.6';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.6';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids

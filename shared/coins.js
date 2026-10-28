@@ -1,7 +1,7 @@
 // Coins: earned by playing games, spent in the store (store/). Shared by
 // every page.
 //
-//   import * as coins from '../shared/coins.js?v=0.7.5';
+//   import * as coins from '../shared/coins.js?v=0.7.6';
 //   coins.earn('01-times-table', 2);  // returns the new balance
 //   coins.balance();                  // earned minus spent
 //   coins.spend('sprout', 50);        // false if it's owned or she can't afford it
@@ -14,7 +14,7 @@
 // coins came from and went. Everything is under one storage key and re-read
 // before every change, so pages never overwrite each other's coins.
 
-import * as storage from './storage.js?v=0.7.5';
+import * as storage from './storage.js?v=0.7.6';
 
 const KEY = 'coins';
 
@@ -98,7 +98,7 @@ export function spend(item, price) {
 
 // One time: coins for progress made before coins existed, at the rates the
 // games pay now. Zoe Spells pays 100 times the level for each wall finished
-// (every level below the highest open one), and Times Tables 1 coin per
+// (every level below the highest open one), and Zoe Multiplies 1 coin per
 // saved right answer, 2 for problems beyond 10 × 10. Its saved tries are
 // the last 3 per problem; wrong ones are saved as 5 s, and so are right ones
 // that took 5 s or more, so only tries under 5 s count. This reads those

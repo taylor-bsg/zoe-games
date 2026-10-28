@@ -1,4 +1,4 @@
-# 01-times-table: Times Tables
+# 01-times-table: Zoe Multiplies
 
 The user's spec, verbatim (2026-10-17):
 
@@ -71,6 +71,14 @@ Requested 2026-10-26, verbatim:
 
 This replaces "weighted by score" above.
 
+Requested 2026-10-28, verbatim:
+
+> Change times tables  to Zoe Multiplies
+
+The game is now called Zoe Multiplies wherever its name shows: the
+launcher tile, the start card, and the page title. Its folder and save key
+stay `01-times-table`, so saved times and coins carry over.
+
 ## Coins
 
 Added with the Squishy Store (see `store/SPEC.md`). Every right answer
@@ -79,7 +87,7 @@ the answer box.
 
 ## Implementation notes
 
-- **Launcher tile:** ✖️ "Times Tables", "Multiply fast!".
+- **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
 - **Start screen:** a title card ("Answer fast to turn the grid green!"),
   the grid, the two size buttons (the chosen one is dark), and Start. The
   Start tap also unlocks sound.

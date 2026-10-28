@@ -1,6 +1,6 @@
 // Per-game save/load on localStorage.
 //
-//   import * as storage from '../shared/storage.js?v=0.7.5';
+//   import * as storage from '../shared/storage.js?v=0.7.6';
 //   const progress = storage.load('01-times-table', { stars: 0 });
 //   progress.stars += 1;
 //   storage.save('01-times-table', progress);

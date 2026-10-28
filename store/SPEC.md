@@ -10,7 +10,7 @@ Answers to questions asked before building:
 
 - **Zoe Spells coins:** only for finishing a wall, as one big prize per
   level: 100, 200, 300, and 400 coins for levels 1–4.
-- **Times Tables coins:** 1 coin per right answer on 10×10, 2 on 15×15.
+- **Zoe Multiplies coins:** 1 coin per right answer on 10×10, 2 on 15×15.
 - **3D:** real 3D, with no library.
 - **Head start:** yes. Progress from before coins existed counts once, at the
   same rates.
@@ -60,7 +60,7 @@ mark.
   the title.
 - **Coins:** a gold coin with a star, drawn in SVG (`coins.ICON`), since
   Apple's 🪙 emoji is a silver coin that looks gray when small.
-  - Earning shows a floating "+N" and a coin. Times Tables floats it from
+  - Earning shows a floating "+N" and a coin. Zoe Multiplies floats it from
     the answer box. Zoe Spells floats it from the tally after the wall
     celebration, plays a "ching", and says "You won 200 coins!".
   - Zoe Spells' start screen shows the level's prize: "Finish the wall to
@@ -185,8 +185,8 @@ mark.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.
-  - Times Tables: 1 or 2 coins for each saved try under 5 s. Only the last 3
-    tries per problem are saved, and wrong tries are saved as 5 s.
+  - Zoe Multiplies: 1 or 2 coins for each saved try under 5 s. Only the
+    last 3 tries per problem are saved, and wrong tries are saved as 5 s.
 - **Saved data:** under `zoe-games:store`: `hatched`, the ids of the
   squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,
