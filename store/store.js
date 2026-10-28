@@ -1,30 +1,37 @@
 // The Squishy Store: spend the coins earned in the games on squishy plush
-// dragons, drawn in real 3D. See SPEC.md. The big view spins when dragged and
-// squishes when tapped; the shelf below shows every squishy, with a check on
-// the ones Zoe owns.
+// dragons, drawn in real 3D. See SPEC.md. One squishy fills the store at a
+// time: arrows go to the others, a drag spins it, and a tap squishes it. The
+// dots show which one this is, gold for the ones Zoe owns.
 
-import * as coins from '../shared/coins.js?v=0.7.0';
-import * as sound from '../shared/sound.js?v=0.7.0';
-import { confetti } from '../shared/celebrate.js?v=0.7.0';
-import { createSquishy } from './squishy.js?v=0.7.0';
-import { ITEMS } from './items.js?v=0.7.0';
+import * as coins from '../shared/coins.js?v=0.7.1';
+import * as sound from '../shared/sound.js?v=0.7.1';
+import { confetti } from '../shared/celebrate.js?v=0.7.1';
+import { createSquishy } from './squishy.js?v=0.7.1';
+import { ITEMS } from './items.js?v=0.7.1';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
 const DRAG = 0.012; // radians per pixel dragged
 const IDLE_FRAME = 33; // ms between pictures while just spinning: 30 a second, easy on older iPads
+const SQUISH = 0.55; // how hard a tap squishes
+const HOP = 0.3; // how much a squishy wobbles when it appears
 
 function $(id) {
   return document.getElementById(id);
 }
 
-let picked = ITEMS[0];
+let index = 0; // which squishy is showing
 let angle = 0.5;
 let squishAt = -1e9; // when the last squish started (ms)
+let squishBy = SQUISH;
 let touchedAt = -1e9; // when the stage was last dragged
 let lastFrame = 0;
 let lastDraw = 0;
-const stage = createSquishy($('stage'), { maxRatio: 1.5 });
+const stage = createSquishy($('stage'), { maxRatio: 1.25 });
+
+function picked() {
+  return ITEMS[index];
+}
 
 function showBalance() {
   const t = coins.totals();
@@ -35,7 +42,7 @@ function showBalance() {
 // A wobbly squash: squished at first, then bouncing back.
 function squishAmount(now) {
   const t = (now - squishAt) / 1000;
-  return t < 1.6 ? 0.55 * Math.exp(-4.5 * t) * Math.cos(14 * t) : 0;
+  return t < 1.6 ? squishBy * Math.exp(-4.5 * t) * Math.cos(14 * t) : 0;
 }
 
 function frame(now) {
@@ -44,7 +51,7 @@ function frame(now) {
   const idle = now - touchedAt > IDLE_AFTER && now - squishAt > 1600;
   if (now - touchedAt > IDLE_AFTER) angle += SPIN * dt;
   if (stage && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
-    stage.draw(picked.look, { angle: angle, squish: squishAmount(now) });
+    stage.draw(picked().look, { angle: angle, squish: squishAmount(now) });
     lastDraw = now;
   }
   requestAnimationFrame(frame);
@@ -52,42 +59,35 @@ function frame(now) {
 
 function squish() {
   squishAt = performance.now();
+  squishBy = SQUISH;
   sound.squeak();
 }
 
 function showPicked() {
-  const owned = coins.owns(picked.id);
-  const short = picked.price - coins.balance();
+  const item = picked();
+  const owned = coins.owns(item.id);
+  const short = item.price - coins.balance();
   const buy = $('buy');
-  $('stage-name').textContent = picked.name;
+  $('stage-name').textContent = item.name;
   buy.classList.toggle('is-owned', owned);
   buy.classList.toggle('is-short', !owned && short > 0);
   if (owned) buy.textContent = '💖 It’s yours!';
   else if (short > 0) buy.innerHTML = 'Need ' + short + ' more ' + coins.ICON;
-  else buy.innerHTML = 'Buy for ' + picked.price + ' ' + coins.ICON;
-  Array.prototype.forEach.call($('shelf').children, function (card) {
-    card.classList.toggle('is-picked', card.getAttribute('data-id') === picked.id);
-  });
-}
-
-function showShelf() {
-  Array.prototype.forEach.call($('shelf').children, function (card) {
-    const item = ITEMS.filter(function (i) {
-      return i.id === card.getAttribute('data-id');
-    })[0];
-    const owned = coins.owns(item.id);
-    card.classList.toggle('is-owned', owned);
-    card.querySelector('.item-price').innerHTML = owned ? '✓ Mine' : item.price + ' ' + coins.ICON;
+  else buy.innerHTML = 'Buy for ' + item.price + ' ' + coins.ICON;
+  Array.prototype.forEach.call($('dots').children, function (dot, i) {
+    dot.classList.toggle('is-here', i === index);
+    dot.classList.toggle('is-owned', coins.owns(ITEMS[i].id));
   });
 }
 
 function buy() {
+  const item = picked();
   const button = $('buy');
-  if (coins.owns(picked.id)) {
+  if (coins.owns(item.id)) {
     squish();
     return;
   }
-  if (!coins.spend(picked.id, picked.price)) {
+  if (!coins.spend(item.id, item.price)) {
     button.classList.remove('is-nudged');
     void button.offsetWidth; // restarts the wiggle
     button.classList.add('is-nudged');
@@ -98,56 +98,23 @@ function buy() {
   setTimeout(sound.celebrate, 250);
   confetti();
   squish();
-  $('stage-hint').textContent = 'You got ' + picked.name + '! 🎉';
+  $('stage-hint').textContent = 'You got ' + item.name + '! 🎉';
   $('purse').classList.remove('is-paid');
   void $('purse').offsetWidth;
   $('purse').classList.add('is-paid');
   showBalance();
-  showShelf();
   showPicked();
 }
 
-function pick(item) {
-  picked = item;
+// Shows another squishy, which hops in with a little wobble.
+function show(n) {
+  index = (n + ITEMS.length) % ITEMS.length;
   angle = 0.5;
   touchedAt = -1e9;
+  squishAt = performance.now();
+  squishBy = HOP;
   $('stage-hint').textContent = 'Drag to spin. Tap to squish!';
   showPicked();
-}
-
-// The shelf's pictures come from one hidden 3D canvas, copied into images.
-function buildShelf() {
-  const shelf = $('shelf');
-  const painter = createSquishy(document.createElement('canvas'), { preserve: true });
-  ITEMS.forEach(function (item) {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'btn item';
-    card.setAttribute('data-id', item.id);
-    let picture;
-    if (painter) {
-      painter.draw(item.look, { angle: 0.55, pixels: [240, 168] });
-      picture = document.createElement('img');
-      picture.src = painter.canvas.toDataURL('image/png');
-      picture.alt = '';
-    } else {
-      picture = document.createElement('span');
-      picture.className = 'item-fallback';
-      picture.textContent = '🐉';
-    }
-    const name = document.createElement('span');
-    name.className = 'item-name';
-    name.textContent = item.name;
-    const price = document.createElement('span');
-    price.className = 'item-price';
-    card.appendChild(picture);
-    card.appendChild(name);
-    card.appendChild(price);
-    card.addEventListener('click', function () {
-      pick(item);
-    });
-    shelf.appendChild(card);
-  });
 }
 
 // Drag to spin; a tap without much dragging squishes.
@@ -163,7 +130,11 @@ function watchStage() {
     startAngle = angle;
     moved = 0;
     touchedAt = performance.now();
-    if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+    try {
+      canvas.setPointerCapture(event.pointerId); // keep the drag even off the canvas
+    } catch (e) {
+      // The touch already ended; nothing to capture.
+    }
   });
   canvas.addEventListener('pointermove', function (event) {
     if (!down) return;
@@ -189,14 +160,30 @@ $('stage').addEventListener('pointerup', function () {
   sound.unlock();
 });
 
+ITEMS.forEach(function () {
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  $('dots').appendChild(dot);
+});
+$('prev').addEventListener('click', function () {
+  show(index - 1);
+});
+$('next').addEventListener('click', function () {
+  show(index + 1);
+});
+// Arrow keys too, for trying it on a laptop.
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'ArrowLeft') show(index - 1);
+  else if (event.key === 'ArrowRight') show(index + 1);
+});
 $('buy').addEventListener('click', buy);
-buildShelf();
-// Start on the first squishy she doesn't own yet (or the first one).
-pick(ITEMS.filter(function (item) {
+
+// Start on the first squishy Zoe doesn't own yet (or the first one).
+const firstNew = ITEMS.filter(function (item) {
   return !coins.owns(item.id);
-})[0] || ITEMS[0]);
+})[0];
+show(firstNew ? ITEMS.indexOf(firstNew) : 0);
 showBalance();
-showShelf();
 if (stage) {
   watchStage();
   requestAnimationFrame(frame);

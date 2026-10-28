@@ -4,24 +4,23 @@
 // functions and ray-marched in a fragment shader, then lit like soft fabric.
 // The face and belly are painted on by position, so they turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.0';
-//   const view = createSquishy(canvas, { preserve: false }); // null without WebGL
+//   import { createSquishy } from './squishy.js?v=0.7.1';
+//   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
 // A look is colors (hex strings: body, belly, horn, wing, cheek, spike, eye)
 // and features (spikes, crown, stars: true or false). angle turns the dragon
 // (radians); squish squashes it toward the floor (0 to 0.6) or stretches it
-// up (negative). The picture fills the canvas's on-screen size, or
-// state.pixels ([width, height]) for a canvas that isn't on screen. With
-// preserve: true the canvas keeps its picture, so canvas.toDataURL() can
-// copy it.
+// up (negative). The picture fills the canvas's on-screen size, at up to
+// maxRatio pixels per CSS pixel (default 2), and the dragon is zoomed to be
+// as big as fits.
 
 const VERTEX = 'attribute vec2 aPos; void main() { gl_Position = vec4(aPos, 0.0, 1.0); }';
 
 const FRAGMENT = [
   'precision highp float;',
   'uniform vec2 uRes;',
-  'uniform float uAngle, uSquish, uSpikes, uCrown, uStars;',
+  'uniform float uFocal, uAngle, uSquish, uSpikes, uCrown, uStars;',
   'uniform vec3 uBody, uBelly, uHorn, uWing, uCheek, uSpike, uEye;',
   'const float FLOOR = -0.86;',
 
@@ -156,7 +155,7 @@ const FRAGMENT = [
   '  vec3 ww = normalize(vec3(0.0, 0.02, 0.0) - ro);',
   '  vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));',
   '  vec3 vv = cross(uu, ww);',
-  '  vec3 rd = normalize(uv.x * uu + uv.y * vv + 2.15 * ww);',
+  '  vec3 rd = normalize(uv.x * uu + uv.y * vv + uFocal * ww);',
   // Only march rays that hit a sphere around the dragon.
   '  vec3 oc = ro - vec3(0.0, 0.05, -0.05);',
   '  float b = dot(oc, rd);',
@@ -216,8 +215,7 @@ export function createSquishy(canvas, options) {
   const opts = options || {};
   let gl = null;
   try {
-    gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false,
-      preserveDrawingBuffer: !!opts.preserve });
+    gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
   } catch (e) {
     gl = null;
   }
@@ -239,7 +237,7 @@ export function createSquishy(canvas, options) {
   const aPos = gl.getAttribLocation(program, 'aPos');
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-  const names = ['uRes', 'uAngle', 'uSquish', 'uSpikes', 'uCrown', 'uStars', 'uBody', 'uBelly',
+  const names = ['uRes', 'uFocal', 'uAngle', 'uSquish', 'uSpikes', 'uCrown', 'uStars', 'uBody', 'uBelly',
     'uHorn', 'uWing', 'uCheek', 'uSpike', 'uEye'];
   const u = {};
   names.forEach(function (name) {
@@ -249,15 +247,17 @@ export function createSquishy(canvas, options) {
 
   function draw(look, state) {
     const ratio = Math.min(window.devicePixelRatio || 1, maxRatio);
-    const size = state && state.pixels;
-    const width = Math.max(1, Math.round(size ? size[0] : canvas.clientWidth * ratio));
-    const height = Math.max(1, Math.round(size ? size[1] : canvas.clientHeight * ratio));
+    const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+    const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
     }
     gl.viewport(0, 0, width, height);
     gl.uniform2f(u.uRes, width, height);
+    // Zoom in as far as the dragon still fits: about 1.2 units either side
+    // of center (wings and tail as it turns), and 3.7 units from the camera.
+    gl.uniform1f(u.uFocal, Math.min(3.1, (3.7 * width) / height / 1.2));
     gl.uniform1f(u.uAngle, (state && state.angle) || 0);
     gl.uniform1f(u.uSquish, (state && state.squish) || 0);
     gl.uniform1f(u.uSpikes, look.spikes ? 1 : 0);

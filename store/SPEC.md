@@ -19,6 +19,15 @@ Stated before building: "Squishmallows" is a brand name and this site is
 public, so the store sells original squishy plush dragons modeled on the
 game's dragons, called squishy dragons.
 
+## Changes
+
+Requested by the user, verbatim (2026-10-28):
+
+> The store is cute but crowded. Instead of having all of the critters at the bottom have arrow buttons to go to the next critter. Then you can display the critter much larger.
+
+The shelf of all eight is gone. One squishy fills the store, with ◀ ▶ arrows
+to the others, and it's drawn about twice as tall as before.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -31,11 +40,17 @@ game's dragons, called squishy dragons.
     celebration, plays a "ching", and says "You won 200 coins!".
   - Zoe Spells' start screen shows the level's prize: "Finish the wall to
     win 200" or "Wall prize won: 200 ✓".
-- **Store layout:** a big view of one squishy (name, a hint, and a buy
-  button) and a shelf of all eight as cards (picture, name, price, or "✓
-  Mine"). Landscape puts them side by side; portrait puts the shelf under
-  the big view. "My coins" is in the top bar, and "Earned … · Spent …" sits
-  at the bottom.
+- **Store layout:** one squishy at a time, as big as fits, between round
+  yellow ◀ ▶ arrows (80px). The arrows wrap around from the last squishy to
+  the first, and the left and right arrow keys work too, for a laptop.
+  - Under the squishy (beside it in landscape): the name, a dot for each of
+    the eight (the one on screen is ringed, owned ones are gold), a hint,
+    and the buy button.
+  - On phone-sized screens the arrows float over the edges of the view.
+  - "My coins" is in the top bar, and "Earned … · Spent …" sits at the
+    bottom.
+  - A new squishy hops in with a little wobble, facing three-quarters
+    forward.
 - **Big view:** the squishy spins slowly. A drag turns it, and it starts
   spinning again 2.5 s after the drag ends. A tap squishes it: a wobbly
   squash that bounces back, with a squeaky-toy sound.
@@ -67,11 +82,11 @@ game's dragons, called squishy dragons.
     and a faint fuzz.
   - The face (eyes, cheeks, a smile) and the belly are painted on, so they
     turn with the body.
-  - The big view renders at up to 1.5× pixel density and 30 frames a second
+  - The camera zooms in as far as the squishy still fits the view's shape,
+    wings and tail included.
+  - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.
-  - The shelf pictures are drawn once with the same renderer and copied into
-    images.
   - Without WebGL, a 🐉 stands in.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.

@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.7.0">
+  <link rel="stylesheet" href="../shared/base.css?v=0.7.1">
   <style>
     .purse {
       display: flex;
@@ -47,52 +47,121 @@
       width: var(--tap);
     }
 
-    .shop {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      grid-template-rows: minmax(0, 1fr) auto;
-      gap: 16px;
-      margin-top: 12px;
-    }
-
-    @media (orientation: landscape) {
-      .shop {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr);
-      }
-    }
-
-    /* The big view of one squishy: drag to spin, tap to squish. */
+    /* One squishy at a time, as big as fits, with arrows to the others.
+       Landscape puts the name and buy button beside it. */
     .stage {
+      flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 10px;
-      padding: 12px 20px 18px;
+      margin-top: 12px;
+      padding: 12px 12px 18px;
       text-align: center;
     }
 
-    .stage-canvas {
+    @media (orientation: landscape) {
+      .stage {
+        flex-direction: row;
+        padding: 12px 24px 12px 12px;
+      }
+    }
+
+    .stage-row {
       flex: 1;
+      min-width: 0;
       min-height: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* The canvas sits in a box and never sizes itself, so drawing at the
+       box's size can't make the box grow. */
+    .canvas-box {
+      flex: 1;
+      min-width: 0;
+      align-self: stretch;
+      position: relative;
+    }
+
+    .stage-canvas,
+    .stage-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
+      height: 100%;
+    }
+
+    .stage-canvas {
       touch-action: none;
       cursor: grab;
     }
 
     .stage-fallback {
-      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 140px;
+      font-size: 160px;
+    }
+
+    .arrow {
+      flex: none;
+      width: 80px;
+      height: 80px;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .arrow svg {
+      width: 46%;
+      height: 46%;
+    }
+
+    .info {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    @media (orientation: landscape) {
+      .info {
+        width: 310px;
+      }
     }
 
     .stage-name {
-      font-size: 34px;
+      font-size: 40px;
       font-weight: 900;
+      line-height: 1.1;
+    }
+
+    /* Which squishy this is: one dot each; owned ones are gold. */
+    .dots {
+      display: flex;
+      gap: 10px;
+      margin: 2px 0 4px;
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #d6ddf5;
+      transition: transform 0.2s ease;
+    }
+
+    .dot.is-owned {
+      background: var(--sun);
+    }
+
+    .dot.is-here {
+      transform: scale(1.45);
+      box-shadow: 0 0 0 2px var(--ink);
     }
 
     .stage-hint {
@@ -101,7 +170,7 @@
       opacity: 0.75;
     }
 
-    .stage .btn {
+    .buy {
       width: 100%;
       font-size: clamp(28px, 4.4vmin, 40px);
       white-space: nowrap;
@@ -121,75 +190,32 @@
       animation: wiggle 0.45s ease;
     }
 
-    /* The squishies for sale. */
-    .shelf {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      align-content: center;
-    }
-
-    @media (orientation: landscape) {
-      .shelf {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    .item {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      min-height: 0;
-      padding: 6px 6px 10px;
-      border-radius: 22px;
-      background: var(--white);
-      font-size: 20px;
-    }
-
-    .item.is-picked {
-      box-shadow: 0 0 0 5px var(--sun), var(--shadow);
-    }
-
-    .item img,
-    .item .item-fallback {
-      width: 100%;
-      max-width: 120px;
-      height: 84px;
-      object-fit: contain;
-      font-size: 56px;
-      line-height: 84px;
-    }
-
-    .item-name {
-      font-weight: 800;
-      line-height: 1.1;
-    }
-
-    .item-price {
-      font-size: 18px;
-      opacity: 0.8;
-    }
-
-    .item.is-owned .item-price {
-      color: var(--good);
-      opacity: 1;
-    }
-
-    /* Phone-sized screens: smaller shelf labels so long names fit. */
+    /* Phone-sized screens: the arrows float over the edges of the view, so
+       the squishy keeps the whole width. */
     @media (max-width: 500px) {
-      .shelf {
-        gap: 8px;
+      .stage-row {
+        position: relative;
       }
 
-      .item {
-        padding: 4px 2px 8px;
-        font-size: 15px;
+      .arrow {
+        position: absolute;
+        z-index: 1;
+        top: 50%;
+        width: var(--tap);
+        height: var(--tap);
+        margin-top: calc(var(--tap) / -2);
       }
 
-      .item-price {
-        font-size: 14px;
+      #prev {
+        left: 0;
+      }
+
+      #next {
+        right: 0;
+      }
+
+      .stage-name {
+        font-size: 32px;
       }
     }
 
@@ -212,18 +238,30 @@
       <div class="topbar-balance"></div>
     </header>
 
-    <main class="shop">
-      <section class="card stage">
-        <canvas class="stage-canvas" id="stage" aria-hidden="true"></canvas>
+    <main class="card stage">
+      <div class="stage-row">
+        <button type="button" class="btn arrow" id="prev" aria-label="Previous squishy">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3.4"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5L7.5 12 15 19.5"/></svg>
+        </button>
+        <div class="canvas-box">
+          <canvas class="stage-canvas" id="stage" aria-hidden="true"></canvas>
+        </div>
+        <button type="button" class="btn arrow" id="next" aria-label="Next squishy">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3.4"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5l7.5 7.5L9 19.5"/></svg>
+        </button>
+      </div>
+      <div class="info">
         <p class="stage-name" id="stage-name"></p>
+        <div class="dots" id="dots" aria-hidden="true"></div>
         <p class="stage-hint" id="stage-hint">Drag to spin. Tap to squish!</p>
         <button type="button" class="btn btn-big buy" id="buy"></button>
-      </section>
-      <section class="shelf" id="shelf"></section>
+      </div>
     </main>
     <p class="ledger" id="ledger"></p>
   </div>
 
-  <script type="module" src="store.js?v=0.7.0"></script>
+  <script type="module" src="store.js?v=0.7.1"></script>
 </body>
 </html>
