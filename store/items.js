@@ -49,8 +49,8 @@ export const ITEMS = [
   },
   {
     id: 'galaxy', name: 'Galaxy', price: 250,
-    look: { size: 0.9, body: '#5f3dc4', belly: '#9775fa', horn: '#ffd43b', wing: '#845ef7',
-      cheek: '#f783ac', spike: '#ffd43b', eye: '#1d2b53', stars: true, wings: 1.5 },
+    look: { size: 1, body: '#5f3dc4', belly: '#9775fa', horn: '#ffd43b', wing: '#845ef7',
+      cheek: '#f783ac', spike: '#ffd43b', eye: '#1d2b53', stars: true, wings: 1.3, heads: 2 },
   },
   {
     id: 'dj', name: 'DJ Bop', price: 275,

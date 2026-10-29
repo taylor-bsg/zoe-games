@@ -55,8 +55,17 @@ mark.
 
 > Make the squisheggs sized according to how big the squishdragon is.
 
-Each egg is now scaled by its squishy's size, from 82% (Sprout's) to 100%
-(Professor's and DJ Bop's).
+Each egg is now scaled by its squishy's size, from 82% (Sprout's) to
+100%.
+
+> Make one of the dragons have two heads
+
+Galaxy now has two heads, each with its own face and horns. Galaxy got them
+because it's one of the pricier squishies and isn't a copy of a Zoe Spells
+dragon, while most of the others wear something on the head (glasses,
+headphones, a hat, a halo, a crown). It's now full size, with slightly
+smaller wings, so it doesn't look smaller than its neighbors and still
+fits the view.
 
 ## Implementation notes
 
@@ -136,7 +145,7 @@ Each egg is now scaled by its squishy's size, from 82% (Sprout's) to 100%
   | Ember | 150 | 94% | Red, like the level 3 dragon; bigger wings |
   | Shade | 200 | 96% | Shadow purple, like the level 4 dragon; pink sunglasses |
   | Professor | 225 | 100% | Mint; round glasses and a red bow tie (new) |
-  | Galaxy | 250 | 90% | Purple with gold stars; big wings |
+  | Galaxy | 250 | 100% | Purple with gold stars; two heads, and bigger wings |
   | DJ Bop | 275 | 100% | Cyan with pink spikes; headphones (new) |
   | Party Puff | 300 | 87% | Orange; a striped party hat with a pom-pom (new) |
   | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
@@ -144,10 +153,12 @@ Each egg is now scaled by its squishy's size, from 82% (Sprout's) to 100%
 
   - Squishies with big flair (wings, hats, tails) are a little smaller, so
     the flair still fits the view; the flair makes them look grander anyway.
+    Galaxy is full size: its two heads stand no taller than one head would.
   - All twelve cost 2,450 coins. The four Zoe Spells walls pay 1,000.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
-  feet, a tail, horns, small wings, and spikes or a crown on some.
+  feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy
+  has two heads on its body instead (see Flair parts).
   - It's lit like soft fabric: wrapped light, darker creases, a rim glow,
     and a faint fuzz.
   - The face (eyes, cheeks, a smile) and the belly are painted on, so they
@@ -172,9 +183,16 @@ Each egg is now scaled by its squishy's size, from 82% (Sprout's) to 100%
     horns, and two cups. The party hat is striped, with a white pom-pom. The
     halo is a tilted ring that glows. The bow tie is two bows and a knot
     under the smile.
+  - **Two heads** (`heads: 2`): a lower body with a round head melted onto
+    each side of its top, with a neck. The heads turn a little apart and tip
+    out. Each has its own painted face, at 60% of the usual size, and two
+    small horns; the belly is painted on the body. Spikes, crown, glasses,
+    headphones, hat, and halo are placed for one head, so a two-headed
+    squishy can't wear them yet.
   - **Draw cost:** the most elaborate squishy (Shade: sunglasses and spikes)
     takes about 1.3× as long to draw as a plain one. The glasses are only
-    worked out near the face, which keeps that down on older iPads.
+    worked out near the face, which keeps that down on older iPads. Two
+    heads cost little: Galaxy draws in about 1.1× plain Sprout's time.
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes

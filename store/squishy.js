@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.7';
+//   import { createSquishy } from './squishy.js?v=0.7.8';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,6 +20,9 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
+//   heads       2 for two heads, each with a face and horns, on a lower
+//               body. Spikes, crown, glasses, headphones, hat, and halo are
+//               placed for one head.
 //   egg         draws a mystery egg instead of a dragon, at the look's size:
 //               body color, spots in the belly, wing, and spike colors (gold
 //               stars if stars), and a big question mark in the eye color.
@@ -39,7 +42,7 @@ const FRAGMENT = [
   // Packed four to a vector, to stay within the 16 uniform vectors every
   // WebGL device has.
   'uniform vec4 uView;', // zoom, turn, squish, egg
-  'uniform float uTilt;',
+  'uniform vec4 uMore;', // tilt, two heads, and two to spare
   'uniform vec4 uShape;', // size, wing size, tail size, tail tip
   'uniform vec4 uExtras;', // spikes, crown, stars, bow tie
   'uniform vec4 uGear;', // glasses (1 round, 2 sun), headphones, hat, halo
@@ -60,6 +63,8 @@ const FRAGMENT = [
   '#define HEADPHONES uGear.y',
   '#define HAT uGear.z',
   '#define HALO uGear.w',
+  '#define TILT uMore.x',
+  '#define TWO_HEADS uMore.y',
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -105,11 +110,21 @@ const FRAGMENT = [
   // toward the floor and bulged out (or stretched up for a negative squish),
   // and scaled to its size, still standing on the floor.
   'vec3 local(vec3 p) {',
-  '  p.xy = rot(uTilt) * (p.xy - vec2(0.0, FLOOR)) + vec2(0.0, FLOOR);',
+  '  p.xy = rot(TILT) * (p.xy - vec2(0.0, FLOOR)) + vec2(0.0, FLOOR);',
   '  p.xz = rot(ANGLE) * p.xz;',
   '  p.y = (p.y - FLOOR) / ((1.0 - 0.3 * SQUISH) * SIZE) + FLOOR;',
   '  p.xz /= (1.0 + 0.18 * SQUISH) * SIZE;',
   '  return p;',
+  '}',
+
+  // A two-headed dragon's head on this side (q is the dragon's space with x
+  // made positive), in the head's own space: centered, turned a little away
+  // from the other head, and tipped out.
+  'vec3 headSpace(vec3 q) {',
+  '  vec3 h = q - vec3(0.46, 0.46, 0.16);',
+  '  h.xz = rot(0.25) * h.xz;',
+  '  h.xy = rot(0.15) * h.xy;',
+  '  return h;',
   '}',
 
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
@@ -140,19 +155,29 @@ const FRAGMENT = [
   '    return egg;',
   '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
-  '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
+  // With one head, the round body is the head. Two heads sit on a lower
+  // body, melted on at the neck, each with its own little horns.
+  '  float body = TWO_HEADS > 0.5 ? sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8)) :',
+  '    sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
   '  vec2 res = vec2(body, 1.0);',
+  '  if (TWO_HEADS > 0.5) {',
+  '    vec3 h = headSpace(q);',
+  '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.49, 0.45, 0.45)), 0.12);',
+  '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
+  '    res = add(res, sdRoundCone(hq, vec3(0.15, 0.3, -0.02), vec3(0.23, 0.52, -0.07), 0.075, 0.028), 2.0, 0.04);',
+  '  } else {',
+  '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
+  '  }',
   '  res.x = smin(res.x, sdEllipsoid(q - vec3(0.42, -0.72, 0.42), vec3(0.22, 0.13, 0.2)), 0.08);',
   // The tail: a big one is longer and thicker, curving up behind (which also
   // keeps it inside the view), maybe with a ball on the tip.
   '  vec3 tip = vec3(0.0, -0.5, -0.66) + vec3(0.0, 0.2 + 0.6 * (TAIL - 1.0), -0.44 - 0.1 * (TAIL - 1.0));',
   '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), tip, 0.18 * min(TAIL, 1.3), 0.06 * TAIL), 0.1);',
   '  if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
-  '  res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   // Wings: bigger ones reach further up and out.
   '  float big = WINGS - 1.0;',
-  '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big, -0.44 - 0.08 * big);',
+  '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big - 0.18 * TWO_HEADS, -0.44 - 0.08 * big);',
   '  w.xy = rot(-0.5 - 0.15 * big) * w.xy;',
   '  w.xz = rot(0.5) * w.xz;',
   '  res = add(res, sdEllipsoid(w, vec3(0.08 + 0.03 * big, 0.34 * WINGS, 0.26 * WINGS)), 3.0, 0.06);',
@@ -268,6 +293,20 @@ const FRAGMENT = [
   '  return col;',
   '}',
 
+  // A face, at the size of a one-headed dragon's: cheeks, eyes with a shine,
+  // and a smile.
+  'vec3 face(vec2 f, vec3 col) {',
+  '  vec2 e = vec2(abs(f.x), f.y);',
+  '  if (length((e - vec2(0.56, -0.1)) / vec2(0.12, 0.07)) < 1.0) col = uCheek;',
+  '  if (length((e - vec2(0.31, 0.12)) / vec2(0.085, 0.115)) < 1.0) {',
+  '    col = uEye;',
+  '    if (length(e - vec2(0.29, 0.17)) < 0.035) col = vec3(1.0);',
+  '  }',
+  '  float arc = abs(length(f - vec2(0.0, 0.03)) - 0.12);',
+  '  if (f.y < -0.03 && arc < 0.017) col = mix(uEye, uBody, 0.25);',
+  '  return col;',
+  '}',
+
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
   '  if (m > 9.5) return eggPaint(local(world));',
@@ -289,17 +328,13 @@ const FRAGMENT = [
   '    vec3 f = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.55 && length(f) < 0.17) col = vec3(1.0, 0.96, 0.75);',
   '  }',
-  '  if (p.z > 0.15) {',
-  '    vec2 f = p.xy;',
-  '    vec2 e = vec2(abs(f.x), f.y);',
-  '    if (length((f - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
-  '    if (length((e - vec2(0.56, -0.1)) / vec2(0.12, 0.07)) < 1.0) col = uCheek;',
-  '    if (length((e - vec2(0.31, 0.12)) / vec2(0.085, 0.115)) < 1.0) {',
-  '      col = uEye;',
-  '      if (length(e - vec2(0.29, 0.17)) < 0.035) col = vec3(1.0);',
-  '    }',
-  '    float arc = abs(length(f - vec2(0.0, 0.03)) - 0.12);',
-  '    if (f.y < -0.03 && arc < 0.017) col = mix(uEye, uBody, 0.25);',
+  '  if (TWO_HEADS > 0.5) {',
+  '    if (p.z > 0.15 && length((p.xy - vec2(0.0, -0.4)) / vec2(0.44, 0.27)) < 1.0) col = uBelly;',
+  '    vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
+  '    if (h.z > 0.15) col = face(h.xy / 0.6, col);',
+  '  } else if (p.z > 0.15) {',
+  '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
+  '    col = face(p.xy, col);',
   '  }',
   '  return col;',
   '}',
@@ -403,7 +438,7 @@ export function createSquishy(canvas, options) {
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   const u = {};
-  ['uRes', 'uView', 'uTilt', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
+  ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
     u[name] = gl.getUniformLocation(program, name);
   });
   COLORS.forEach(function (part) {
@@ -430,7 +465,7 @@ export function createSquishy(canvas, options) {
     // full squash and stretch, every 6° of turn.
     gl.uniform4f(u.uView, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
-    gl.uniform1f(u.uTilt, (state && state.tilt) || 0);
+    gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), 0, 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),
