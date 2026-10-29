@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.8';
+//   import { createSquishy } from './squishy.js?v=0.7.9';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,9 +20,9 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-//   heads       2 for two heads, each with a face and horns, on a lower
-//               body. Spikes, crown, glasses, headphones, hat, and halo are
-//               placed for one head.
+//   heads       2 for two heads up on long, skinny necks, each with a face
+//               and horns. Spikes, crown, glasses, headphones, hat, and halo
+//               are placed for one head.
 //   egg         draws a mystery egg instead of a dragon, at the look's size:
 //               body color, spots in the belly, wing, and spike colors (gold
 //               stars if stars), and a big question mark in the eye color.
@@ -121,9 +121,9 @@ const FRAGMENT = [
   // made positive), in the head's own space: centered, turned a little away
   // from the other head, and tipped out.
   'vec3 headSpace(vec3 q) {',
-  '  vec3 h = q - vec3(0.46, 0.46, 0.16);',
-  '  h.xz = rot(0.25) * h.xz;',
-  '  h.xy = rot(0.15) * h.xy;',
+  '  vec3 h = q - vec3(0.57, 1.02, 0.24);',
+  '  h.xz = rot(0.35) * h.xz;',
+  '  h.xy = rot(0.12) * h.xy;',
   '  return h;',
   '}',
 
@@ -155,17 +155,18 @@ const FRAGMENT = [
   '    return egg;',
   '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
-  // With one head, the round body is the head. Two heads sit on a lower
-  // body, melted on at the neck, each with its own little horns.
+  // With one head, the round body is the head. Two heads sit up on long,
+  // skinny necks from a lower body, each with its own little horns.
   '  float body = TWO_HEADS > 0.5 ? sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8)) :',
   '    sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
   '  vec2 res = vec2(body, 1.0);',
   '  if (TWO_HEADS > 0.5) {',
+  '    res.x = smin(res.x, sdRoundCone(q, vec3(0.24, 0.25, 0.04), vec3(0.53, 0.86, 0.2), 0.13, 0.08), 0.12);',
   '    vec3 h = headSpace(q);',
-  '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.49, 0.45, 0.45)), 0.12);',
+  '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.39, 0.35, 0.35)), 0.06);',
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
-  '    res = add(res, sdRoundCone(hq, vec3(0.15, 0.3, -0.02), vec3(0.23, 0.52, -0.07), 0.075, 0.028), 2.0, 0.04);',
+  '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
   '  } else {',
   '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   '  }',
@@ -331,7 +332,7 @@ const FRAGMENT = [
   '  if (TWO_HEADS > 0.5) {',
   '    if (p.z > 0.15 && length((p.xy - vec2(0.0, -0.4)) / vec2(0.44, 0.27)) < 1.0) col = uBelly;',
   '    vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
-  '    if (h.z > 0.15) col = face(h.xy / 0.6, col);',
+  '    if (h.z > 0.1) col = face(h.xy / 0.47, col);',
   '  } else if (p.z > 0.15) {',
   '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
   '    col = face(p.xy, col);',
@@ -458,12 +459,12 @@ export function createSquishy(canvas, options) {
     gl.uniform2f(u.uRes, width, height);
     // The same zoom for every squishy, so smaller ones look smaller: as far
     // in as the biggest still fits, 3.7 units from the camera, at any turn,
-    // squash, or stretch: 1.48 units either side (a tail pointing sideways
-    // and a little forward in a full squash) and 1.52 above the aim (a horn
-    // turned toward the camera in a full stretch). Each squishy's size in
-    // items.js keeps it inside that, checked by rendering every squishy at
-    // full squash and stretch, every 6° of turn.
-    gl.uniform4f(u.uView, Math.min(3.7 / 1.52, (3.7 * width) / height / 1.48),
+    // squash, or stretch. That's 1.67 units either side and 1.69 above the
+    // aim, which a full-size squishy with big flair (Dragon King's crown,
+    // wings, and big tail) needs. Each squishy's size in items.js keeps it
+    // inside that, checked by rendering every squishy at full squash and
+    // stretch, every 6° of turn.
+    gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
     gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), 0, 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
