@@ -185,6 +185,14 @@ follows a wrong one (3 s), the user replied, verbatim:
 After a miss, once Zoe taps the right spelling, the next word now comes 5 s
 later (it was 3 s). First-try right answers still move on after 1.4 s.
 
+Requested by the user, verbatim (2026-10-29):
+
+> Make it say the word again after you get it right after getting it wrong
+
+After a miss, once Zoe taps the right spelling, the voice says the word
+again, 0.5 s after the ding, while the right spelling shows. In level 4 it
+says the sentence instead, since sound-alikes sound the same on their own.
+
 ## Coins
 
 Added with the Squishy Store (see `store/SPEC.md`), by the user's choice:
@@ -229,7 +237,8 @@ coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
   wiggles orange, then turns gray and crossed out, and can't be tapped
   again. The word stays until Zoe taps the right spelling. Finding it after a
   miss fills the gap in green and plays the ding, with no lightning since
-  the brick doesn't climb. The next word comes 5 s later.
+  the brick doesn't climb. 0.5 s later the voice says the word again (the
+  sentence, in level 4). The next word comes 5 s after the tap.
 - **Bricks:** gray stone (missed, level 0), blue (start, level 1; green in
   level 4), gold (level 2; see-through in level 4), with dark mortar between
   them.

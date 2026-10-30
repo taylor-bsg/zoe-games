@@ -1,6 +1,6 @@
 // Star bursts and confetti, drawn on a temporary full-screen canvas.
 //
-//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.7.10';
+//   import { stars, confetti, zip } from '../shared/celebrate.js?v=0.7.11';
 //   stars(answerElement);  // small burst of stars, e.g. for a right answer
 //   confetti();            // big party, e.g. for finishing a round
 //   zip();                 // a cute animal zips across the screen
@@ -13,7 +13,7 @@
 
 // Animals for zip(). Apple draws these facing left, so they're flipped when
 // flying right. (Its snail faces right, so it's left out.)
-import { ICON } from './coins.js?v=0.7.10';
+import { ICON } from './coins.js?v=0.7.11';
 
 const CRITTERS = ['🐕', '🐈', '🐇', '🐢', '🦖', '🦕', '🐳', '🐬', '🐠', '🦔', '🦦', '🐘',
   '🦄', '🐤', '🐝', '🦭', '🐧', '🦆', '🐿️', '🐁', '🐖', '🦘', '🐉', '🦓'];

@@ -3,15 +3,15 @@
 // its own dragon; finishing a level opens the next. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.7.10';
-import * as speech from '../shared/speech.js?v=0.7.10';
-import * as storage from '../shared/storage.js?v=0.7.10';
-import * as coins from '../shared/coins.js?v=0.7.10';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.10';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.7.10';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.7.10';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.7.10';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.7.10';
+import * as sound from '../shared/sound.js?v=0.7.11';
+import * as speech from '../shared/speech.js?v=0.7.11';
+import * as storage from '../shared/storage.js?v=0.7.11';
+import * as coins from '../shared/coins.js?v=0.7.11';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.11';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.7.11';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.7.11';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.7.11';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.7.11';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -19,6 +19,7 @@ const START = 1; // new bricks start in the middle: one right answer makes them 
 const COLORS = ['#a7adbd', '#5aa9ff', '#ffd23f']; // gray stone, blue, gold
 const NEXT_AFTER_RIGHT = 1400; // ms before the next word, once the sounds have finished
 const NEXT_AFTER_FOUND = 5000; // ms to look at the right spelling, when found after a miss
+const SAY_AGAIN_AFTER = 500; // ms after the ding before the word is said again, when found after a miss
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
@@ -258,6 +259,13 @@ function say() {
   speech.speak(LEVELS[wall - 1].sentenceOnly ? sentence : current.word + '. ' + sentence);
 }
 
+// Says the word once more, after Zoe finds it following a miss. For
+// sound-alikes it's the sentence again, since the word alone sounds the same.
+function sayAgain() {
+  const sentence = current.sentence.replace('___', current.word);
+  speech.speak(LEVELS[wall - 1].sentenceOnly ? sentence : current.word);
+}
+
 function showSentence() {
   const parts = current.sentence.split('___');
   const sentence = $('sentence');
@@ -392,8 +400,10 @@ function answer(button, text) {
   gap.classList.add('is-filled');
   button.classList.add('is-right');
   if (missedThisTime) {
-    // Found it after a miss: well done, but the brick only climbs on a first try.
+    // Found it after a miss: well done, but the brick only climbs on a first
+    // try. The word is said again while Zoe looks at the right spelling.
     sound.correct();
+    setTimeout(sayAgain, SAY_AGAIN_AFTER);
     setTimeout(next, NEXT_AFTER_FOUND);
     return;
   }
