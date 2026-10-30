@@ -82,8 +82,25 @@ stay `01-times-table`, so saved times and coins carry over.
 ## Coins
 
 Added with the Squishy Store (see `store/SPEC.md`). Every right answer
-earns 1 coin on 10×10 and 2 on 15×15. A "+1" and a gold coin float up from
-the answer box.
+earned 1 coin on 10×10 and 2 on 15×15, with a "+1" and a gold coin floating
+up from the answer box.
+
+Requested by the user, verbatim (2026-10-30):
+
+> Also, the multiply game is just a money machine, there is no limit to how many coins you get. Maybe it should track your highest geomean and you get coins for increasing it? Open to suggestions.
+
+Asked how it should pay, the user chose: 10 coins for each new record (the
+"New record!" cheer, which takes about ten good answers' worth of
+speed-score improvement), but only when it beats the best speed she's ever
+been paid for. Right answers no longer pay on their own.
+
+- A "+10" and a gold coin float up from the speed score with the cheer.
+- The start card says "New records win 10", with a coin.
+- Clearing scores resets the records but not what she's been paid for, so
+  climbing back to an old record doesn't pay again.
+- For players from before this change, pay starts from their current
+  record, since their progress so far was paid per answer.
+- Going from 5 s to 2.5 s pays about 310 coins on 10×10 and 700 on 15×15.
 
 ## Implementation notes
 
@@ -145,5 +162,7 @@ the answer box.
   the record marks, but keeps the size choice. The label then reads "Scores
   cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
-  the last 3 scores in seconds); and `best` (size → speed at the last cheer).
+  the last 3 scores in seconds); `best` (size → speed at the last cheer);
+  and `paid` (size → the best speed she's been paid coins for, kept when
+  scores are cleared).
   Unreadable values are ignored.

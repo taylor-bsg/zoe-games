@@ -11,6 +11,8 @@ Answers to questions asked before building:
 - **Zoe Spells coins:** only for finishing a wall, as one big prize per
   level: 100, 200, 300, and 400 coins for levels 1–4.
 - **Zoe Multiplies coins:** 1 coin per right answer on 10×10, 2 on 15×15.
+  (Since 2026-10-30, 10 coins per new record instead; see
+  `01-times-table/SPEC.md`.)
 - **3D:** real 3D, with no library.
 - **Head start:** yes. Progress from before coins existed counts once, at the
   same rates.
@@ -84,6 +86,17 @@ Party Puff's little tail is now a big, bushy one like a chinchilla's. It
 curls up behind its back and over to one side, so the cream tip peeks up
 beside its head from the front.
 
+Requested by the user, verbatim (2026-10-30):
+
+> It feels like we should charge something for hatching an egg. Maybe 20%? But it stays hatched.
+
+Asked whether an egg should be ready to hatch once Zoe can afford the
+squishy or just the fee, the user chose the squishy, as before. Hatching
+now costs a fifth of the squishy's price, and a hatched squishy stays out
+of its egg even when she can't afford it. Only the button hatches, so
+tapping an egg can't spend coins by accident. (The same message asked
+about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -92,8 +105,9 @@ beside its head from the front.
 - **Coins:** a gold coin with a star, drawn in SVG (`coins.ICON`), since
   Apple's 🪙 emoji is a silver coin that looks gray when small.
   - Earning shows a floating "+N" and a coin. Zoe Multiplies floats it from
-    the answer box. Zoe Spells floats it from the tally after the wall
-    celebration, plays a "ching", and says "You won 200 coins!".
+    the speed score when a record pays. Zoe Spells floats it from the tally
+    after the wall celebration, plays a "ching", and says "You won 200
+    coins!".
   - Zoe Spells' start screen shows the level's prize: "Finish the wall to
     win 200" or "Wall prize won: 200 ✓".
 - **Store layout:** one squishy at a time, as big as fits, with round
@@ -121,7 +135,8 @@ beside its head from the front.
     squashes. The hint reads "Swipe sideways to spin, down to squish!".
 - **Mystery eggs:** what the store shows for each squishy depends on its
   state.
-  - **Locked** (not owned, not enough coins): a 3D egg that rocks gently.
+  - **Locked** (never hatched, not enough coins to buy it): a 3D egg that
+    rocks gently.
     The name reads "Mystery egg", the button "Need 25 more", and the hint
     "What’s inside? Earn coins to find out!". Tapping the egg squishes it;
     tapping the button wiggles it and says "Play games to earn more
@@ -132,17 +147,19 @@ beside its head from the front.
     belly, wing, and spike colors and a big ? on the front: navy, or white
     on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
     egg wears Shade's pink sunglasses instead of the ?.
-  - **Ready** (enough coins, never hatched): the egg wiggles excitedly every
-    1.6 s. The button reads "🥚 Hatch it!" and the hint "It’s ready to hatch!
-    Tap it!". The store opens on a ready egg if there is one.
-  - **Hatching:** a tap on the egg or the button makes it rock harder and
-    harder, peeping three times, for 1.1 s. Then it pops open: the squishy
-    appears with a stretch and a bounce, a fanfare, and stars, and the hint
-    reads "Meet Sprout! 🎉". Hatching waits for a tap partly because iOS
-    only plays sound after one.
-  - **Hatched** (enough coins): the squishy shows as usual and can be bought.
-    If spending later leaves too few coins, it's a locked egg again (as
-    asked). When there are enough again, it shows without hatching.
+  - **Ready** (enough coins to buy it, never hatched): the egg wiggles
+    excitedly every 1.6 s. The button reads "🥚 Hatch for 10" (a fifth of
+    the price) and the hint "It’s ready to hatch! Tap “Hatch” to see
+    inside.". Tapping the egg squishes it and wiggles the button, pointing
+    to it. The store opens on a ready egg if there is one.
+  - **Hatching:** tapping the button pays the fee with a "ching" (the purse
+    bounces), and the egg rocks harder and harder, peeping three times, for
+    1.1 s. Then it pops open: the squishy appears with a stretch and a
+    bounce, a fanfare, and stars, and the hint reads "Meet Sprout! 🎉".
+    Taps during the hatching do nothing.
+  - **Hatched:** the squishy shows as usual from then on, whatever Zoe's
+    coins: "Buy for 50", or "Need 10 more" when hatching left too few.
+    Squishies hatched before hatching cost anything stay hatched too.
   - **Owned:** always visible.
 - **Buying:** "Buy for 75" when there are enough coins, then a "ching",
   the fanfare, confetti, a squish, and "You got Bubblegum! 🎉". The button
@@ -171,7 +188,8 @@ beside its head from the front.
   - Size goes with price: 50% for the cheapest, 5% more for each price
     step, and 100% for the priciest. The view's zoom leaves room for Dragon
     King at full size, the biggest with its crown, wings, and big tail.
-  - All twelve cost 2,450 coins. The four Zoe Spells walls pay 1,000.
+  - All twelve cost 2,450 coins, plus 490 to hatch them. The four Zoe Spells
+    walls pay 1,000, and Zoe Multiplies pays 10 per new record.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy
@@ -239,7 +257,9 @@ beside its head from the front.
   squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,
     `02-spelling`, and `head start`.
-  - `spent`: one `{ item, price, at }` per purchase.
+  - `spent`: one `{ item, price, at }` per purchase. Hatching an egg is one
+    too, with the item `hatch:` plus the squishy's id (e.g. `hatch:sprout`).
+    A squishy counts as hatched if either list has it.
   - `headStart`: true once the head start is given.
   - The balance is earned minus spent. Every change re-reads storage first,
     so pages never overwrite each other's coins.

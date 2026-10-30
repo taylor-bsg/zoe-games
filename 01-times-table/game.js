@@ -2,11 +2,11 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.12';
-import * as sound from '../shared/sound.js?v=0.7.12';
-import * as storage from '../shared/storage.js?v=0.7.12';
-import * as coins from '../shared/coins.js?v=0.7.12';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.12';
+import { createKeypad } from '../shared/keypad.js?v=0.7.13';
+import * as sound from '../shared/sound.js?v=0.7.13';
+import * as storage from '../shared/storage.js?v=0.7.13';
+import * as coins from '../shared/coins.js?v=0.7.13';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.13';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -19,16 +19,19 @@ const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; /
 // 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
 const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
-const PAY = { 10: 1, 15: 2 }; // coins per right answer, by grid size
+const RECORD_PAY = 10; // coins for a new record that beats any she's been paid for
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear scores';
 
 // times: 'AxB' -> the last KEEP attempt scores in seconds, oldest first.
 // best: grid size -> the speed at the last cheer (lower is better).
-const saved = storage.load(GAME_ID, { size: SIZES[0], times: {}, best: {} });
+// paid: grid size -> the best speed she's been paid coins for. Clearing
+// scores keeps it, so coming back up to an old record doesn't pay twice.
+const saved = storage.load(GAME_ID, { size: SIZES[0], times: {}, best: {}, paid: {} });
 if (SIZES.indexOf(saved.size) < 0) saved.size = SIZES[0];
 if (!isObject(saved.times)) saved.times = {};
 if (!isObject(saved.best)) saved.best = {};
+if (!isObject(saved.paid)) saved.paid = {};
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -183,10 +186,10 @@ function pop(element, kind) {
 
 function start() {
   sound.unlock(); // this tap is what lets iOS play sound
-  if (typeof saved.best[saved.size] !== 'number') {
-    saved.best[saved.size] = speed();
-    storage.save(GAME_ID, saved);
-  }
+  if (typeof saved.best[saved.size] !== 'number') saved.best[saved.size] = speed();
+  // Before records paid, every right answer did; pay from her record on.
+  if (typeof saved.paid[saved.size] !== 'number') saved.paid[saved.size] = saved.best[saved.size];
+  storage.save(GAME_ID, saved);
   $('intro').hidden = true;
   $('setup').hidden = true;
   $('playing').hidden = false;
@@ -309,6 +312,16 @@ function newRecord() {
   return true;
 }
 
+// Coins for a new record, when it beats the best she's been paid for.
+function payRecord() {
+  const n = saved.size;
+  if (!(saved.best[n] < saved.paid[n])) return false;
+  saved.paid[n] = saved.best[n];
+  storage.save(GAME_ID, saved);
+  coins.earn(GAME_ID, RECORD_PAY);
+  return true;
+}
+
 function right() {
   const seconds = Math.max(0.1, (elapsed + performance.now() - shownAt) / 1000);
   answering = false;
@@ -316,12 +329,10 @@ function right() {
   pad.setEnabled(false);
   const crowned = remember(Math.min(seconds, SLOW));
   const record = newRecord();
+  const paid = record && payRecord();
   mark('is-correct');
   sound.correct();
   stars(pad.display);
-  coins.earn(GAME_ID, PAY[saved.size]);
-  const box = pad.display.getBoundingClientRect();
-  floatCoins({ x: box.right, y: box.top }, PAY[saved.size]);
   if (record) say('New record! ' + time, 'record');
   else if (crowned) say('👑 Mastered! ' + time, 'good');
   else say(pick(PRAISE) + ' ' + time, 'good');
@@ -336,6 +347,7 @@ function right() {
     setTimeout(function () {
       sound.cheer();
       zip();
+      if (paid) floatCoins($('speed-box'), RECORD_PAY);
     }, cheerAt);
     setTimeout(function () {
       $('speed-box').classList.remove('is-record');
@@ -387,7 +399,8 @@ function stopHolding() {
   clearLabel('Hold until the bar fills', 1500);
 }
 
-// Forgets every score, for both grid sizes, and the record marks.
+// Forgets every score, for both grid sizes, and the record marks. What
+// she's been paid for stays, so records pay again only past her best ever.
 function clearScores() {
   holding = false;
   $('clear-button').classList.remove('is-holding');
@@ -434,6 +447,7 @@ window.addEventListener('pageshow', function (event) {
   if (event.persisted) pause();
 });
 
+$('record-pay').innerHTML = 'New records win ' + RECORD_PAY + ' ' + coins.ICON;
 showSize();
 buildGrid();
 showSpeed();

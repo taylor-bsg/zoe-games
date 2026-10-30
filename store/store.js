@@ -4,16 +4,16 @@
 // up squashes or stretches it as far as the finger goes, and a tap squishes
 // it. The dots show which one this is, gold for the ones Zoe owns.
 //
-// Zoe only sees a squishy she owns or has enough coins for. Any other is a
-// mystery egg in its colors. When she first has enough for one, its egg
-// wiggles until she taps it, and then it hatches.
+// Each squishy starts as a mystery egg in its colors. Once Zoe has enough
+// coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
+// price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.7.12';
-import * as sound from '../shared/sound.js?v=0.7.12';
-import * as storage from '../shared/storage.js?v=0.7.12';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.12';
-import { createSquishy } from './squishy.js?v=0.7.12';
-import { ITEMS } from './items.js?v=0.7.12';
+import * as coins from '../shared/coins.js?v=0.7.13';
+import * as sound from '../shared/sound.js?v=0.7.13';
+import * as storage from '../shared/storage.js?v=0.7.13';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.13';
+import { createSquishy } from './squishy.js?v=0.7.13';
+import { ITEMS } from './items.js?v=0.7.13';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -27,16 +27,18 @@ const MAX_SQUASH = 0.9;
 const MAX_STRETCH = -0.6;
 const DECIDE = 10; // px a swipe goes before it counts as sideways or up and down
 const HATCH_MS = 1100; // how long an egg shakes before it hatches
+const HATCH_FEE = 0.2; // share of a squishy's price that hatching its egg costs
 // Lines in halves that wrap as units, so a narrow panel breaks between them.
 const HINT = '<span>Swipe sideways to spin,</span> <span>down to squish!</span>';
-const READY_HINT = '<span>It’s ready to hatch!</span> <span>Tap it!</span>';
+const READY_HINT = '<span>It’s ready to hatch!</span> <span>Tap “Hatch” to see inside.</span>';
 const LOCKED_HINT = '<span>What’s inside?</span> <span>Earn coins to find out!</span>';
 
 function $(id) {
   return document.getElementById(id);
 }
 
-// hatched: ids of squishies whose eggs Zoe has hatched.
+// hatched: ids of squishies whose eggs Zoe has hatched. Paying to hatch one
+// is also in the coins' spending list, as 'hatch:' + id.
 const saved = storage.load('store', { hatched: [] });
 if (!Array.isArray(saved.hatched)) saved.hatched = [];
 
@@ -52,10 +54,15 @@ let lastFrame = 0;
 let lastDraw = 0;
 let wallet = coins.totals();
 const owned = {}; // id -> true
+const hatched = {}; // id -> true once its egg is hatched; it stays hatched
 const stage = createSquishy($('stage'), { maxRatio: 1.25 });
 
 function picked() {
   return ITEMS[index];
+}
+
+function hatchFee(item) {
+  return Math.round(item.price * HATCH_FEE);
 }
 
 function brightness(hex) {
@@ -82,18 +89,20 @@ function refresh() {
   wallet = coins.totals();
   ITEMS.forEach(function (item) {
     owned[item.id] = coins.owns(item.id);
+    hatched[item.id] = saved.hatched.indexOf(item.id) >= 0 || coins.owns('hatch:' + item.id);
   });
 }
 
 // What the store shows for a squishy:
 //   owned    hers, always visible
-//   visible  she has enough coins and has hatched it
-//   ready    she has enough coins but hasn't hatched it yet: a wiggling egg
+//   visible  hatched, so it stays out of its egg, whatever her coins
+//   ready    she has enough coins to buy it but hasn't hatched it: a
+//            wiggling egg
 //   locked   she doesn't have enough coins: a calm egg
 function stateOf(item) {
   if (owned[item.id]) return 'owned';
-  if (wallet.balance < item.price) return 'locked';
-  return saved.hatched.indexOf(item.id) >= 0 ? 'visible' : 'ready';
+  if (hatched[item.id]) return 'visible';
+  return wallet.balance >= item.price ? 'ready' : 'locked';
 }
 
 function isEgg(state) {
@@ -161,11 +170,12 @@ function showPicked() {
   const state = stateOf(item);
   const buy = $('buy');
   $('stage-name').textContent = isEgg(state) ? 'Mystery egg' : item.name;
+  const short = state !== 'owned' && state !== 'ready' && wallet.balance < item.price;
   buy.classList.toggle('is-owned', state === 'owned');
-  buy.classList.toggle('is-short', state === 'locked');
+  buy.classList.toggle('is-short', short);
   if (state === 'owned') buy.textContent = '💖 It’s yours!';
-  else if (state === 'ready') buy.textContent = '🥚 Hatch it!';
-  else if (state === 'locked') buy.innerHTML = 'Need ' + (item.price - wallet.balance) + ' more ' + coins.ICON;
+  else if (state === 'ready') buy.innerHTML = '🥚 Hatch for ' + hatchFee(item) + ' ' + coins.ICON;
+  else if (short) buy.innerHTML = 'Need ' + (item.price - wallet.balance) + ' more ' + coins.ICON;
   else buy.innerHTML = 'Buy for ' + item.price + ' ' + coins.ICON;
   $('stage-hint').innerHTML = state === 'ready' ? READY_HINT : state === 'locked' ? LOCKED_HINT : HINT;
   const fallback = document.querySelector('.stage-fallback'); // without WebGL
@@ -176,17 +186,36 @@ function showPicked() {
   });
 }
 
-// The egg on screen shakes and peeps, then pops open (see pop).
+// Wiggles a button to say "not that" or "over here".
+function nudge(button) {
+  button.classList.remove('is-nudged');
+  void button.offsetWidth; // restarts the wiggle
+  button.classList.add('is-nudged');
+}
+
+// Bounces the coin purse after spending.
+function showPaid() {
+  $('purse').classList.remove('is-paid');
+  void $('purse').offsetWidth;
+  $('purse').classList.add('is-paid');
+  showBalance();
+}
+
+// Pays to hatch the egg on screen, which shakes and peeps, then pops open
+// (see pop).
 function hatch() {
   const item = picked();
-  if (stateOf(item) !== 'ready') return;
+  if (stateOf(item) !== 'ready' || !coins.spend('hatch:' + item.id, hatchFee(item))) return;
   saved.hatched.push(item.id);
   storage.save('store', saved);
+  refresh();
+  showPaid();
   hatchAt = performance.now();
   popping = true;
-  sound.squeak();
-  setTimeout(sound.squeak, 400);
-  setTimeout(sound.squeak, 750);
+  sound.coin();
+  setTimeout(sound.squeak, 300);
+  setTimeout(sound.squeak, 600);
+  setTimeout(sound.squeak, 900);
   $('buy').textContent = '🐣 Hatching…';
   $('stage-hint').textContent = 'It’s hatching!';
 }
@@ -204,6 +233,7 @@ function pop() {
 }
 
 function buy() {
+  if (popping) return; // still hatching
   const item = picked();
   const state = stateOf(item);
   const button = $('buy');
@@ -216,9 +246,7 @@ function buy() {
     return;
   }
   if (state === 'locked' || !coins.spend(item.id, item.price)) {
-    button.classList.remove('is-nudged');
-    void button.offsetWidth; // restarts the wiggle
-    button.classList.add('is-nudged');
+    nudge(button);
     $('stage-hint').textContent = 'Play games to earn more coins!';
     return;
   }
@@ -227,10 +255,7 @@ function buy() {
   setTimeout(sound.celebrate, 250);
   confetti();
   squish();
-  $('purse').classList.remove('is-paid');
-  void $('purse').offsetWidth;
-  $('purse').classList.add('is-paid');
-  showBalance();
+  showPaid();
   showPicked();
   $('stage-hint').textContent = 'You got ' + item.name + '! 🎉';
 }
@@ -257,10 +282,12 @@ function letGo() {
   held = null;
 }
 
-// A tap hatches an egg that's ready, and squishes anything else.
+// A tap squishes the squishy or egg. Hatching costs coins, so only the
+// button hatches; tapping an egg that's ready wiggles the button instead.
 function tapStage() {
-  if (stateOf(picked()) === 'ready') hatch();
-  else squish();
+  if (popping) return;
+  squish();
+  if (stateOf(picked()) === 'ready') nudge($('buy'));
 }
 
 // A swipe's first few pixels decide what it does: sideways spins, up or down
