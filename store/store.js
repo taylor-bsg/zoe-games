@@ -8,12 +8,12 @@
 // mystery egg in its colors. When she first has enough for one, its egg
 // wiggles until she taps it, and then it hatches.
 
-import * as coins from '../shared/coins.js?v=0.7.9';
-import * as sound from '../shared/sound.js?v=0.7.9';
-import * as storage from '../shared/storage.js?v=0.7.9';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.9';
-import { createSquishy } from './squishy.js?v=0.7.9';
-import { ITEMS } from './items.js?v=0.7.9';
+import * as coins from '../shared/coins.js?v=0.7.10';
+import * as sound from '../shared/sound.js?v=0.7.10';
+import * as storage from '../shared/storage.js?v=0.7.10';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.10';
+import { createSquishy } from './squishy.js?v=0.7.10';
+import { ITEMS } from './items.js?v=0.7.10';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
