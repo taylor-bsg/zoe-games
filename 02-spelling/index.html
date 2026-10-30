@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.7.14">
+  <link rel="stylesheet" href="../shared/base.css?v=0.7.15">
   <style>
     /* Gold-brick count, in the middle of the top bar. */
     .tally {
@@ -394,8 +394,8 @@
     }
 
     /* Dragons puff from their nostrils when they peek over: snowflakes for
-       the ice dragon, bubbles for the sea dragon, smoke and embers for the
-       fire dragon. */
+       the ice dragon, sparkles for the rainbow dragon, bubbles for the sea
+       dragon, smoke and embers for the fire dragon. */
     .puff {
       opacity: 0;
       transform-box: fill-box;
@@ -474,6 +474,17 @@
 
       <div class="scene">
         <svg id="scene" viewBox="0 120 1000 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <!-- The rainbow dragon's wings: six bands, top to bottom. -->
+            <linearGradient id="rainbow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0.000" stop-color="#ff6b6b"/><stop offset="0.167" stop-color="#ff6b6b"/>
+              <stop offset="0.167" stop-color="#ffa94d"/><stop offset="0.333" stop-color="#ffa94d"/>
+              <stop offset="0.333" stop-color="#ffd43b"/><stop offset="0.500" stop-color="#ffd43b"/>
+              <stop offset="0.500" stop-color="#69db7c"/><stop offset="0.667" stop-color="#69db7c"/>
+              <stop offset="0.667" stop-color="#4dabf7"/><stop offset="0.833" stop-color="#4dabf7"/>
+              <stop offset="0.833" stop-color="#9775fa"/><stop offset="1.000" stop-color="#9775fa"/>
+            </linearGradient>
+          </defs>
           <g fill="#ffffff" opacity="0.85">
             <ellipse cx="130" cy="190" rx="70" ry="26"/>
             <ellipse cx="175" cy="172" rx="48" ry="30"/>
@@ -536,6 +547,40 @@
               <g class="puff puff-right" stroke-linecap="round" fill="none">
                 <path d="M34,-67 L34,-37 M21.0,-59.5 L47.0,-44.5 M21.0,-44.5 L47.0,-59.5 M58,-43 L58,-21 M48.5,-37.5 L67.5,-26.5 M48.5,-26.5 L67.5,-37.5" stroke="#4dabf7" stroke-width="8.5"/>
                 <path d="M34,-67 L34,-37 M21.0,-59.5 L47.0,-44.5 M21.0,-44.5 L47.0,-59.5 M58,-43 L58,-21 M48.5,-37.5 L67.5,-26.5 M48.5,-26.5 L67.5,-37.5" stroke="#ffffff" stroke-width="4.5"/>
+              </g>
+            </g>
+            <g id="dragon-2a" transform="translate(675 336)" display="none">
+              <path d="M-80,-92 C-150,-152 -210,-142 -232,-112 C-202,-112 -192,-82 -162,-82 C-150,-62 -120,-62 -90,-62 Z" fill="url(#rainbow)" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M80,-92 C150,-152 210,-142 232,-112 C202,-112 192,-82 162,-82 C150,-62 120,-62 90,-62 Z" fill="url(#rainbow)" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M-50,-128 C-62,-150 -66,-170 -60,-192 C-44,-170 -34,-150 -28,-138 Z" fill="#ffd43b"/>
+              <path d="M50,-128 C62,-150 66,-170 60,-192 C44,-170 34,-150 28,-138 Z" fill="#ffd43b"/>
+              <path d="M-32,-147 L-21,-170 L-10,-150 Z" fill="#ff6b6b"/>
+              <path d="M-10,-150 L0,-180 L10,-150 Z" fill="#ffd43b"/>
+              <path d="M10,-150 L21,-170 L32,-147 Z" fill="#4dabf7"/>
+              <ellipse cx="0" cy="-90" rx="96" ry="66" fill="#cc5de8"/>
+              <circle cx="-70" cy="-76" r="4" fill="#f3d9fa"/>
+              <circle cx="-60" cy="-64" r="3" fill="#f3d9fa"/>
+              <circle cx="-76" cy="-62" r="2.5" fill="#f3d9fa"/>
+              <circle cx="70" cy="-76" r="4" fill="#f3d9fa"/>
+              <circle cx="60" cy="-64" r="3" fill="#f3d9fa"/>
+              <circle cx="76" cy="-62" r="2.5" fill="#f3d9fa"/>
+              <ellipse cx="0" cy="-50" rx="60" ry="34" fill="#f3d9fa"/>
+              <ellipse cx="-18" cy="-56" rx="7" ry="5" fill="#862e9c"/>
+              <ellipse cx="18" cy="-56" rx="7" ry="5" fill="#862e9c"/>
+              <ellipse cx="-38" cy="-108" rx="21" ry="23" fill="#ffffff"/>
+              <ellipse cx="38" cy="-108" rx="21" ry="23" fill="#ffffff"/>
+              <circle cx="-35" cy="-104" r="11" fill="#339af0"/>
+              <circle cx="41" cy="-104" r="11" fill="#339af0"/>
+              <circle cx="-35" cy="-104" r="5.5" fill="#1d2b53"/>
+              <circle cx="41" cy="-104" r="5.5" fill="#1d2b53"/>
+              <circle cx="-31" cy="-109" r="3.5" fill="#ffffff"/>
+              <circle cx="45" cy="-109" r="3.5" fill="#ffffff"/>
+              <path d="M-22,-32 Q0,-20 22,-32" stroke="#862e9c" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <g class="puff puff-left">
+                <path d="M-34,-72 L-30.5,-61.5 L-20,-58 L-30.5,-54.5 L-34,-44 L-37.5,-54.5 L-48,-58 L-37.5,-61.5 Z" fill="#ffd43b"/><path d="M-54,-76 L-52,-70 L-46,-68 L-52,-66 L-54,-60 L-56,-66 L-62,-68 L-56,-70 Z" fill="#ff6b6b"/><path d="M-50,-44 L-48.5,-39.5 L-44,-38 L-48.5,-36.5 L-50,-32 L-51.5,-36.5 L-56,-38 L-51.5,-39.5 Z" fill="#4dabf7"/>
+              </g>
+              <g class="puff puff-right">
+                <path d="M34,-72 L30.5,-61.5 L20,-58 L30.5,-54.5 L34,-44 L37.5,-54.5 L48,-58 L37.5,-61.5 Z" fill="#ffd43b"/><path d="M54,-76 L52,-70 L46,-68 L52,-66 L54,-60 L56,-66 L62,-68 L56,-70 Z" fill="#ff6b6b"/><path d="M50,-44 L48.5,-39.5 L44,-38 L48.5,-36.5 L50,-32 L51.5,-36.5 L56,-38 L51.5,-39.5 Z" fill="#4dabf7"/>
               </g>
             </g>
             <g id="dragon-2b" transform="translate(675 336)" display="none">
@@ -685,6 +730,7 @@
             <div class="level-buttons">
               <button type="button" class="btn btn-white level-button" data-level="1">1</button>
               <button type="button" class="btn btn-white level-button" data-level="2">2</button>
+              <button type="button" class="btn btn-white level-button" data-level="2a">2A</button>
               <button type="button" class="btn btn-white level-button" data-level="2b">2B</button>
               <button type="button" class="btn btn-white level-button" data-level="3">3</button>
               <button type="button" class="btn btn-white level-button" data-level="4">4</button>
@@ -701,6 +747,6 @@
     </main>
   </div>
 
-  <script type="module" src="game.js?v=0.7.14"></script>
+  <script type="module" src="game.js?v=0.7.15"></script>
 </body>
 </html>

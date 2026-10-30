@@ -1,18 +1,19 @@
 // Zoe Spells: pick the right spelling to zap a brick in the castle wall that
 // keeps the dragon out. Each level is a wall of 100 bricks, one per word, with
-// its own dragon; finishing a level opens the next, and level 2B opens with
-// level 2. See SPEC.md. Play never ends; the Home button is the way out.
+// its own dragon; finishing a level opens the next, and levels 2A and 2B open
+// with level 2. See SPEC.md. Play never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.7.14';
-import * as speech from '../shared/speech.js?v=0.7.14';
-import * as storage from '../shared/storage.js?v=0.7.14';
-import * as coins from '../shared/coins.js?v=0.7.14';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.14';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.7.14';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.7.14';
-import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.14';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.7.14';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.7.14';
+import * as sound from '../shared/sound.js?v=0.7.15';
+import * as speech from '../shared/speech.js?v=0.7.15';
+import * as storage from '../shared/storage.js?v=0.7.15';
+import * as coins from '../shared/coins.js?v=0.7.15';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.15';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.7.15';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.7.15';
+import { WORDS as WORDS_2A } from './words-2a.js?v=0.7.15';
+import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.15';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.7.15';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.7.15';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -25,8 +26,8 @@ const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
 
-// The levels, in order. Each has an id, saved with progress (1-4, or '2b'
-// for level 2B, which came later); the label it shows; opens, the highest
+// The levels, in order. Each has an id, saved with progress (1-4, or '2a'
+// and '2b' for levels 2A and 2B, which came later); the label it shows; opens, the highest
 // open numbered level that opens it; the coins its wall pays; its words,
 // dragon, hill colors (back, then front), and start-screen line; and what a
 // finished brick is (with a non-breaking hyphen, so lines don't break inside
@@ -39,6 +40,8 @@ const LEVELS = [
     hill: ['#62c370', '#4fae5d'], intro: 'Tap the right spelling to zap a brick!', top: 'gold' },
   { id: 2, label: '2', opens: 2, prize: 200, words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon',
     hill: ['#eef7ff', '#d3e8f8'], intro: 'Level 2: keep the ice dragon out!', top: 'gold' },
+  { id: '2a', label: '2A', opens: 2, prize: 200, words: WORDS_2A, dragon: 'dragon-2a', name: 'rainbow dragon',
+    hill: ['#c0eb75', '#94d82d'], intro: 'Level 2A: keep the rainbow dragon out!', top: 'gold' },
   { id: '2b', label: '2B', opens: 2, prize: 200, words: WORDS_2B, dragon: 'dragon-2b', name: 'sea dragon',
     hill: ['#3bc9db', '#f3d9a4'], intro: 'Level 2B: keep the sea dragon out!', top: 'gold' },
   { id: 3, label: '3', opens: 3, prize: 300, words: WORDS_3, dragon: 'dragon-3', name: 'fire dragon',
@@ -77,11 +80,11 @@ if (!isObject(saved.paid)) { // walls finished before coins existed were paid by
   for (let n = 1; n < saved.unlocked; n++) saved.paid[n] = true;
 }
 
-// For testing, game/?level=2 (or 2b) opens that level for this visit, locked
-// or not.
+// For testing, game/?level=2 (or 2a, 2b) opens that level for this visit,
+// locked or not.
 const preview = byId((/[?&]level=(\w+)/.exec(location.search) || [])[1]);
 
-// The level with this id (a number, or '2b' in any case), or null.
+// The level with this id (a number, or '2a' or '2b' in any case), or null.
 function byId(id) {
   const key = String(id).toLowerCase();
   return LEVELS.filter(function (info) {
@@ -451,9 +454,15 @@ function answer(button, text) {
   }
 }
 
+// "2", "2 and 2A", "2, 2A, and 2B".
+function listOf(labels) {
+  if (labels.length < 3) return labels.join(' and ');
+  return labels.slice(0, -1).join(', ') + ', and ' + labels[labels.length - 1];
+}
+
 // Every brick is gold: the dragon gives up and flies away. Finishing the
 // highest open numbered level for the first time opens the next one (with
-// level 2, 2B), and goes to its start screen.
+// level 2, 2A and 2B), and goes to its start screen.
 function finishWall() {
   const opens = wall.id === saved.unlocked && wall.id < LAST ? wall.id + 1 : 0;
   const prize = saved.paid[wall.id] ? 0 : wall.prize;
@@ -478,7 +487,7 @@ function finishWall() {
   storage.save(GAME_ID, saved);
   $('sentence').textContent = 'The wall is all ' + wall.top + '! The ' + wall.name + ' flew away!' +
     (prize ? ' You won ' + prize + ' coins!' : '') +
-    (labels.length > 1 ? ' Levels ' + labels.join(' and ') + ' are open!' : '') +
+    (labels.length > 1 ? ' Levels ' + listOf(labels) + ' are open!' : '') +
     (labels.length === 1 ? ' Level ' + labels[0] + ' is open!' : '');
   $('choices').innerHTML = '';
   sound.celebrate();

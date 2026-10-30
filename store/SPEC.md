@@ -9,8 +9,8 @@ A request from Zoe, passed on by the user, verbatim (2026-10-28):
 Answers to questions asked before building:
 
 - **Zoe Spells coins:** only for finishing a wall, as one big prize per
-  level: 100, 200, 300, and 400 coins for levels 1–4. (Level 2B, added
-  later, pays 200.)
+  level: 100, 200, 300, and 400 coins for levels 1–4. (Levels 2A and 2B,
+  added later, pay 200 each.)
 - **Zoe Multiplies coins:** 1 coin per right answer on 10×10, 2 on 15×15.
   (Since 2026-10-30, 10 coins per new record instead; see
   `01-times-table/SPEC.md`.)
@@ -189,9 +189,9 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
   - Size goes with price: 50% for the cheapest, 5% more for each price
     step, and 100% for the priciest. The view's zoom leaves room for Dragon
     King at full size, the biggest with its crown, wings, and big tail.
-  - All twelve cost 2,450 coins, plus 490 to hatch them. The five Zoe Spells
-    walls (levels 1–4 and 2B) pay 1,200, and Zoe Multiplies pays 10 per new
-    record.
+  - All twelve cost 2,450 coins, plus 490 to hatch them. The six Zoe Spells
+    walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 10 per
+    new record.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy

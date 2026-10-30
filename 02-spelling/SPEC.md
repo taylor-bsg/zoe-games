@@ -228,11 +228,44 @@ Implementation notes for 2B:
   keep their numbers, so saved progress carries over, and `unlocked` still
   counts only them.
 
+## Level 2A
+
+Offered an easier list for ages 6–7 after level 2B, the user replied,
+verbatim (2026-10-30):
+
+> Yes let’s add level 2A
+
+Asked, the user chose:
+
+- **Opening:** with level 2, like 2B.
+- **Prize:** 200 coins, the same as levels 2 and 2B.
+- **Dragon:** a rainbow dragon, with rainbow-striped wings and a sunny
+  meadow.
+
+Implementation notes for 2A:
+
+- **Words:** from what England's curriculum teaches in year 2 (ages 6–7),
+  the same document as the other levels. 75 example words for its spelling
+  patterns (-dge and -ge, soft g and c, kn and gn, wr, -le, -el, -al and
+  -il, y turning to i, dropping e, doubling, a before l, o in mother, -ey,
+  wa and wor, -ful and -ness, -tion), then 25 of its "common exception
+  words" that don't follow them (climb, sugar, hour, water, money). None
+  are in other levels, and the plainest (age, ice, jar, cry, old, fast) are
+  left out. See `words-2a.js`.
+- **Rainbow dragon:** grape purple, with gold horns, a red, yellow, and blue
+  crest, and wings striped in the six rainbow colors (an SVG gradient with
+  hard stops). It puffs sparkles when it peeks over the wall.
+- **Meadow:** lime green hills.
+- **Level picker:** 1, 2, 2A, 2B, 3, 4. Portrait fits all six in one row;
+  landscape and phones wrap to two rows.
+- **Messages:** finishing level 1 says "Levels 2, 2A, and 2B are open!".
+- **Saved data:** its id is `2a`, like 2B's `2b`.
+
 ## Coins
 
 Added with the Squishy Store (see `store/SPEC.md`), by the user's choice:
 coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
-Level 2B, added later, pays 200.
+Levels 2A and 2B, added later, pay 200 each.
 
 - **Paying:** the prize is paid once per finished wall, and recorded in
   `paid` (level → true) in the saved data. A wall that slips and is
@@ -329,16 +362,16 @@ Level 2B, added later, pays 200.
   level 4. Sounds and everything else work the same on every level.
 - **Clearing:** on any level, clearing affects only that level's bricks. Open
   levels and the missed-word record stay.
-- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=2b`, `=3`, `=4`)
-  opens that level for the visit, even when it's locked, without unlocking
-  it.
+- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=2a`, `=2b`, `=3`,
+  `=4`) opens that level for the visit, even when it's locked, without
+  unlocking it.
 - **Saved data:** under `zoe-games:02-spelling`:
   - `levels`: word → 0–2, for the words of both levels (no word is in both).
     Unanswered words, and any unreadable values, count as 1.
-  - `unlocked`: the highest open numbered level (1–4); 2B is open once it's
-    2. On load, a finished wall opens the next level, for saves from before
-    that level existed.
-  - `wall`: the level last picked (1–4, or `2b`).
+  - `unlocked`: the highest open numbered level (1–4); 2A and 2B are open
+    once it's 2. On load, a finished wall opens the next level, for saves
+    from before that level existed.
+  - `wall`: the level last picked (1–4, `2a`, or `2b`).
   - `missed`: word → `{ count, last, picked }`. That's the number of wrong
     picks, the time of the last one (ms since 1970), and how often each wrong
     spelling was picked. It covers both levels' words and is for the future
