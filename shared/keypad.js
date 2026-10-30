@@ -2,7 +2,7 @@
 // iPad's own keyboard covers much of the screen. It also takes digits,
 // Backspace, and Enter from a physical keyboard, for testing on a laptop.
 //
-//   import { createKeypad } from '../shared/keypad.js?v=0.7.13';
+//   import { createKeypad } from '../shared/keypad.js?v=0.7.14';
 //   const pad = createKeypad(document.getElementById('keypad'), {
 //     display: document.getElementById('answer'), // optional, see below
 //     maxLength: 2,                               // digits allowed, default 3

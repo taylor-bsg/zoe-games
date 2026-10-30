@@ -1,17 +1,18 @@
 // Zoe Spells: pick the right spelling to zap a brick in the castle wall that
 // keeps the dragon out. Each level is a wall of 100 bricks, one per word, with
-// its own dragon; finishing a level opens the next. See SPEC.md. Play never
-// ends; the Home button is the way out.
+// its own dragon; finishing a level opens the next, and level 2B opens with
+// level 2. See SPEC.md. Play never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.7.13';
-import * as speech from '../shared/speech.js?v=0.7.13';
-import * as storage from '../shared/storage.js?v=0.7.13';
-import * as coins from '../shared/coins.js?v=0.7.13';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.13';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.7.13';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.7.13';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.7.13';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.7.13';
+import * as sound from '../shared/sound.js?v=0.7.14';
+import * as speech from '../shared/speech.js?v=0.7.14';
+import * as storage from '../shared/storage.js?v=0.7.14';
+import * as coins from '../shared/coins.js?v=0.7.14';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.14';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.7.14';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.7.14';
+import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.14';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.7.14';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.7.14';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -23,23 +24,27 @@ const SAY_AGAIN_AFTER = 500; // ms after the ding before the word is said again,
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
-const PRIZE = 100; // coins for finishing a wall, times the level
 
-// The levels, in order: their words, dragon, hill colors, start-screen line,
-// and what a finished brick is (with a non-breaking hyphen, so lines don't
-// break inside see-through). Level 4's middle bricks are green, not blue, so
+// The levels, in order. Each has an id, saved with progress (1-4, or '2b'
+// for level 2B, which came later); the label it shows; opens, the highest
+// open numbered level that opens it; the coins its wall pays; its words,
+// dragon, hill colors (back, then front), and start-screen line; and what a
+// finished brick is (with a non-breaking hyphen, so lines don't break inside
+// see-through). Level 4's middle bricks are green, not blue, so
 // they can't be mistaken for see-through panes showing the blue sky. Level 4's finished bricks are see-through
 // glass, with no mortar behind them, so they show the dragon lurking behind
 // the wall; its words are sound-alikes, so the voice reads just the sentence.
 const LEVELS = [
-  { words: WORDS_1, dragon: 'dragon-1', name: 'dragon', hill: ['#62c370', '#4fae5d'],
-    intro: 'Tap the right spelling to zap a brick!', top: 'gold' },
-  { words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon', hill: ['#eef7ff', '#d3e8f8'],
-    intro: 'Level 2: keep the ice dragon out!', top: 'gold' },
-  { words: WORDS_3, dragon: 'dragon-3', name: 'fire dragon', hill: ['#c4623f', '#9c4329'],
-    intro: 'Level 3: keep the fire dragon out!', top: 'gold' },
-  { words: WORDS_4, dragon: 'dragon-4', name: 'shadow dragon', hill: ['#7183a3', '#5b6b8a'],
-    intro: 'Level 4: turn the wall see‑through!', top: 'see‑through', glass: true,
+  { id: 1, label: '1', opens: 1, prize: 100, words: WORDS_1, dragon: 'dragon-1', name: 'dragon',
+    hill: ['#62c370', '#4fae5d'], intro: 'Tap the right spelling to zap a brick!', top: 'gold' },
+  { id: 2, label: '2', opens: 2, prize: 200, words: WORDS_2, dragon: 'dragon-2', name: 'ice dragon',
+    hill: ['#eef7ff', '#d3e8f8'], intro: 'Level 2: keep the ice dragon out!', top: 'gold' },
+  { id: '2b', label: '2B', opens: 2, prize: 200, words: WORDS_2B, dragon: 'dragon-2b', name: 'sea dragon',
+    hill: ['#3bc9db', '#f3d9a4'], intro: 'Level 2B: keep the sea dragon out!', top: 'gold' },
+  { id: 3, label: '3', opens: 3, prize: 300, words: WORDS_3, dragon: 'dragon-3', name: 'fire dragon',
+    hill: ['#c4623f', '#9c4329'], intro: 'Level 3: keep the fire dragon out!', top: 'gold' },
+  { id: 4, label: '4', opens: 4, prize: 400, words: WORDS_4, dragon: 'dragon-4', name: 'shadow dragon',
+    hill: ['#7183a3', '#5b6b8a'], intro: 'Level 4: turn the wall see‑through!', top: 'see‑through', glass: true,
     colors: ['#a7adbd', '#2f9e44', 'rgba(255, 255, 255, 0.12)'], sentenceOnly: true },
 ];
 
@@ -58,24 +63,34 @@ const WAND = { x: 316, y: 477 }; // center of the wand's star
 // missed: word -> { count, last, picked } for every word ever missed: how many
 // wrong picks, when the last one was (ms since 1970), and which wrong
 // spellings were picked how often. Kept for a future level; never cleared.
-// unlocked: the highest level that's open. wall: the level last chosen.
-// paid: level -> true once its wall prize is paid; clearing the wall resets
-// it, so a wall that slips and comes back can't pay twice.
+// unlocked: the highest numbered level that's open. wall: the id of the level
+// last chosen. paid: level id -> true once its wall prize is paid; clearing
+// the wall resets it, so a wall that slips and comes back can't pay twice.
+const LAST = 4; // the highest numbered level
 const saved = storage.load(GAME_ID, { levels: {}, missed: {}, unlocked: 1, wall: 1 });
 if (!isObject(saved.levels)) saved.levels = {};
 if (!isObject(saved.missed)) saved.missed = {};
-if (!isLevel(saved.unlocked)) saved.unlocked = 1;
-if (!isLevel(saved.wall) || saved.wall > saved.unlocked) saved.wall = 1;
+if (!byId(saved.unlocked) || typeof saved.unlocked !== 'number') saved.unlocked = 1;
+if (!byId(saved.wall) || !opened(byId(saved.wall))) saved.wall = 1;
 if (!isObject(saved.paid)) { // walls finished before coins existed were paid by the head start
   saved.paid = {};
   for (let n = 1; n < saved.unlocked; n++) saved.paid[n] = true;
 }
 
-// For testing, game/?level=2 opens that level for this visit, locked or not.
-const preview = Number((/[?&]level=(\d+)/.exec(location.search) || [])[1]);
+// For testing, game/?level=2 (or 2b) opens that level for this visit, locked
+// or not.
+const preview = byId((/[?&]level=(\w+)/.exec(location.search) || [])[1]);
 
-function isLevel(value) {
-  return typeof value === 'number' && value >= 1 && value <= LEVELS.length && value % 1 === 0;
+// The level with this id (a number, or '2b' in any case), or null.
+function byId(id) {
+  const key = String(id).toLowerCase();
+  return LEVELS.filter(function (info) {
+    return String(info.id) === key;
+  })[0] || null;
+}
+
+function opened(info) {
+  return saved.unlocked >= info.opens;
 }
 
 function isObject(value) {
@@ -87,7 +102,7 @@ function $(id) {
 }
 
 let bricks = {}; // word -> its <rect>, for the level on screen
-let wall = 1; // the level on screen
+let wall = LEVELS[0]; // the level on screen, from LEVELS
 let words = WORDS_1; // its words
 let current = null; // the entry being asked
 let answering = false;
@@ -129,7 +144,7 @@ function goldCount(list) {
 
 function buildWall() {
   const group = $('wall');
-  const glass = LEVELS[wall - 1].glass;
+  const glass = wall.glass;
   while (group.firstChild) group.removeChild(group.firstChild);
   bricks = {};
   const top = WALL_BOTTOM - ROWS * BRICK_H;
@@ -156,14 +171,13 @@ function buildWall() {
   }
 }
 
-function isOpen(n) {
-  return n <= saved.unlocked || n === preview;
+function isOpen(info) {
+  return opened(info) || info === preview;
 }
 
 // Shows a level: its wall, dragon, hill, and the start-screen line.
-function showLevel(n) {
-  const info = LEVELS[n - 1];
-  wall = n;
+function showLevel(info) {
+  wall = info;
   words = info.words;
   current = null;
   buildWall();
@@ -177,47 +191,48 @@ function showLevel(n) {
   $('hill-back').setAttribute('fill', info.hill[0]);
   $('hill-front').setAttribute('fill', info.hill[1]);
   $('intro-text').textContent = info.intro;
-  $('tally-label').textContent = 'Level ' + n + ' ' + info.top + ' bricks';
+  $('tally-label').textContent = 'Level ' + info.label + ' ' + info.top + ' bricks';
   showPrize();
   showLevelButtons();
 }
 
 function showPrize() {
-  $('prize').innerHTML = saved.paid[wall] ? 'Wall prize won: ' + PRIZE * wall + ' ' + coins.ICON + ' ✓' :
-    'Finish the wall to win ' + PRIZE * wall + ' ' + coins.ICON;
+  $('prize').innerHTML = saved.paid[wall.id] ? 'Wall prize won: ' + wall.prize + ' ' + coins.ICON + ' ✓' :
+    'Finish the wall to win ' + wall.prize + ' ' + coins.ICON;
 }
 
 function showLevelButtons() {
   levelButtons.forEach(function (button) {
-    const n = Number(button.getAttribute('data-level'));
-    const open = isOpen(n);
-    button.textContent = open ? String(n) : '🔒';
-    button.setAttribute('aria-label', 'Level ' + n + (open ? '' : ', locked'));
+    const info = byId(button.getAttribute('data-level'));
+    const open = isOpen(info);
+    button.textContent = open ? info.label : '🔒';
+    button.setAttribute('aria-label', 'Level ' + info.label + (open ? '' : ', locked'));
     button.classList.toggle('is-locked', !open);
-    button.setAttribute('aria-pressed', String(n === wall));
+    button.setAttribute('aria-pressed', String(info === wall));
   });
 }
 
 function pickLevel(button) {
-  const n = Number(button.getAttribute('data-level'));
-  if (!isOpen(n)) { // locked: say how to open it
+  const info = byId(button.getAttribute('data-level'));
+  if (!isOpen(info)) { // locked: say how to open it
+    const before = byId(info.opens - 1); // finishing it opens this one
     pop(button, 'is-nudged');
-    $('intro-text').textContent = 'Make every brick in level ' + (n - 1) + ' ' + LEVELS[n - 2].top +
-      ' to open level ' + n + '!';
+    $('intro-text').textContent = 'Make every brick in level ' + before.label + ' ' + before.top +
+      ' to open level ' + info.label + '!';
     setTimeout(function () {
-      $('intro-text').textContent = LEVELS[wall - 1].intro;
+      $('intro-text').textContent = wall.intro;
     }, 3000);
     return;
   }
-  if (n !== preview) {
-    saved.wall = n;
+  if (info !== preview) {
+    saved.wall = info.id;
     storage.save(GAME_ID, saved);
   }
-  showLevel(n);
+  showLevel(info);
 }
 
 function paint(word) {
-  const info = LEVELS[wall - 1];
+  const info = wall;
   bricks[word].style.fill = (info.colors || COLORS)[level(word)];
   if (info.glass) bricks[word].classList.toggle('is-clear', level(word) === TOP);
 }
@@ -256,14 +271,14 @@ function choose() {
 // the same alone, so for them it's just the sentence.
 function say() {
   const sentence = current.sentence.replace('___', current.word);
-  speech.speak(LEVELS[wall - 1].sentenceOnly ? sentence : current.word + '. ' + sentence);
+  speech.speak(wall.sentenceOnly ? sentence : current.word + '. ' + sentence);
 }
 
 // Says the word once more, after Zoe finds it following a miss. For
 // sound-alikes it's the sentence again, since the word alone sounds the same.
 function sayAgain() {
   const sentence = current.sentence.replace('___', current.word);
-  speech.speak(LEVELS[wall - 1].sentenceOnly ? sentence : current.word);
+  speech.speak(wall.sentenceOnly ? sentence : current.word);
 }
 
 function showSentence() {
@@ -436,17 +451,24 @@ function answer(button, text) {
   }
 }
 
-// Every brick is gold: the dragon gives up and flies away. Finishing a level
-// for the first time opens the next one, and goes to its start screen.
+// Every brick is gold: the dragon gives up and flies away. Finishing the
+// highest open numbered level for the first time opens the next one (with
+// level 2, 2B), and goes to its start screen.
 function finishWall() {
-  const opens = wall < LEVELS.length && saved.unlocked === wall ? wall + 1 : 0;
-  const prize = saved.paid[wall] ? 0 : PRIZE * wall;
+  const opens = wall.id === saved.unlocked && wall.id < LAST ? wall.id + 1 : 0;
+  const prize = saved.paid[wall.id] ? 0 : wall.prize;
+  const labels = LEVELS.filter(function (info) {
+    return info.opens === opens;
+  }).map(function (info) {
+    return info.label;
+  });
   if (opens) {
     saved.unlocked = opens;
     saved.wall = opens;
   }
   if (prize) {
-    saved.paid[wall] = true;
+    saved.paid[wall.id] = true;
+    showPrize();
     coins.earn(GAME_ID, prize);
     setTimeout(function () {
       sound.coin();
@@ -454,9 +476,10 @@ function finishWall() {
     }, 1300);
   }
   storage.save(GAME_ID, saved);
-  $('sentence').textContent = 'The wall is all ' + LEVELS[wall - 1].top + '! The ' + LEVELS[wall - 1].name +
-    ' flew away!' + (prize ? ' You won ' + prize + ' coins!' : '') +
-    (opens ? ' Level ' + opens + ' is open!' : '');
+  $('sentence').textContent = 'The wall is all ' + wall.top + '! The ' + wall.name + ' flew away!' +
+    (prize ? ' You won ' + prize + ' coins!' : '') +
+    (labels.length > 1 ? ' Levels ' + labels.join(' and ') + ' are open!' : '') +
+    (labels.length === 1 ? ' Level ' + labels[0] + ' is open!' : '');
   $('choices').innerHTML = '';
   sound.celebrate();
   confetti();
@@ -470,7 +493,7 @@ function finishWall() {
   setTimeout(function () {
     if (opens) {
       showStart();
-      showLevel(opens);
+      showLevel(byId(opens));
     } else {
       next();
     }
@@ -555,7 +578,7 @@ function clearWall() {
   words.forEach(function (entry) {
     delete saved.levels[entry.word];
   });
-  delete saved.paid[wall]; // finishing it all over again wins the prize again
+  delete saved.paid[wall.id]; // finishing it all over again wins the prize again
   storage.save(GAME_ID, saved);
   showPrize();
   words.forEach(function (entry) {
@@ -588,10 +611,10 @@ document.addEventListener('visibilitychange', function () {
 });
 
 // Saved games from before a level existed: a finished wall opens the next.
-while (saved.unlocked < LEVELS.length &&
-    goldCount(LEVELS[saved.unlocked - 1].words) === LEVELS[saved.unlocked - 1].words.length) {
+while (saved.unlocked < LAST &&
+    goldCount(byId(saved.unlocked).words) === byId(saved.unlocked).words.length) {
   saved.unlocked += 1;
   storage.save(GAME_ID, saved);
 }
-showLevel(isLevel(preview) ? preview : saved.wall);
+showLevel(preview || byId(saved.wall));
 peekLater();

@@ -193,10 +193,46 @@ After a miss, once Zoe taps the right spelling, the voice says the word
 again, 0.5 s after the ding, while the right spelling shows. In level 4 it
 says the sentence instead, since sound-alikes sound the same on their own.
 
+## Level 2B
+
+Requested by the user, verbatim (2026-10-30):
+
+> Zoe mentioned that she found the level 3 very challenging. But she had a lot of basic spelling issues, not just on hard words. Is there another list we can use to target 7-9 year old spellers, and put it as level 2B?
+
+Asked, the user chose:
+
+- **Words:** 100 of the example words for the spelling patterns England's
+  curriculum teaches at ages 7–9 (years 3 and 4), from the same document as
+  levels 2–4. Level 2 used that age's statutory word list. These are the
+  patterns' own examples, which are plainer: young, touch, double, measure,
+  picture, action, magician, science, beginning, return. Words already in
+  other levels are left out, as are the hardest (mathematician, spontaneous,
+  irresponsible). See `words-2b.js`.
+- **Opening:** 2B opens with level 2, as soon as level 1 is all gold. Level
+  3 still opens when level 2 is all gold, and finishing 2B opens nothing.
+- **Prize:** 200 coins, the same as level 2.
+- **Dragon:** a sea dragon, behind a wall by the beach.
+
+Implementation notes for 2B:
+
+- **Sea dragon:** teal, with webbed fins for wings, frills for horns, a
+  crest, and cyan eyes. When it peeks over the wall, bubbles float from its
+  nostrils.
+- **Beach:** the hills are a strip of sea behind the wall and sand in front.
+- **Level picker:** a "2B" button sits between 2 and 3. Five buttons fit on
+  one row in portrait; in landscape and on phones they wrap to two rows.
+- **Messages:** finishing level 1 now says "Levels 2 and 2B are open!", and
+  tapping a locked 2B says "Make every brick in level 1 gold to open level
+  2B!".
+- **Saved data:** level 2B's id is `2b`, in `wall` and `paid`. Levels 1–4
+  keep their numbers, so saved progress carries over, and `unlocked` still
+  counts only them.
+
 ## Coins
 
 Added with the Squishy Store (see `store/SPEC.md`), by the user's choice:
 coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
+Level 2B, added later, pays 200.
 
 - **Paying:** the prize is paid once per finished wall, and recorded in
   `paid` (level → true) in the saved data. A wall that slips and is
@@ -293,14 +329,16 @@ coins only for finishing a wall, 100 times the level (100, 200, 300, 400).
   level 4. Sounds and everything else work the same on every level.
 - **Clearing:** on any level, clearing affects only that level's bricks. Open
   levels and the missed-word record stay.
-- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=3`, `=4`) opens
-  that level for the visit, even when it's locked, without unlocking it.
+- **Testing:** in Safari, `…/02-spelling/?level=2` (or `=2b`, `=3`, `=4`)
+  opens that level for the visit, even when it's locked, without unlocking
+  it.
 - **Saved data:** under `zoe-games:02-spelling`:
   - `levels`: word → 0–2, for the words of both levels (no word is in both).
     Unanswered words, and any unreadable values, count as 1.
-  - `unlocked`: the highest open level (1–4). On load, a finished wall
-    opens the next level, for saves from before that level existed.
-  - `wall`: the level last picked.
+  - `unlocked`: the highest open numbered level (1–4); 2B is open once it's
+    2. On load, a finished wall opens the next level, for saves from before
+    that level existed.
+  - `wall`: the level last picked (1–4, or `2b`).
   - `missed`: word → `{ count, last, picked }`. That's the number of wrong
     picks, the time of the last one (ms since 1970), and how often each wrong
     spelling was picked. It covers both levels' words and is for the future
