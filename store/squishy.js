@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.11';
+//   import { createSquishy } from './squishy.js?v=0.7.12';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,6 +20,8 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
+//   fluffyTail  a big, bushy tail like a chinchilla's, curling up behind,
+//               with a tip in the belly color (instead of the usual tail)
 //   heads       2 for two heads up on long, skinny necks, each with a face
 //               and horns. Spikes, crown, glasses, headphones, hat, and halo
 //               are placed for one head.
@@ -42,7 +44,7 @@ const FRAGMENT = [
   // Packed four to a vector, to stay within the 16 uniform vectors every
   // WebGL device has.
   'uniform vec4 uView;', // zoom, turn, squish, egg
-  'uniform vec4 uMore;', // tilt, two heads, and two to spare
+  'uniform vec4 uMore;', // tilt, two heads, fluffy tail, and one to spare
   'uniform vec4 uShape;', // size, wing size, tail size, tail tip
   'uniform vec4 uExtras;', // spikes, crown, stars, bow tie
   'uniform vec4 uGear;', // glasses (1 round, 2 sun), headphones, hat, halo
@@ -65,6 +67,7 @@ const FRAGMENT = [
   '#define HALO uGear.w',
   '#define TILT uMore.x',
   '#define TWO_HEADS uMore.y',
+  '#define FLUFFY_TAIL uMore.z',
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -128,7 +131,8 @@ const FRAGMENT = [
   '}',
 
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
-  // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg.
+  // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg,
+  // 11 fluffy tail.
   'vec2 map(vec3 world) {',
   '  vec3 p = local(world);',
   // The mystery egg: rounder and wider at the bottom, resting on the floor.
@@ -172,10 +176,24 @@ const FRAGMENT = [
   '  }',
   '  res.x = smin(res.x, sdEllipsoid(q - vec3(0.42, -0.72, 0.42), vec3(0.22, 0.13, 0.2)), 0.08);',
   // The tail: a big one is longer and thicker, curving up behind (which also
-  // keeps it inside the view), maybe with a ball on the tip.
-  '  vec3 tip = vec3(0.0, -0.5, -0.66) + vec3(0.0, 0.2 + 0.6 * (TAIL - 1.0), -0.44 - 0.1 * (TAIL - 1.0));',
-  '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), tip, 0.18 * min(TAIL, 1.3), 0.06 * TAIL), 0.1);',
-  '  if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
+  // keeps it inside the view), maybe with a ball on the tip. A fluffy one,
+  // like a chinchilla's, is puffs that grow fatter as they curl up behind the
+  // back and over to one side, so its tip peeks up by the head from the
+  // front.
+  '  if (FLUFFY_TAIL > 0.5) {',
+  '    float t = length(p - vec3(0.0, -0.5, -0.7)) - 0.17;',
+  '    t = smin(t, length(p - vec3(0.0, -0.38, -0.96)) - 0.25, 0.16);',
+  '    t = smin(t, length(p - vec3(0.05, -0.1, -1.06)) - 0.31, 0.16);',
+  '    t = smin(t, length(p - vec3(0.12, 0.22, -1.06)) - 0.33, 0.16);',
+  '    t = smin(t, length(p - vec3(0.22, 0.55, -0.95)) - 0.32, 0.16);',
+  '    t = smin(t, length(p - vec3(0.32, 0.86, -0.78)) - 0.28, 0.16);',
+  '    t = smin(t, length(p - vec3(0.4, 1.06, -0.52)) - 0.22, 0.16);',
+  '    res = add(res, t, 11.0, 0.08);',
+  '  } else {',
+  '    vec3 tip = vec3(0.0, -0.5, -0.66) + vec3(0.0, 0.2 + 0.6 * (TAIL - 1.0), -0.44 - 0.1 * (TAIL - 1.0));',
+  '    res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), tip, 0.18 * min(TAIL, 1.3), 0.06 * TAIL), 0.1);',
+  '    if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
+  '  }',
   // Wings: bigger ones reach further up and out.
   '  float big = WINGS - 1.0;',
   '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big - 0.18 * TWO_HEADS, -0.44 - 0.08 * big);',
@@ -310,6 +328,7 @@ const FRAGMENT = [
 
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
+  '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
   '  if (m > 9.5) return eggPaint(local(world));',
   '  if (m > 8.5) return vec3(1.0, 0.98, 0.95);',
   '  if (m > 7.5) {',
@@ -466,7 +485,7 @@ export function createSquishy(canvas, options) {
     // stretch, every 6° of turn.
     gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
-    gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), 0, 0);
+    gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail), 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),

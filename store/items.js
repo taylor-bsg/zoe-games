@@ -63,7 +63,7 @@ export const ITEMS = [
     id: 'party', name: 'Party Puff', price: 300,
     look: { size: 0.9, body: '#ffa94d', belly: '#fff4e6', horn: '#fff3bf', wing: '#f76707',
       cheek: '#ff6b6b', spike: '#f76707', eye: '#1d2b53',
-      hat: true, acc: '#cc5de8', acc2: '#ffd43b' },
+      hat: true, acc: '#cc5de8', acc2: '#ffd43b', fluffyTail: true },
   },
   {
     id: 'angel', name: 'Angel', price: 350,

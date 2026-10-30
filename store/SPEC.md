@@ -76,6 +76,14 @@ out about 10% so that Dragon King fits at full size. This replaces the
 earlier sizes, including Galaxy's full size. "Them" is Galaxy's two heads,
 which were on short necks: they now sit up on long, skinny necks.
 
+Requested by the user, verbatim (2026-10-29):
+
+> Party puff should have a big chinchilla tail
+
+Party Puff's little tail is now a big, bushy one like a chinchilla's. It
+curls up behind its back and over to one side, so the cream tip peeks up
+beside its head from the front.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -156,7 +164,7 @@ which were on short necks: they now sit up on long, skinny necks.
   | Professor | 225 | 75% | Mint; round glasses and a red bow tie (new) |
   | Galaxy | 250 | 80% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
   | DJ Bop | 275 | 85% | Cyan with pink spikes; headphones (new) |
-  | Party Puff | 300 | 90% | Orange; a striped party hat with a pom-pom (new) |
+  | Party Puff | 300 | 90% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
   | Angel | 350 | 95% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 100% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
 
@@ -193,6 +201,10 @@ which were on short necks: they now sit up on long, skinny necks.
     horns, and two cups. The party hat is striped, with a white pom-pom. The
     halo is a tilted ring that glows. The bow tie is two bows and a knot
     under the smile.
+  - **Chinchilla tail** (`fluffyTail`): seven puffs, melted smoothly
+    together, that grow fatter as they curl up behind the back and over to
+    one side. It's the body color with a cream (belly color) tip, which
+    peeks up beside the head from the front. It replaces the usual tail.
   - **Two heads** (`heads: 2`): a lower body with two round heads up on
     long, skinny necks that lean apart. The heads turn a little away from
     each other and tip out. Each has its own painted face, at 47% of the
