@@ -39,7 +39,8 @@ https://taylor-bsg.github.io/zoe-games/.
 ## Layout
 
 ```
-index.html            launcher: one big tile per game, mute toggle, version in a corner
+index.html            launcher: one big tile per game, mute toggle, version in a corner;
+                      also warms up the store's 3D view (store/SPEC.md)
 games.js              registry: id (= folder name), title, emoji, description
 version.js            version string, shown small on the launcher
 manifest.webmanifest

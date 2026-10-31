@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="shared/base.css?v=0.7.26">
+  <link rel="stylesheet" href="shared/base.css?v=0.7.27">
   <style>
     .tiles {
       display: grid;
@@ -128,10 +128,11 @@
   <p class="version" id="version"></p>
 
   <script type="module">
-    import { games } from './games.js?v=0.7.26';
-    import { VERSION } from './version.js?v=0.7.26';
-    import * as sound from './shared/sound.js?v=0.7.26';
-    import * as coins from './shared/coins.js?v=0.7.26';
+    import { games } from './games.js?v=0.7.27';
+    import { VERSION } from './version.js?v=0.7.27';
+    import * as sound from './shared/sound.js?v=0.7.27';
+    import * as coins from './shared/coins.js?v=0.7.27';
+    import { warmUp } from './store/squishy.js?v=0.7.27';
 
     const tiles = document.getElementById('tiles');
     games.forEach(function (game) {
@@ -167,6 +168,11 @@
 
     document.getElementById('coins').innerHTML = coins.ICON + ' ' + coins.balance();
     document.getElementById('version').textContent = 'v' + VERSION;
+
+    // The store's 3D view can take seconds to compile on a slower computer.
+    // Compile it here in the background, a moment after this page shows, so
+    // it's ready when the Store button is tapped.
+    setTimeout(warmUp, 1000);
   </script>
 </body>
 </html>

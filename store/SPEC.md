@@ -147,6 +147,18 @@ can take seconds. Now the store shows at once, with the squishy as a big
 emoji (🥚 or 🐉) while the 3D view compiles in the background; then the 3D
 squishy takes its place. Everything works meanwhile, including hatching.
 
+Asked next, verbatim (2026-10-31):
+
+> Is there some way to make it more incremental, or to do it in the background?
+
+The main page now compiles the store's 3D program in the background, a
+second after it appears, so it's ready before the Store button is tapped.
+Browsers keep compiled programs between pages: tested on a never-seen
+program, the store's compile and first picture took 12–16 ms after a
+warm-up instead of 137–145 ms. The main page stays smooth while it runs. A
+smaller eggs-only program compiled first (the incremental way) was measured
+too: about a third faster, so the warm-up does far more.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -269,6 +281,13 @@ squishy takes its place. Everything works meanwhile, including hatching.
     Chrome does), the store checks each frame without waiting; elsewhere it
     first lets the store show for a couple of frames, then waits for the
     compile.
+  - **Warm-up:** the main page calls `warmUp()` from `squishy.js` a second
+    after it shows. On a hidden one-pixel canvas it compiles the same
+    program and draws one pixel (some drivers finish compiling only on the
+    first drawing), then lets the canvas go. It runs only where the browser
+    compiles in the background, so the main page never waits for it. Once
+    the program has been compiled, browsers keep it, and the warm-up is
+    quick.
   - Every squishy is drawn with the same zoom, so their sizes compare. The
     zoom is set so the largest still fits; each squishy's size in
     `items.js` keeps it inside. A big tail curves up behind, which keeps it
