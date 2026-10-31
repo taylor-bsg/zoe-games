@@ -33,26 +33,21 @@
   <p><a href="../">🏠 Home</a></p>
   <h1>Squishy speed check</h1>
   <p>
-    For developers, not linked from the store. It times how long this
-    computer takes to get the store's 3D view ready: it compiles the 3D
-    program three ways, from the smallest (eggs only) to the full one, then
-    draws with it. The page may freeze while it compiles, for a few minutes
-    on a slow computer. When it says Done, tap Copy and paste the result.
+    For developers. It times how long this computer takes to get the
+    store's 3D view ready for each squishy and egg: compiling its 3D
+    program, then drawing it once. It takes a minute or two on a slower
+    computer. When it says Done, tap Copy and paste the result.
   </p>
   <button type="button" id="start">Start</button>
   <button type="button" id="copy" disabled>Copy</button>
   <pre id="out"></pre>
 
   <script type="module">
-    import { VERSION } from '../version.js?v=0.7.29';
-
+    import { VERSION } from '../version.js?v=0.7.30';
+    import { ITEMS } from './items.js?v=0.7.30';
 
     const out = document.getElementById('out');
     const lines = [];
-    const LOOK = { size: 0.82, body: '#4cc26e', belly: '#c3f0cf', horn: '#ffe08a', wing: '#2f9e5b',
-      cheek: '#ff8fab', spike: '#ffb84d', eye: '#1d2b53', spikes: true };
-    // Places in squishy.js to change for the smaller programs.
-    const AFTER_EGG = "  '  if (KIND > 0.5 && KIND < 1.5) {',";
     const OCCLUSION = "  'float occlusion(vec3 p, vec3 n) {',";
 
     function log(line) {
@@ -70,13 +65,12 @@
       return (ms / 1000).toFixed(2) + ' s';
     }
 
-    // squishy.js with a program no cache has seen, made smaller for some
-    // variants.
+    // squishy.js with programs no cache has seen, and for the experiment,
+    // without crease shading.
     async function module(variant) {
       let src = await (await fetch('./squishy.js?check=' + Date.now())).text();
-      if (src.indexOf(AFTER_EGG) < 0 || src.indexOf(OCCLUSION) < 0) throw new Error('squishy.js has changed');
+      if (src.indexOf(OCCLUSION) < 0) throw new Error('squishy.js has changed');
       src = src.replace('const float FLOOR = -0.86;', 'const float FLOOR = -0.86000' + Math.floor(Math.random() * 1e6) + ';');
-      if (variant === 'eggs only') src = src.replace(AFTER_EGG, "  '  return vec2(1e9, 0.0);',\n" + AFTER_EGG);
       if (variant === 'no crease shading') {
         src = src.replace(OCCLUSION, "  'float occlusion(vec3 p, vec3 n) { return 1.0; }',\n  'float unused(vec3 p, vec3 n) {',");
       }
@@ -94,47 +88,42 @@
         (background ? 'background compiling' : 'no background compiling');
     }
 
-    async function time(variant, frames) {
-      const mod = await module(variant);
-      const canvas = document.createElement('canvas');
-      document.body.appendChild(canvas);
+    // Compiles one look's program, and draws it once.
+    async function time(view, gl, name, look) {
       const started = performance.now();
-      const view = mod.createSquishy(canvas, { maxRatio: 1 });
-      if (!view) {
-        log(variant + ': no WebGL');
-        return;
-      }
       let longest = 0;
-      let last = performance.now();
-      while (view.state() === 'compiling') {
+      let last = started;
+      while (view.status(look) === 'compiling') {
         await pause(50);
         const now = performance.now();
         longest = Math.max(longest, now - last);
         last = now;
       }
       const compiled = performance.now();
-      if (view.state() === 'failed') {
-        log(variant + ': compile FAILED after ' + seconds(compiled - started));
+      if (view.status(look) === 'failed') {
+        log(name + ': FAILED');
+        return;
+      }
+      view.draw(look, { angle: 0.5, squish: 0 });
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+      log(name + ': ' + seconds(compiled - started) + (longest > 200 ? ' (page froze up to ' + seconds(longest) + ')' : '') +
+        ', first picture ' + seconds(performance.now() - compiled));
+    }
+
+    async function run(variant, looks) {
+      const mod = await module(variant);
+      const canvas = document.createElement('canvas');
+      document.body.appendChild(canvas);
+      const view = mod.createSquishy(canvas, { maxRatio: 1 });
+      if (!view) {
+        log('no WebGL');
         return;
       }
       const gl = canvas.getContext('webgl');
-      const pixel = new Uint8Array(4);
-      view.draw(LOOK, { angle: 0.5, squish: 0 });
-      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-      const drawn = performance.now();
-      let line = variant + ': compile ' + seconds(compiled - started) + ' (page froze up to ' +
-        seconds(longest) + '), first picture ' + seconds(drawn - compiled);
-      if (frames) {
-        canvas.style.width = '640px';
-        canvas.style.height = '540px';
-        const t = performance.now();
-        for (let i = 0; i < frames; i++) {
-          view.draw(LOOK, { angle: 0.5 + i * 0.2, squish: 0 });
-          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        }
-        line += ', then ' + ((performance.now() - t) / frames).toFixed(0) + ' ms a picture at 640×540';
+      for (const pair of looks) {
+        await pause(100); // shows the last line before the next compile
+        await time(view, gl, pair[0], pair[1]);
       }
-      log(line);
       const lose = gl.getExtension('WEBGL_lose_context');
       if (lose) lose.loseContext();
       canvas.remove();
@@ -145,13 +134,21 @@
       lines.length = 0;
       log('Version ' + VERSION + ' | ' + navigator.userAgent);
       log('Graphics: ' + graphics());
+      log('Compiling each squishy, then eggs:');
       try {
-        for (const variant of ['eggs only', 'no crease shading', 'full']) {
-          log('Compiling: ' + variant + '…');
-          await pause(300); // shows the line before a compile can freeze the page
-          lines.pop();
-          await time(variant, variant === 'full' ? 5 : 0);
-        }
+        const looks = ITEMS.map(function (item) {
+          return [item.name, item.look];
+        });
+        looks.push(['egg', { egg: true, body: '#4cc26e' }]);
+        looks.push(['egg with stars', { egg: true, body: '#5f3dc4', stars: true }]);
+        looks.push(['egg with sunglasses', { egg: true, body: '#3b2f63', glasses: 'sun' }]);
+        looks.push(['cube egg', { egg: true, body: '#ffbe55', cube: true }]);
+        await run('as in the store', looks);
+        const party = ITEMS.filter(function (item) {
+          return item.id === 'party';
+        })[0];
+        log('Experiment:');
+        await run('no crease shading', [['Party Puff without crease shading', party.look]]);
         log('Done');
       } catch (e) {
         log('Error: ' + e.message);

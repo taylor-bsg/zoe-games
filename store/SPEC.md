@@ -161,6 +161,23 @@ So on that Chromebook the compile takes about 30 s, freezes the whole page
 while it runs (it isn't really in the background there), and isn't kept
 between pages. Version 0.7.28 removed the warm-up.
 
+To find out why, `store/speed-check.html` timed the compile on that
+Chromebook (reached by a temporary "Speed check" link on the main page,
+since it can't open other addresses). It has Intel UHD 600 graphics, drawn
+in hardware (25 ms a picture, smooth enough), and the page didn't freeze
+while compiling. The one 3D program with every squishy's parts took 14.7 s
+to compile, 10.7 s without the crease shading, and with only an egg's
+parts, 0.8 s. So the time goes into the size of the program, which held
+every squishy's parts at once, copied about nine times over by the
+compiler.
+
+Version 0.7.30 compiles a separate, small program for each combination of
+parts a squishy needs (Sprout, Sunny, Frosty, and Ember share one), when
+it's first shown. Its emoji shows until then, and the squishies likely to
+come next compile in the background. Every squishy and egg looks the same
+as before: compared pixel by pixel, at most 4 single pixels differed, by
+5/255.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -277,12 +294,20 @@ between pages. Version 0.7.28 removed the warm-up.
   - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.
-  - Until the 3D view has compiled, a 🐉 stands in (a 🥚 for a mystery
-    egg), and without WebGL, or if the compile fails, for good. Where the
-    browser compiles in the background (`KHR_parallel_shader_compile`, as
-    Chrome does), the store checks each frame without waiting; elsewhere it
-    first lets the store show for a couple of frames, then waits for the
-    compile.
+  - **A program per squishy:** each squishy (and each kind of egg) is
+    drawn by a program with only its parts: an egg, the serpent, or a
+    dragon with only its own flair (`#define`s in `squishy.js`, chosen by
+    its `parts()`). Programs are compiled when first needed, and kept while
+    the store is open; squishies with the same parts share one.
+  - Until a squishy's program has compiled, its emoji stands in (🐉, or 🥚
+    for a mystery egg), and without WebGL, or if the compile fails, for
+    good. Where the browser compiles in the background
+    (`KHR_parallel_shader_compile`, as Chrome and Safari do), the store
+    checks each frame without waiting; elsewhere it first lets the store
+    show for a couple of frames, then waits for the compile.
+  - **Compiling ahead:** once the squishy on screen is drawn, the store
+    compiles, one at a time in the background, the squishy inside the egg
+    on screen (for hatching), then the next squishy and the one before.
   - Every squishy is drawn with the same zoom, so their sizes compare. The
     zoom is set so the largest still fits; each squishy's size in
     `items.js` keeps it inside. A big tail curves up behind, which keeps it

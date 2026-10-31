@@ -5,16 +5,21 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.29';
+//   import { createSquishy } from './squishy.js?v=0.7.30';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
-//   view.state(); // 'compiling', 'ready', or 'failed'
+//   view.status(look); // 'compiling', 'ready', or 'failed'
 //
-// Compiling the 3D program can take seconds on a slower computer, such as a
-// Chromebook. createSquishy only starts it. Where the browser compiles in the
-// background (KHR_parallel_shader_compile), state() answers without waiting,
-// so a page can show something else until it's 'ready'; elsewhere it waits.
-// draw() always waits for the compile, and draws nothing if it failed.
+// Each look is drawn by a 3D program compiled with only the parts it needs
+// (see parts), since a slower computer takes seconds per program: on a
+// Chromebook with Intel UHD 600 graphics, one program with every part took
+// 15 s, an egg's 0.8 s. Programs are compiled when a look first needs one,
+// and kept. status(look) starts compiling its program and, where the browser
+// compiles in the background (view.background, KHR_parallel_shader_compile),
+// answers without waiting, so a page can show something else until it's
+// 'ready'; elsewhere it waits. view.compiling() says whether any program is
+// still compiling. draw() waits for the look's program, and draws nothing if
+// it failed.
 //
 // A look has colors (hex strings): body, belly, horn, wing, cheek, spike, eye,
 // and acc and acc2 for accessories. Everything else is optional:
@@ -126,11 +131,13 @@ const FRAGMENT = [
   // A cube egg's own space, centered in the cube. It's 1.24 across with
   // edges rounded by 0.16, and as it rocks it rises just enough that its
   // lowest rounded corner stays on the floor, at any turn.
+  '#ifdef IS_CUBE',
   'vec3 cubeSpace(vec3 p) {',
   '  float e = 0.46 * (abs(cos(ANGLE)) + abs(sin(ANGLE)));', // half its bottom, across the rocking
   '  float lift = (0.16 + e * sin(abs(TILT))) / cos(TILT) - 0.16;',
   '  return p - vec3(0.0, FLOOR + 0.62 + lift, 0.0);',
   '}',
+  '#endif',
 
   'float smin(float a, float b, float k) {',
   '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
@@ -154,16 +161,19 @@ const FRAGMENT = [
   // A two-headed dragon's head on this side (q is the dragon's space with x
   // made positive), in the head's own space: centered, turned a little away
   // from the other head, and tipped out.
+  '#ifdef HAS_TWO_HEADS',
   'vec3 headSpace(vec3 q) {',
   '  vec3 h = q - vec3(0.57, 1.02, 0.24);',
   '  h.xz = rot(0.35) * h.xz;',
   '  h.xy = rot(0.12) * h.xy;',
   '  return h;',
   '}',
+  '#endif',
 
   // A sea serpent: a coil on the floor, a neck rising from its front to a
   // head with a crest, fins, and whiskers, and a tail curling up at the back
   // with a fin. Materials as in map.
+  '#ifdef IS_SERPENT',
   'vec2 serpent(vec3 p) {',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   '  float coil = sdTorus(p - vec3(0.0, -0.62, -0.12), vec2(0.56, 0.24));',
@@ -185,6 +195,7 @@ const FRAGMENT = [
   '    sdRoundCone(q, vec3(0.62, 0.1, 0.62), vec3(0.82, -0.12, 0.5), 0.034, 0.024));',
   '  return add(res, whisker, 5.0, 0.02);',
   '}',
+  '#endif',
 
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
   // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg,
@@ -195,17 +206,19 @@ const FRAGMENT = [
   // Its taper bends distances a little, so they're scaled down to be safe.
   // A cube egg is a soft cube, lifted as it rocks so a corner stays on the
   // floor.
-  '  if (EGG > 0.5) {',
+  '#ifdef IS_EGG',
+  '  {',
   '    vec2 egg;',
-  '    if (KIND > 2.5) {',
-  '      egg = vec2(sdRoundBox(cubeSpace(p), vec3(0.62), 0.16), 10.0);',
-  '    } else {',
-  '      float y = p.y + 0.06;',
-  '      float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
-  '      egg = vec2(0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64)), 10.0);',
-  '    }',
+  '#ifdef IS_CUBE',
+  '    egg = vec2(sdRoundBox(cubeSpace(p), vec3(0.62), 0.16), 10.0);',
+  '#else',
+  '    float y = p.y + 0.06;',
+  '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
+  '    egg = vec2(0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64)), 10.0);',
+  '#endif',
   // Glasses on an egg, fitted to its curve: each lens faces out from the
   // egg's face, leaning back with it, and the arms wrap back to its sides.
+  '#ifdef HAS_GLASSES',
   '    if (GLASSES > 0.5) {',
   '      vec3 q = vec3(abs(p.x), p.y, p.z);',
   '      vec3 l = q - vec3(0.251, 0.214, 0.562);',
@@ -218,21 +231,27 @@ const FRAGMENT = [
   '      egg = add(egg, frame, 5.0, 0.006);',
   '      if (GLASSES > 1.5) egg = add(egg, sdEllipsoid(l, vec3(0.13, 0.13, 0.012)), 6.0, 0.003);',
   '    }',
+  '#endif',
   '    egg.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
   '    return egg;',
   '  }',
-  '  if (KIND > 0.5 && KIND < 1.5) {',
+  '#elif defined(IS_SERPENT)',
+  '  {',
   '    vec2 s = serpent(p);',
   '    s.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
   '    return s;',
   '  }',
+  '#else',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   // With one head, the round body is the head. Two heads sit up on long,
   // skinny necks from a lower body, each with its own little horns. A
   // chubby dragon has a big round body with a head on top, a snout, and
   // stubby arms.
   '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
+  '#ifdef HAS_TWO_HEADS',
   '  if (TWO_HEADS > 0.5) body = sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8));',
+  '#endif',
+  '#ifdef IS_CHUBBY',
   '  if (KIND > 1.5) {',
   '    body = sdEllipsoid(p - vec3(0.0, -0.2, 0.0), vec3(0.86, 0.68, 0.74));',
   '    body = smin(body, sdEllipsoid(p - vec3(0.0, 0.56, 0.06), vec3(0.5, 0.44, 0.46)), 0.14);',
@@ -241,27 +260,33 @@ const FRAGMENT = [
   '    arm.xy = rot(-0.35) * arm.xy;', // tipped out at the hand
   '    body = smin(body, sdEllipsoid(arm, vec3(0.14, 0.25, 0.15)), 0.06);',
   '  }',
+  '#endif',
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
   '  vec2 res = vec2(body, 1.0);',
+  '#if defined(HAS_TWO_HEADS)',
   '  if (TWO_HEADS > 0.5) {',
   '    res.x = smin(res.x, sdRoundCone(q, vec3(0.24, 0.25, 0.04), vec3(0.53, 0.86, 0.2), 0.13, 0.08), 0.12);',
   '    vec3 h = headSpace(q);',
   '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.39, 0.35, 0.35)), 0.06);',
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
   '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
-  '  } else if (KIND > 1.5) {', // floppy dog ears down the sides of the head
+  '  }',
+  '#elif defined(IS_CHUBBY)',
+  '  if (KIND > 1.5) {', // floppy dog ears down the sides of the head
   '    vec3 ear = q - vec3(0.48, 0.6, 0.0);',
   '    ear.xy = rot(-0.5) * ear.xy;', // the top tucked in at the head, the tip out
   '    res = add(res, sdEllipsoid(ear, vec3(0.08, 0.34, 0.2)), 2.0, 0.05);',
-  '  } else {',
-  '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   '  }',
+  '#else',
+  '  res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
+  '#endif',
   '  res.x = smin(res.x, sdEllipsoid(q - vec3(0.42, -0.72, 0.42), vec3(0.22, 0.13, 0.2)), 0.08);',
   // The tail: a big one is longer and thicker, curving up behind (which also
   // keeps it inside the view), maybe with a ball on the tip. A fluffy one,
   // like a chinchilla's, is puffs that grow fatter as they curl up behind the
   // back and over to one side, so its tip peeks up by the head from the
   // front.
+  '#ifdef HAS_FLUFFY_TAIL',
   '  if (FLUFFY_TAIL > 0.5) {',
   '    float t = length(p - vec3(0.0, -0.5, -0.7)) - 0.17;',
   '    t = smin(t, length(p - vec3(0.0, -0.38, -0.96)) - 0.25, 0.16);',
@@ -271,18 +296,26 @@ const FRAGMENT = [
   '    t = smin(t, length(p - vec3(0.32, 0.86, -0.78)) - 0.28, 0.16);',
   '    t = smin(t, length(p - vec3(0.4, 1.06, -0.52)) - 0.22, 0.16);',
   '    res = add(res, t, 11.0, 0.08);',
-  '  } else {',
+  '  }',
+  '#else',
+  '  {',
   '    vec3 tip = vec3(0.0, -0.5, -0.66) + vec3(0.0, 0.2 + 0.6 * (TAIL - 1.0), -0.44 - 0.1 * (TAIL - 1.0));',
   '    res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.5, -0.66), tip, 0.18 * min(TAIL, 1.3), 0.06 * TAIL), 0.1);',
+  '#ifdef HAS_TAIL_TIP',
   '    if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
+  '#endif',
   '  }',
+  '#endif',
   // Wings: bigger ones reach further up and out.
   '  float big = WINGS - 1.0;',
   '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big - 0.18 * TWO_HEADS, -0.44 - 0.08 * big);',
+  '#ifdef IS_CHUBBY',
   '  if (KIND > 1.5) w = q - vec3(0.5 + 0.24 * big, 0.32 + 0.24 * big, -0.5 - 0.08 * big);', // up on the back
+  '#endif',
   '  w.xy = rot(-0.5 - 0.15 * big) * w.xy;',
   '  w.xz = rot(0.5) * w.xz;',
   '  res = add(res, sdEllipsoid(w, vec3(0.08 + 0.03 * big, 0.34 * WINGS, 0.26 * WINGS)), 3.0, 0.06);',
+  '#ifdef HAS_SPIKES',
   '  if (SPIKES > 0.5) {',
   '    for (int i = 0; i < 3; i++) {',
   '      float t = float(i);',
@@ -290,6 +323,8 @@ const FRAGMENT = [
   '      res = add(res, sdRoundCone(p, a, a + vec3(0.0, 0.2, -0.1), 0.1, 0.03), 4.0, 0.04);',
   '    }',
   '  }',
+  '#endif',
+  '#ifdef HAS_CROWN',
   '  if (CROWN > 0.5) {',
   '    res = add(res, sdTorus(p - vec3(0.0, 0.83, 0.02), vec2(0.27, 0.05)), 4.0, 0.02);',
   '    for (int i = 0; i < 5; i++) {',
@@ -298,10 +333,12 @@ const FRAGMENT = [
   '      res = add(res, sdRoundCone(p, c, c + vec3(0.0, 0.2, 0.0), 0.06, 0.02), 4.0, 0.02);',
   '    }',
   '  }',
+  '#endif',
   // Glasses: rings over the painted eyes, turned to follow the round head,
   // with a bridge and arms that run back along the head. Away from the face,
   // a sphere around them stands in (it's never farther than they are), which
   // saves work on slower iPads.
+  '#ifdef HAS_GLASSES',
   '  if (GLASSES > 0.5) {',
   '    float bound = length(p - vec3(0.0, 0.15, 0.62)) - 0.95;',
   '    if (bound > 0.05) {',
@@ -317,30 +354,40 @@ const FRAGMENT = [
   '      if (GLASSES > 1.5) res = add(res, sdEllipsoid(l, vec3(0.15, 0.15, 0.018)), 6.0, 0.005);',
   '    }',
   '  }',
+  '#endif',
   // Headphones: a band over the top, in front of the horns, and two cups.
+  '#ifdef HAS_HEADPHONES',
   '  if (HEADPHONES > 0.5) {',
   '    vec3 h = p - vec3(0.0, -0.12, 0.15);',
   '    res = add(res, max(sdTorus(h.xzy, vec2(1.005, 0.05)), -0.02 - p.y), 5.0, 0.02);',
   '    res = add(res, sdEllipsoid(q - vec3(1.0, -0.02, 0.15), vec3(0.11, 0.21, 0.21)), 6.0, 0.03);',
   '  }',
+  '#endif',
   // A party hat between the horns, tipped a little, with a pom-pom.
+  '#ifdef HAS_HAT',
   '  if (HAT > 0.5) {',
   '    res = add(res, sdRoundCone(p, vec3(0.0, 0.75, 0.03), vec3(0.11, 1.33, 0.05), 0.26, 0.022), 8.0, 0.03);',
   '    res = add(res, length(p - vec3(0.12, 1.37, 0.05)) - 0.09, 9.0, 0.02);',
   '  }',
+  '#endif',
+  '#ifdef HAS_HALO',
   '  if (HALO > 0.5) {',
   '    vec3 hl = p - vec3(0.0, 1.17, -0.05);',
   '    hl.yz = rot(0.22) * hl.yz;',
   '    res = add(res, sdTorus(hl, vec2(0.3, 0.035)), 7.0, 0.01);',
   '  }',
+  '#endif',
+  '#ifdef HAS_BOWTIE',
   '  if (BOWTIE > 0.5) {',
   '    res = add(res, sdEllipsoid(q - vec3(0.1, -0.17, 0.84), vec3(0.1, 0.065, 0.045)), 6.0, 0.02);',
   '    res = add(res, length(p - vec3(0.0, -0.17, 0.865)) - 0.042, 6.0, 0.02);',
   '  }',
+  '#endif',
   // Squashing, stretching, and size change distances; scale down to the
   // smallest factor so the march never steps past the surface.
   '  res.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
   '  return res;',
+  '#endif',
   '}',
 
   'vec3 normal(vec3 p) {',
@@ -371,9 +418,11 @@ const FRAGMENT = [
 
   // The egg: in the squishy's colors, with a big question mark on the front
   // (unless it wears glasses).
+  '#ifdef IS_EGG',
   'vec3 eggPaint(vec3 p) {',
   '  vec3 col = uBody;',
-  '  if (KIND > 2.5) {', // a cube: spots scattered on its flat faces
+  '#if defined(IS_CUBE)',
+  '  {', // a cube: spots scattered on its flat faces
   '    vec3 c = cubeSpace(p);',
   '    vec3 f = fract(c * 3.2 + 0.5) - 0.5;', // the faces cut through the spot centers
   '    vec3 cell = floor(c * 3.2 + 0.5);',
@@ -381,14 +430,20 @@ const FRAGMENT = [
   '    if (hash(cell) > 0.6 && length(f) < 0.26) col = h > 0.66 ? uBelly : (h > 0.33 ? uWing : uSpike);',
   // The ? below goes in the middle of the front face only.
   '    p = vec3(c.x, c.y + 0.08, c.z > 0.4 ? 1.0 : 0.0);',
-  '  } else if (STARS > 0.5) {',
+  '  }',
+  '#elif defined(HAS_STARS)',
+  '  {',
   '    vec3 s = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.5 && length(s) < 0.22) col = vec3(1.0, 0.96, 0.75);',
-  '  } else {',
+  '  }',
+  '#else',
+  '  {',
   '    vec3 f = fract(p * 3.2) - 0.5;',
   '    float h = hash(floor(p * 3.2));',
   '    if (length(f) < 0.26) col = h > 0.66 ? uBelly : (h > 0.33 ? uWing : uSpike);',
   '  }',
+  '#endif',
+  '#ifndef HAS_GLASSES',
   '  if (p.z > 0.25 && GLASSES < 0.5) {',
   '    vec2 g = p.xy;',
   '    vec2 c = vec2(0.0, 0.22);',
@@ -400,11 +455,14 @@ const FRAGMENT = [
   '    d = min(d, length(g - vec2(0.0, -0.21)) - 0.06);', // the dot
   '    if (d < 0.0) col = uEye;',
   '  }',
+  '#endif',
   '  return col;',
   '}',
+  '#endif',
 
   // A face, at the size of a one-headed dragon's: cheeks, eyes with a shine,
   // and a smile.
+  '#if !defined(IS_EGG) && !defined(IS_SERPENT)',
   'vec3 face(vec2 f, vec3 col) {',
   '  vec2 e = vec2(abs(f.x), f.y);',
   '  if (length((e - vec2(0.56, -0.1)) / vec2(0.12, 0.07)) < 1.0) col = uCheek;',
@@ -416,10 +474,12 @@ const FRAGMENT = [
   '  if (f.y < -0.03 && arc < 0.017) col = mix(uEye, uBody, 0.25);',
   '  return col;',
   '}',
+  '#endif',
 
   // A sea serpent's colors: a pale belly down the front of its neck, and a
   // fierce face: narrowed eyes under frowning brows, and an open mouth with
   // two fangs.
+  '#ifdef IS_SERPENT',
   'vec3 serpentPaint(vec3 p) {',
   '  vec3 col = uBody;',
   '  if (p.y < 0.08 && p.z > 0.3 && abs(p.x) < 0.13 + 0.12 * clamp(0.08 - p.y, 0.0, 0.6)) {',
@@ -441,9 +501,11 @@ const FRAGMENT = [
   '  }',
   '  return col;',
   '}',
+  '#endif',
 
   // The face of a chubby dragon, on its head and snout: eyes, cheeks,
   // nostrils, and a smile across the snout.
+  '#ifdef IS_CHUBBY',
   'vec3 snoutFace(vec3 p, vec3 col) {',
   '  vec2 e = vec2(abs(p.x), p.y);',
   '  if (p.z > 0.3 && length((e - vec2(0.2, 0.68)) / vec2(0.07, 0.09)) < 1.0) {',
@@ -456,17 +518,24 @@ const FRAGMENT = [
   '  if (p.z > 0.45 && p.y < 0.45 && arc < 0.015) col = mix(uEye, uBody, 0.25);',
   '  return col;',
   '}',
+  '#endif',
 
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
+  '#ifdef HAS_FLUFFY_TAIL',
   '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
+  '#endif',
+  '#ifdef IS_EGG',
   '  if (m > 9.5) return eggPaint(local(world));',
+  '#endif',
+  '#ifdef HAS_HAT',
   '  if (m > 8.5) return vec3(1.0, 0.98, 0.95);',
   '  if (m > 7.5) {',
   '    vec3 p = local(world);',
   '    float s = dot(p - vec3(0.0, 0.75, 0.03), vec3(0.186, 0.982, 0.034));', // along the hat
   '    return mod(floor(s * 11.5), 2.0) < 1.0 ? uAcc : uAcc2;',
   '  }',
+  '#endif',
   '  if (m > 6.5) return uAcc;',
   '  if (m > 5.5) return uAcc2;',
   '  if (m > 4.5) return uAcc;',
@@ -474,29 +543,38 @@ const FRAGMENT = [
   '  if (m > 2.5) return uWing;',
   '  if (m > 1.5) return uHorn;',
   '  vec3 p = local(world);',
-  '  if (KIND > 0.5 && KIND < 1.5) return serpentPaint(p);',
+  '#if defined(IS_SERPENT)',
+  '  return serpentPaint(p);',
+  '#elif defined(IS_EGG)',
+  '  return uBody;', // not reached: an egg's colors come from eggPaint
+  '#else',
   '  vec3 col = uBody;',
+  '#ifdef HAS_STARS',
   '  if (STARS > 0.5) {',
   '    vec3 f = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.55 && length(f) < 0.17) col = vec3(1.0, 0.96, 0.75);',
   '  }',
-  '  if (TWO_HEADS > 0.5) {',
-  '    if (p.z > 0.15 && length((p.xy - vec2(0.0, -0.4)) / vec2(0.44, 0.27)) < 1.0) col = uBelly;',
-  '    vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
-  '    if (h.z > 0.1) col = face(h.xy / 0.47, col);',
-  '  } else if (p.z > 0.15) {',
-  '    if (KIND > 1.5) {', // a big belly with stripes across it, and the face
-  '      if (p.y < 0.2 && length((p.xy - vec2(0.0, -0.24)) / vec2(0.56, 0.46)) < 1.0) {',
-  '        col = uBelly;',
-  '        if (fract((p.y + 0.74) / 0.12) < 0.15) col = mix(uBelly, uBody, 0.5);',
-  '      }',
-  '      return snoutFace(p, col);',
-  '    } else if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) {',
+  '#endif',
+  '#if defined(HAS_TWO_HEADS)',
+  '  if (p.z > 0.15 && length((p.xy - vec2(0.0, -0.4)) / vec2(0.44, 0.27)) < 1.0) col = uBelly;',
+  '  vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
+  '  if (h.z > 0.1) col = face(h.xy / 0.47, col);',
+  '#elif defined(IS_CHUBBY)',
+  '  if (p.z > 0.15) {', // a big belly with stripes across it, and the face
+  '    if (p.y < 0.2 && length((p.xy - vec2(0.0, -0.24)) / vec2(0.56, 0.46)) < 1.0) {',
   '      col = uBelly;',
+  '      if (fract((p.y + 0.74) / 0.12) < 0.15) col = mix(uBelly, uBody, 0.5);',
   '    }',
+  '    return snoutFace(p, col);',
+  '  }',
+  '#else',
+  '  if (p.z > 0.15) {',
+  '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
   '    col = face(p.xy, col);',
   '  }',
+  '#endif',
   '  return col;',
+  '#endif',
   '}',
 
   'void main() {',
@@ -552,12 +630,53 @@ const FRAGMENT = [
 
 const COLORS = ['body', 'belly', 'horn', 'wing', 'cheek', 'spike', 'eye', 'acc', 'acc2'];
 
+// The parts of the 3D program a look needs, as #define names. Everything
+// else is left out of its program.
+function parts(look) {
+  const list = [];
+  if (look.egg) {
+    list.push('IS_EGG');
+    if (look.cube) list.push('IS_CUBE');
+  } else if (look.serpent) {
+    list.push('IS_SERPENT');
+  } else {
+    if (look.heads === 2) list.push('HAS_TWO_HEADS');
+    if (look.chubby) list.push('IS_CHUBBY');
+    if (look.fluffyTail) list.push('HAS_FLUFFY_TAIL');
+    if (look.tailTip) list.push('HAS_TAIL_TIP');
+    if (look.spikes) list.push('HAS_SPIKES');
+    if (look.crown) list.push('HAS_CROWN');
+    if (look.headphones) list.push('HAS_HEADPHONES');
+    if (look.hat) list.push('HAS_HAT');
+    if (look.halo) list.push('HAS_HALO');
+    if (look.bowtie) list.push('HAS_BOWTIE');
+  }
+  if (look.glasses) list.push('HAS_GLASSES');
+  if (look.stars) list.push('HAS_STARS');
+  return list;
+}
+
 // Starts compiling a shader; checking it waits for it, so that comes later.
 function shader(gl, type, source) {
   const s = gl.createShader(type);
   gl.shaderSource(s, source);
   gl.compileShader(s);
   return s;
+}
+
+// Starts compiling and linking the program for some parts.
+function build(gl, list) {
+  const defines = list.map(function (name) {
+    return '#define ' + name + '\n';
+  }).join('');
+  const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
+  const fragment = shader(gl, gl.FRAGMENT_SHADER, defines + FRAGMENT);
+  const program = gl.createProgram();
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.bindAttribLocation(program, 0, 'aPos');
+  gl.linkProgram(program);
+  return { status: 'compiling', program: program, vertex: vertex, fragment: fragment, u: {} };
 }
 
 function rgb(hex) {
@@ -579,52 +698,71 @@ export function createSquishy(canvas, options) {
   }
   if (!gl) return null;
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
-  const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
-  const fragment = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
-  const program = gl.createProgram();
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  let status = 'compiling';
-  const u = {};
+  const programs = {}; // the parts, joined with spaces -> its program
+  let using = null; // the program in use
   const maxRatio = opts.maxRatio || 2;
+  // The one big triangle every picture is drawn on, for every program.
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-  // Once compiled: checks the program and sets up what drawing needs.
-  function finish() {
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      if (window.console) {
-        console.error('squishy: ' + (gl.getShaderInfoLog(fragment) || gl.getShaderInfoLog(vertex) ||
-          gl.getProgramInfoLog(program)));
-      }
-      status = 'failed';
-      return;
-    }
-    gl.useProgram(program);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(program, 'aPos');
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-    ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
-      u[name] = gl.getUniformLocation(program, name);
-    });
-    COLORS.forEach(function (part) {
-      u[part] = gl.getUniformLocation(program, 'u' + part.charAt(0).toUpperCase() + part.slice(1));
-    });
-    status = 'ready';
+  // The program for a look, which starts compiling the first time.
+  function programFor(look) {
+    const list = parts(look);
+    const key = list.join(' ');
+    if (!programs[key]) programs[key] = build(gl, list);
+    return programs[key];
   }
 
-  function state() {
-    if (status === 'compiling' && (!parallel || gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR))) {
-      finish();
+  // Once compiled: checks the program and finds its uniforms.
+  function finish(entry) {
+    if (!gl.getProgramParameter(entry.program, gl.LINK_STATUS)) {
+      if (window.console) {
+        console.error('squishy: ' + (gl.getShaderInfoLog(entry.fragment) || gl.getShaderInfoLog(entry.vertex) ||
+          gl.getProgramInfoLog(entry.program)));
+      }
+      entry.status = 'failed';
+      return;
     }
-    return status;
+    ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
+      entry.u[name] = gl.getUniformLocation(entry.program, name);
+    });
+    COLORS.forEach(function (part) {
+      entry.u[part] = gl.getUniformLocation(entry.program, 'u' + part.charAt(0).toUpperCase() + part.slice(1));
+    });
+    entry.status = 'ready';
+  }
+
+  // Checks on a program without waiting, where the browser compiles in the
+  // background.
+  function check(entry) {
+    if (entry.status === 'compiling' && (!parallel ||
+        gl.getProgramParameter(entry.program, parallel.COMPLETION_STATUS_KHR))) {
+      finish(entry);
+    }
+    return entry.status;
+  }
+
+  function status(look) {
+    return check(programFor(look));
+  }
+
+  function compiling() {
+    return Object.keys(programs).some(function (key) {
+      return check(programs[key]) === 'compiling';
+    });
   }
 
   function draw(look, state) {
-    if (status === 'compiling') finish();
-    if (status !== 'ready') return;
+    const entry = programFor(look);
+    if (entry.status === 'compiling') finish(entry); // waits for it
+    if (entry.status !== 'ready') return;
+    if (using !== entry) {
+      gl.useProgram(entry.program);
+      using = entry;
+    }
+    const u = entry.u;
     const ratio = Math.min(window.devicePixelRatio || 1, maxRatio);
     const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
     const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
@@ -658,5 +796,5 @@ export function createSquishy(canvas, options) {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  return { canvas: canvas, draw: draw, state: state };
+  return { canvas: canvas, draw: draw, status: status, compiling: compiling, background: !!parallel };
 }

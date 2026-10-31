@@ -8,12 +8,12 @@
 // coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
 // price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.7.29';
-import * as sound from '../shared/sound.js?v=0.7.29';
-import * as storage from '../shared/storage.js?v=0.7.29';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.29';
-import { createSquishy } from './squishy.js?v=0.7.29';
-import { ITEMS } from './items.js?v=0.7.29';
+import * as coins from '../shared/coins.js?v=0.7.30';
+import * as sound from '../shared/sound.js?v=0.7.30';
+import * as storage from '../shared/storage.js?v=0.7.30';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.30';
+import { createSquishy } from './squishy.js?v=0.7.30';
+import { ITEMS } from './items.js?v=0.7.30';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -55,11 +55,12 @@ let lastDraw = 0;
 let wallet = coins.totals();
 const owned = {}; // id -> true
 const hatched = {}; // id -> true once its egg is hatched; it stays hatched
-// The 3D view starts compiling now, which can take seconds on a slower
-// computer. Until it's ready (and for good without WebGL), an emoji stands in.
-let stage = createSquishy($('stage'), { maxRatio: 1.25 });
-let stageReady = false;
+// Each look's 3D program compiles when first needed, which can take a few
+// seconds on a slower computer. Meanwhile (and for good without WebGL), an
+// emoji stands in.
+const stage = createSquishy($('stage'), { maxRatio: 1.25 });
 let framesShown = 0;
+let emojiShown = true;
 
 function picked() {
   return ITEMS[index];
@@ -133,25 +134,40 @@ function eggTilt(now, ready) {
   return t < 0.6 ? 0.22 * Math.sin(t * 26) * (1 - t / 0.6) : 0;
 }
 
-// Swaps in the 3D view once it has compiled. Asks only after a couple of
-// frames, so the store shows first even where asking waits for the compile.
-function checkStage() {
-  framesShown += 1;
-  if (!stage || stageReady || framesShown < 3) return;
-  const status = stage.state();
-  if (status === 'failed') {
-    stage = null;
-  } else if (status === 'ready') {
-    stageReady = true;
-    const fallback = document.querySelector('.stage-fallback');
-    if (fallback) fallback.parentNode.removeChild(fallback);
+// Whether a look can be drawn in 3D yet; asking starts its compile. Asks
+// only after a couple of frames, so the store shows first even where asking
+// waits for the compile.
+function canDraw(look) {
+  return !!stage && framesShown >= 3 && stage.status(look) === 'ready';
+}
+
+// Shows the emoji in place of the 3D view, or the 3D view again.
+function showEmoji(on) {
+  if (on === emojiShown) return;
+  emojiShown = on;
+  fallback.hidden = !on;
+  if (stage) stage.canvas.style.visibility = on ? 'hidden' : '';
+}
+
+// Where the browser compiles in the background, compiles what's likely to
+// be shown next, one at a time: the squishy in the egg on screen, then the
+// next and the one before.
+function compileAhead() {
+  if (!stage || !stage.background || stage.compiling()) return;
+  const coming = [picked().look];
+  [index + 1, index - 1].forEach(function (n) {
+    const i = (n + ITEMS.length) % ITEMS.length;
+    coming.push(isEgg(stateOf(ITEMS[i])) ? EGGS[i] : ITEMS[i].look);
+  });
+  for (let i = 0; i < coming.length; i++) {
+    if (stage.status(coming[i]) === 'compiling') return;
   }
 }
 
 function frame(now) {
   const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0;
   lastFrame = now;
-  checkStage();
+  framesShown += 1;
   const state = stateOf(picked());
   const shaking = now - hatchAt < HATCH_MS;
   if (popping && !shaking) pop();
@@ -172,8 +188,12 @@ function frame(now) {
   }
   const idle = !shaking && state !== 'ready' && held === null && now - touchedAt > IDLE_AFTER &&
     now - squishAt > 1600; // still moving, but slowly enough for fewer pictures
-  if (stageReady && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
-    stage.draw(egg ? EGGS[index] : picked().look, { angle: angle, tilt: tilt, squish: squash });
+  const look = egg ? EGGS[index] : picked().look;
+  const ready = canDraw(look);
+  showEmoji(!ready);
+  if (ready) compileAhead();
+  if (ready && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
+    stage.draw(look, { angle: angle, tilt: tilt, squish: squash });
     lastDraw = now;
   }
   requestAnimationFrame(frame);
@@ -387,8 +407,12 @@ $('buy').addEventListener('click', buy);
 refresh();
 const fallback = document.createElement('div');
 fallback.className = 'stage-fallback';
-if (stage) $('stage').parentNode.appendChild(fallback); // over the canvas until the 3D view is ready
-else $('stage').parentNode.replaceChild(fallback, $('stage'));
+if (stage) {
+  $('stage').parentNode.appendChild(fallback); // over the canvas while a look compiles
+  stage.canvas.style.visibility = 'hidden';
+} else {
+  $('stage').parentNode.replaceChild(fallback, $('stage'));
+}
 // Start on an egg that's ready to hatch, if there is one, then on the first
 // squishy Zoe doesn't own, then on the first.
 const first = ITEMS.filter(function (item) {
