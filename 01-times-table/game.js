@@ -2,11 +2,11 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.15';
-import * as sound from '../shared/sound.js?v=0.7.15';
-import * as storage from '../shared/storage.js?v=0.7.15';
-import * as coins from '../shared/coins.js?v=0.7.15';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.15';
+import { createKeypad } from '../shared/keypad.js?v=0.7.16';
+import * as sound from '../shared/sound.js?v=0.7.16';
+import * as storage from '../shared/storage.js?v=0.7.16';
+import * as coins from '../shared/coins.js?v=0.7.16';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.16';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -153,8 +153,19 @@ function fitGrid() {
   grid.style.fontSize = Math.max(10, Math.round((side / (saved.size + 1)) * 0.45)) + 'px';
 }
 
+// The speed score that wins the next coins: a new record (RECORD_STEP past
+// the last cheer) that also beats the best she's been paid for. Before the
+// first start, both marks are the speed now.
+function coinGoal() {
+  const n = saved.size;
+  const best = typeof saved.best[n] === 'number' ? saved.best[n] : speed();
+  const paid = typeof saved.paid[n] === 'number' ? saved.paid[n] : best;
+  return Math.min(best * Math.exp(-RECORD_STEP / (n * n)), paid);
+}
+
 function showSpeed() {
   $('speed').textContent = '⏱ ' + speed().toFixed(2) + ' s';
+  $('goal').textContent = '⏱ ' + coinGoal().toFixed(2) + ' s';
 }
 
 function showSize() {
@@ -330,6 +341,7 @@ function right() {
   const crowned = remember(Math.min(seconds, SLOW));
   const record = newRecord();
   const paid = record && payRecord();
+  if (record) showSpeed(); // the goal moves on
   mark('is-correct');
   sound.correct();
   stars(pad.display);
@@ -347,11 +359,17 @@ function right() {
     setTimeout(function () {
       sound.cheer();
       zip();
-      if (paid) floatCoins($('speed-box'), RECORD_PAY);
+      if (paid) {
+        floatCoins($('goal-box'), RECORD_PAY);
+        pop($('goal-box'), 'is-record'); // and it shows the next goal
+      }
     }, cheerAt);
     setTimeout(function () {
       $('speed-box').classList.remove('is-record');
     }, 2000);
+    setTimeout(function () {
+      $('goal-box').classList.remove('is-record');
+    }, cheerAt + 1750);
   }
   setTimeout(next, 700);
 }
@@ -448,6 +466,7 @@ window.addEventListener('pageshow', function (event) {
 });
 
 $('record-pay').innerHTML = 'New records win ' + RECORD_PAY + ' ' + coins.ICON;
+$('goal-label').innerHTML = 'Win ' + RECORD_PAY + ' ' + coins.ICON + ' at';
 showSize();
 buildGrid();
 showSpeed();

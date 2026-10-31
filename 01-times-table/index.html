@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.7.15">
+  <link rel="stylesheet" href="../shared/base.css?v=0.7.16">
   <style>
     /* The speed score: the geomean of every cell's score. Lower is better. */
     .speed {
@@ -42,6 +42,49 @@
     .speed.is-record {
       background: var(--sun);
       animation: pop 0.5s ease;
+    }
+
+    /* The speed score and, beside it, the score that wins the next coins. */
+    .scores {
+      display: flex;
+      gap: 10px;
+    }
+
+    .goal {
+      background: #fff9db;
+    }
+
+    @media (max-width: 560px) {
+      .speed {
+        padding: 4px 12px 6px;
+      }
+
+      .speed-label {
+        font-size: 12px;
+      }
+
+      .speed-value {
+        font-size: 22px;
+      }
+    }
+
+    /* Phones: small enough that Home, both pills, and Pause fit across. */
+    @media (max-width: 430px) {
+      .scores {
+        gap: 6px;
+      }
+
+      .speed {
+        padding: 3px 8px 5px;
+      }
+
+      .speed-label {
+        font-size: 11px;
+      }
+
+      .speed-value {
+        font-size: 18px;
+      }
     }
 
     /* Shown only while playing; it keeps its space so the speed stays
@@ -240,9 +283,15 @@
   <div class="page fit">
     <header class="topbar">
       <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
-      <div class="speed" id="speed-box">
-        <span class="speed-label">Speed score</span>
-        <span class="speed-value" id="speed"></span>
+      <div class="scores">
+        <div class="speed" id="speed-box">
+          <span class="speed-label">Speed score</span>
+          <span class="speed-value" id="speed"></span>
+        </div>
+        <div class="speed goal" id="goal-box">
+          <span class="speed-label" id="goal-label"></span>
+          <span class="speed-value" id="goal"></span>
+        </div>
       </div>
       <button type="button" class="btn btn-icon pause-button" id="pause-button" aria-label="Pause">⏸️</button>
     </header>
@@ -285,6 +334,6 @@
     </main>
   </div>
 
-  <script type="module" src="game.js?v=0.7.15"></script>
+  <script type="module" src="game.js?v=0.7.16"></script>
 </body>
 </html>

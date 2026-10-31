@@ -102,6 +102,21 @@ been paid for. Right answers no longer pay on their own.
   record, since their progress so far was paid per answer.
 - Going from 5 s to 2.5 s pays about 310 coins on 10×10 and 700 on 15×15.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Make it so in the math game you can also see your highest score so you can tell how close you are to getting a 10 coiner
+
+Beside the speed score, a second pill shows the speed score that wins the
+next 10 coins: "Win 10 🪙 at ⏱ 4.89 s". It shows that goal rather than the
+record itself, which would mislead: a new record has to beat the last one
+by about ten good answers' worth (about 2% faster on 10×10, 1% on 15×15),
+and after clearing scores it also has to beat her best ever.
+
+- When the speed score reaches the goal, the record pays: the pill turns
+  gold, the coins float up out of it, and it shows the next goal.
+- It's on the start screen too, so she can see the goal before starting.
+- On phones the two pills shrink, so Home, both pills, and Pause fit across.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
