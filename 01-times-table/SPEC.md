@@ -151,6 +151,13 @@ and then, about a line saying so on the start card:
   grids; wrong ones don't count, and clearing scores keeps the count.
 - The start card doesn't mention it.
 
+Requested by the user, verbatim (2026-10-31), for both games:
+
+> Okay maybe every 25 instead of every 50
+> For both
+
+It's now every 25th right answer.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
@@ -214,5 +221,5 @@ and then, about a line saying so on the start card:
   the last 3 scores in seconds); `best` (size → speed at the last cheer);
   `paid` (size → the coin mark: the next coins come 0.02 s below it; kept
   when scores are cleared); and `rights` (right answers ever, for the coin
-  every 50).
+  every 25).
   Unreadable values are ignored.

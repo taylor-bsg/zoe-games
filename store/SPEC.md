@@ -191,7 +191,7 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     King at full size, the biggest with its crown, wings, and big tail.
   - All twelve cost 2,450 coins, plus 490 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 4 for
-    every 0.02 s faster. Both games also pay 1 for every 50 right answers.
+    every 0.02 s faster. Both games also pay 1 for every 25 right answers.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy

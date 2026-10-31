@@ -3,17 +3,17 @@
 // its own dragon; finishing a level opens the next, and levels 2A and 2B open
 // with level 2. See SPEC.md. Play never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.7.19';
-import * as speech from '../shared/speech.js?v=0.7.19';
-import * as storage from '../shared/storage.js?v=0.7.19';
-import * as coins from '../shared/coins.js?v=0.7.19';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.19';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.7.19';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.7.19';
-import { WORDS as WORDS_2A } from './words-2a.js?v=0.7.19';
-import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.19';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.7.19';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.7.19';
+import * as sound from '../shared/sound.js?v=0.7.20';
+import * as speech from '../shared/speech.js?v=0.7.20';
+import * as storage from '../shared/storage.js?v=0.7.20';
+import * as coins from '../shared/coins.js?v=0.7.20';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.20';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.7.20';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.7.20';
+import { WORDS as WORDS_2A } from './words-2a.js?v=0.7.20';
+import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.20';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.7.20';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.7.20';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -25,7 +25,7 @@ const SAY_AGAIN_AFTER = 500; // ms after the ding before the word is said again,
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
-const ANSWERS_PER_COIN = 50; // a coin for every 50 right on the first try
+const ANSWERS_PER_COIN = 25; // a coin for every 25 right on the first try
 
 // The levels, in order. Each has an id, saved with progress (1-4, or '2a'
 // and '2b' for levels 2A and 2B, which came later); the label it shows; opens, the highest

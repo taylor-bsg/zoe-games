@@ -2,11 +2,11 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.19';
-import * as sound from '../shared/sound.js?v=0.7.19';
-import * as storage from '../shared/storage.js?v=0.7.19';
-import * as coins from '../shared/coins.js?v=0.7.19';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.19';
+import { createKeypad } from '../shared/keypad.js?v=0.7.20';
+import * as sound from '../shared/sound.js?v=0.7.20';
+import * as storage from '../shared/storage.js?v=0.7.20';
+import * as coins from '../shared/coins.js?v=0.7.20';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.20';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -23,7 +23,7 @@ const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
 // hundredth), gets below the coin mark.
 const COIN_STEP = 2; // hundredths of a second
 const STEP_PAY = 4;
-const ANSWERS_PER_COIN = 50; // and a coin for every 50 right answers
+const ANSWERS_PER_COIN = 25; // and a coin for every 25 right answers
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear scores';
 

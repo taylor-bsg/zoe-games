@@ -289,6 +289,13 @@ Requested by the user, verbatim (2026-10-31):
 - The count covers every level and is kept when a wall is cleared. No text
   on screen mentions it.
 
+Requested by the user, verbatim (2026-10-31), for both games:
+
+> Okay maybe every 25 instead of every 50
+> For both
+
+It's now every 25th right answer.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -389,4 +396,4 @@ Requested by the user, verbatim (2026-10-31):
     review level. "Hold to clear the wall" keeps it, and nothing removes words
     from it.
   - `rights`: right answers on the first try, ever, in every level, for the
-    coin every 50.
+    coin every 25.
