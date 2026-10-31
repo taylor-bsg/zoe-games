@@ -138,6 +138,19 @@ and the start card "Every 0.02 s faster wins 4 🪙".
   about half as much, so coins come about half as often per answer.
 - Going from 5 s to 2.5 s now pays 500 coins on either grid.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Let’s make it give a coin every 50 right answers as well.
+
+and then, about a line saying so on the start card:
+
+> Remove the every 50 right answer line. Too crowdedz
+
+- Every 50th right answer pays 1 coin, with a "ching" and a "+1" floating
+  up from the answer box. Right answers count across sessions and both
+  grids; wrong ones don't count, and clearing scores keeps the count.
+- The start card doesn't mention it.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
@@ -199,6 +212,7 @@ and the start card "Every 0.02 s faster wins 4 🪙".
   cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
   the last 3 scores in seconds); `best` (size → speed at the last cheer);
-  and `paid` (size → the coin mark: the next coins come 0.02 s below it;
-  kept when scores are cleared).
+  `paid` (size → the coin mark: the next coins come 0.02 s below it; kept
+  when scores are cleared); and `rights` (right answers ever, for the coin
+  every 50).
   Unreadable values are ignored.
