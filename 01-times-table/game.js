@@ -2,11 +2,11 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.23';
-import * as sound from '../shared/sound.js?v=0.7.23';
-import * as storage from '../shared/storage.js?v=0.7.23';
-import * as coins from '../shared/coins.js?v=0.7.23';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.23';
+import { createKeypad } from '../shared/keypad.js?v=0.7.24';
+import * as sound from '../shared/sound.js?v=0.7.24';
+import * as storage from '../shared/storage.js?v=0.7.24';
+import * as coins from '../shared/coins.js?v=0.7.24';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.24';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -19,9 +19,9 @@ const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; /
 // 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
 const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
-// Coins: STEP_PAY for every COIN_STEP the speed score, as shown (to the
-// hundredth), gets below the coin mark.
-const COIN_STEP = 1; // hundredths of a second
+// Coins: STEP_PAY for every step the speed score, as shown (to the
+// hundredth), gets below the coin mark. Steps are bigger where it's easier
+// to get faster (see coinStep).
 const STEP_PAY = 5;
 const ANSWERS_PER_COIN = 25; // and a coin for every 25 right answers
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
@@ -29,7 +29,7 @@ const CLEAR_LABEL = 'Hold to clear scores';
 
 // times: 'AxB' -> the last KEEP attempt scores in seconds, oldest first.
 // best: grid size -> the speed at the last cheer (lower is better).
-// paid: grid size -> the coin mark. The next coins come COIN_STEP below it,
+// paid: grid size -> the coin mark. The next coins come a step below it,
 // and it moves down a step for each payment. Clearing scores keeps it, so
 // getting fast again doesn't pay twice.
 // rights: right answers ever, on either grid; every ANSWERS_PER_COIN pays a
@@ -165,17 +165,29 @@ function hundredths(seconds) {
   return Math.round(seconds * 100);
 }
 
-// The speed score that wins the next coins: COIN_STEP below the coin mark.
-// Before the first start, the mark is the speed now.
-function coinGoal() {
+// The step to the next coins below a coin mark, in hundredths of a second:
+// 0.03 s over 4 s, 0.02 s over 3 s, and 0.01 s from 3 s down.
+function coinStep(mark) {
+  return mark > 400 ? 3 : mark > 300 ? 2 : 1;
+}
+
+// The coin mark, in hundredths. Before the first start, it's the speed now.
+function coinMark() {
   const n = saved.size;
-  const mark = typeof saved.paid[n] === 'number' ? saved.paid[n] : speed();
-  return (hundredths(mark) - COIN_STEP) / 100;
+  return hundredths(typeof saved.paid[n] === 'number' ? saved.paid[n] : speed());
+}
+
+// The speed score that wins the next coins: a step below the coin mark.
+function coinGoal() {
+  const mark = coinMark();
+  return (mark - coinStep(mark)) / 100;
 }
 
 function showSpeed() {
   $('speed').textContent = '⏱ ' + speed().toFixed(2) + ' s';
   $('goal').textContent = '⏱ ' + coinGoal().toFixed(2) + ' s';
+  $('record-pay').innerHTML = 'Every ' + (coinStep(coinMark()) / 100).toFixed(2) + ' s faster wins ' +
+    STEP_PAY + ' ' + coins.ICON;
 }
 
 function showSize() {
@@ -334,14 +346,19 @@ function newRecord() {
   return true;
 }
 
-// STEP_PAY coins for each COIN_STEP the speed score, as shown, is below the
-// coin mark, which moves down by the steps paid. Returns the coins won.
+// STEP_PAY coins for each step the speed score, as shown, has passed below
+// the coin mark, which moves down by the steps paid. Returns the coins won.
 function payCoins() {
   const n = saved.size;
-  const mark = hundredths(saved.paid[n]);
-  const steps = Math.floor((mark - hundredths(speed())) / COIN_STEP);
-  if (steps < 1) return 0;
-  saved.paid[n] = (mark - steps * COIN_STEP) / 100;
+  const now = hundredths(speed());
+  let mark = hundredths(saved.paid[n]);
+  let steps = 0;
+  while (now <= mark - coinStep(mark)) {
+    mark -= coinStep(mark);
+    steps += 1;
+  }
+  if (!steps) return 0;
+  saved.paid[n] = mark / 100;
   storage.save(GAME_ID, saved);
   coins.earn(GAME_ID, steps * STEP_PAY);
   return steps * STEP_PAY;
@@ -493,7 +510,6 @@ window.addEventListener('pageshow', function (event) {
   if (event.persisted) pause();
 });
 
-$('record-pay').innerHTML = 'Every ' + (COIN_STEP / 100).toFixed(2) + ' s faster wins ' + STEP_PAY + ' ' + coins.ICON;
 $('goal-label').innerHTML = 'Win ' + STEP_PAY + ' ' + coins.ICON + ' at';
 showSize();
 buildGrid();

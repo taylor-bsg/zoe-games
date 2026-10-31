@@ -174,6 +174,17 @@ The step is now 0.01 s: every 0.01 s faster pays 5 coins, the goal pill is
 0.01 s below the coin mark, and the start card reads "Every 0.01 s faster
 wins 5 🪙". Going from 5 s to 2.5 s pays 1,250 coins.
 
+Requested by the user, verbatim (2026-10-31):
+
+> And make the multiply reward 5 coins every 0.02 for over 3s, and every 0.03 for over 4s
+
+The step now depends on the coin mark: 0.03 s over 4 s, 0.02 s over 3 s,
+and 0.01 s from 3 s down, each paying 5 coins. The start card and the goal
+pill always show the step that applies now, e.g. "Every 0.03 s faster wins
+5 🪙" for a new player at 5 s. A step that crosses from one band to the next
+keeps its size; the following one uses the new band's. Going from 5 s to
+2.5 s pays about 33 + 50 + 50 = 133 steps, or 665 coins.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
@@ -235,7 +246,7 @@ wins 5 🪙". Going from 5 s to 2.5 s pays 1,250 coins.
   cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
   the last 3 scores in seconds); `best` (size → speed at the last cheer);
-  `paid` (size → the coin mark: the next coins come 0.01 s below it; kept
+  `paid` (size → the coin mark: the next coins come a step below it; kept
   when scores are cleared); and `rights` (right answers ever, for the coin
   every 25).
   Unreadable values are ignored.

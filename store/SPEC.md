@@ -212,7 +212,7 @@ looks, with original names, since the site is public.
     King, with its crown, wings, and big tail, and Riptide fits inside it.
   - All fourteen cost 3,850 coins, plus 770 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
-    every 0.01 s faster. Both games also pay 1 for every 25 right answers.
+    every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both games also pay 1 for every 25 right answers.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy
