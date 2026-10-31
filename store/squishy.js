@@ -20,8 +20,10 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-//   antennae    two thin antennae curling forward instead of horns (horn
-//               color), and a big belly with stripes across it
+//   antennae    built like a chubby dragon of the kind with antennae: a big
+//               round body with a head on top, a round snout, stubby arms,
+//               two thin antennae curling forward instead of horns (horn
+//               color), wings up on the back, and a big striped belly
 //   serpent     a sea serpent instead of a dragon: a coil on the floor, a
 //               neck rising to a head with a crest and fins (spike color),
 //               whiskers (acc), and a fierce face, and a tail with a fin.
@@ -197,9 +199,19 @@ const FRAGMENT = [
   '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   // With one head, the round body is the head. Two heads sit up on long,
-  // skinny necks from a lower body, each with its own little horns.
-  '  float body = TWO_HEADS > 0.5 ? sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8)) :',
-  '    sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
+  // skinny necks from a lower body, each with its own little horns. A
+  // dragon with antennae has a big round body with a head on top, a snout,
+  // and stubby arms.
+  '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
+  '  if (TWO_HEADS > 0.5) body = sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8));',
+  '  if (KIND > 1.5) {',
+  '    body = sdEllipsoid(p - vec3(0.0, -0.2, 0.0), vec3(0.86, 0.68, 0.74));',
+  '    body = smin(body, sdEllipsoid(p - vec3(0.0, 0.56, 0.06), vec3(0.5, 0.44, 0.46)), 0.14);',
+  '    body = smin(body, sdEllipsoid(p - vec3(0.0, 0.46, 0.4), vec3(0.3, 0.2, 0.22)), 0.08);',
+  '    vec3 arm = q - vec3(0.58, -0.04, 0.42);',
+  '    arm.xy = rot(-0.35) * arm.xy;', // tipped out at the hand
+  '    body = smin(body, sdEllipsoid(arm, vec3(0.14, 0.25, 0.15)), 0.06);',
+  '  }',
   '  body = -smin(-body, p.y - FLOOR - 0.04, 0.1);',
   '  vec2 res = vec2(body, 1.0);',
   '  if (TWO_HEADS > 0.5) {',
@@ -209,8 +221,8 @@ const FRAGMENT = [
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
   '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
   '  } else if (KIND > 1.5) {', // antennae, curling forward over the face
-  '    float a = min(sdRoundCone(q, vec3(0.16, 0.78, 0.12), vec3(0.22, 1.06, 0.26), 0.045, 0.034),',
-  '      sdRoundCone(q, vec3(0.22, 1.06, 0.26), vec3(0.34, 1.18, 0.46), 0.034, 0.022));',
+  '    float a = min(sdRoundCone(q, vec3(0.12, 0.94, 0.18), vec3(0.16, 1.1, 0.3), 0.042, 0.032),',
+  '      sdRoundCone(q, vec3(0.16, 1.1, 0.3), vec3(0.26, 1.18, 0.5), 0.032, 0.022));',
   '    res = add(res, a, 2.0, 0.04);',
   '  } else {',
   '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
@@ -238,6 +250,7 @@ const FRAGMENT = [
   // Wings: bigger ones reach further up and out.
   '  float big = WINGS - 1.0;',
   '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big - 0.18 * TWO_HEADS, -0.44 - 0.08 * big);',
+  '  if (KIND > 1.5) w = q - vec3(0.5 + 0.24 * big, 0.32 + 0.24 * big, -0.5 - 0.08 * big);', // up on the back
   '  w.xy = rot(-0.5 - 0.15 * big) * w.xy;',
   '  w.xz = rot(0.5) * w.xz;',
   '  res = add(res, sdEllipsoid(w, vec3(0.08 + 0.03 * big, 0.34 * WINGS, 0.26 * WINGS)), 3.0, 0.06);',
@@ -392,6 +405,21 @@ const FRAGMENT = [
   '  return col;',
   '}',
 
+  // The face of a dragon with antennae, on its head and snout: eyes, cheeks,
+  // nostrils, and a smile across the snout.
+  'vec3 snoutFace(vec3 p, vec3 col) {',
+  '  vec2 e = vec2(abs(p.x), p.y);',
+  '  if (p.z > 0.3 && length((e - vec2(0.2, 0.68)) / vec2(0.07, 0.09)) < 1.0) {',
+  '    col = uEye;',
+  '    if (length(e - vec2(0.185, 0.71)) < 0.025) col = vec3(1.0);',
+  '  }',
+  '  if (p.z > 0.3 && length((e - vec2(0.34, 0.55)) / vec2(0.07, 0.045)) < 1.0) col = uCheek;',
+  '  if (p.z > 0.55 && length(e - vec2(0.07, 0.52)) < 0.025) col = mix(uEye, uBody, 0.4);',
+  '  float arc = abs(length(p.xy - vec2(0.0, 0.5)) - 0.13);',
+  '  if (p.z > 0.45 && p.y < 0.45 && arc < 0.015) col = mix(uEye, uBody, 0.25);',
+  '  return col;',
+  '}',
+
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
   '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
@@ -420,11 +448,12 @@ const FRAGMENT = [
   '    vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
   '    if (h.z > 0.1) col = face(h.xy / 0.47, col);',
   '  } else if (p.z > 0.15) {',
-  '    if (KIND > 1.5) {', // a big belly with stripes across it
-  '      if (length((p.xy - vec2(0.0, -0.38)) / vec2(0.54, 0.36)) < 1.0) {',
+  '    if (KIND > 1.5) {', // a big belly with stripes across it, and the face
+  '      if (p.y < 0.2 && length((p.xy - vec2(0.0, -0.24)) / vec2(0.56, 0.46)) < 1.0) {',
   '        col = uBelly;',
   '        if (fract((p.y + 0.74) / 0.12) < 0.15) col = mix(uBelly, uBody, 0.5);',
   '      }',
+  '      return snoutFace(p, col);',
   '    } else if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) {',
   '      col = uBelly;',
   '    }',

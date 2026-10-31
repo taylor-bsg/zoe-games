@@ -117,6 +117,15 @@ looks, with original names, since the site is public.
 - Sizes still go from 50% to 100% by price, in even steps, so the others
   shrank a little; Riptide is the biggest.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Butterscotch should look more like a dragonite
+
+Butterscotch now has that build instead of the round squishy shape: a big
+round body with a head on top, a round snout with nostrils and a smile
+across it, stubby arms, a thicker tail, and its small teal wings up on its
+back. The antennae and the striped belly stay.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -204,7 +213,7 @@ looks, with original names, since the site is public.
   | Party Puff | 300 | 83% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
   | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
-  | Butterscotch | 600 | 96% | Orange; antennae, a striped cream belly, and teal wings (new) |
+  | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, antennae, a striped cream belly, and teal wings (new) |
   | Riptide | 800 | 100% | A blue sea serpent with a crest, whiskers, and a fierce face (new) |
 
   - Size goes with price, in even steps from 50% for the cheapest to 100%
@@ -247,9 +256,13 @@ looks, with original names, since the site is public.
     together, that grow fatter as they curl up behind the back and over to
     one side. It's the body color with a cream (belly color) tip, which
     peeks up beside the head from the front. It replaces the usual tail.
-  - **Antennae** (`antennae`, Butterscotch): two thin antennae, in two
-    segments each, curl up and forward over the face instead of horns. The
-    belly is bigger, with thin stripes across it.
+  - **Antennae** (`antennae`, Butterscotch): a different build. A big round
+    body has a head on top, melted on with no neck, and a round snout on the
+    head; stubby arms tip out from the sides. Two thin antennae, in two
+    segments each, curl up and forward instead of horns, and the wings sit
+    up on the back. The face is painted on the head and snout: eyes, cheeks,
+    two nostrils, and a smile across the snout. The big belly has thin
+    stripes across it.
   - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
     dragon's. A ring lying on the floor is the coil, and a neck in two
     tapering segments rises from its front to an oval head. On the head are
@@ -268,7 +281,7 @@ looks, with original names, since the site is public.
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads. Two
     heads on necks cost little: at the same size, Galaxy draws in 1.0–1.2×
-    plain Sprout's time. Riptide takes about 1.2× and Butterscotch 0.85×.
+    plain Sprout's time. Riptide takes about 1.2× and Butterscotch 1.0×.
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
