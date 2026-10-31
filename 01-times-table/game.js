@@ -2,11 +2,11 @@
 // grid that shows how fast each fact is. See SPEC.md. Play never ends; the
 // Home button is the way out.
 
-import { createKeypad } from '../shared/keypad.js?v=0.7.16';
-import * as sound from '../shared/sound.js?v=0.7.16';
-import * as storage from '../shared/storage.js?v=0.7.16';
-import * as coins from '../shared/coins.js?v=0.7.16';
-import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.16';
+import { createKeypad } from '../shared/keypad.js?v=0.7.17';
+import * as sound from '../shared/sound.js?v=0.7.17';
+import * as storage from '../shared/storage.js?v=0.7.17';
+import * as coins from '../shared/coins.js?v=0.7.17';
+import { stars, zip, coins as floatCoins } from '../shared/celebrate.js?v=0.7.17';
 
 const GAME_ID = '01-times-table'; // the folder name; also the save key
 const SIZES = [10, 15]; // normal and advanced grids
@@ -19,14 +19,18 @@ const FLAME = [[255, 255, 255], [255, 224, 77], [255, 138, 0], [240, 62, 62]]; /
 // 2 s answer takes a fresh cell from SLOW to (2 + SLOW * (KEEP - 1)) / KEEP.
 const RECORD_STEP = 10 * Math.log((SLOW * KEEP) / (2 + SLOW * (KEEP - 1)));
 const PRAISE = ['Yes!', 'Great!', 'Super!', 'Nice!', 'You got it!'];
-const RECORD_PAY = 10; // coins for a new record that beats any she's been paid for
+// Coins: STEP_PAY for every COIN_STEP the speed score, as shown (to the
+// hundredth), gets below the coin mark.
+const COIN_STEP = 2; // hundredths of a second
+const STEP_PAY = 4;
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear scores';
 
 // times: 'AxB' -> the last KEEP attempt scores in seconds, oldest first.
 // best: grid size -> the speed at the last cheer (lower is better).
-// paid: grid size -> the best speed she's been paid coins for. Clearing
-// scores keeps it, so coming back up to an old record doesn't pay twice.
+// paid: grid size -> the coin mark. The next coins come COIN_STEP below it,
+// and it moves down a step for each payment. Clearing scores keeps it, so
+// getting fast again doesn't pay twice.
 const saved = storage.load(GAME_ID, { size: SIZES[0], times: {}, best: {}, paid: {} });
 if (SIZES.indexOf(saved.size) < 0) saved.size = SIZES[0];
 if (!isObject(saved.times)) saved.times = {};
@@ -153,14 +157,16 @@ function fitGrid() {
   grid.style.fontSize = Math.max(10, Math.round((side / (saved.size + 1)) * 0.45)) + 'px';
 }
 
-// The speed score that wins the next coins: a new record (RECORD_STEP past
-// the last cheer) that also beats the best she's been paid for. Before the
-// first start, both marks are the speed now.
+function hundredths(seconds) {
+  return Math.round(seconds * 100);
+}
+
+// The speed score that wins the next coins: COIN_STEP below the coin mark.
+// Before the first start, the mark is the speed now.
 function coinGoal() {
   const n = saved.size;
-  const best = typeof saved.best[n] === 'number' ? saved.best[n] : speed();
-  const paid = typeof saved.paid[n] === 'number' ? saved.paid[n] : best;
-  return Math.min(best * Math.exp(-RECORD_STEP / (n * n)), paid);
+  const mark = typeof saved.paid[n] === 'number' ? saved.paid[n] : speed();
+  return (hundredths(mark) - COIN_STEP) / 100;
 }
 
 function showSpeed() {
@@ -198,7 +204,8 @@ function pop(element, kind) {
 function start() {
   sound.unlock(); // this tap is what lets iOS play sound
   if (typeof saved.best[saved.size] !== 'number') saved.best[saved.size] = speed();
-  // Before records paid, every right answer did; pay from her record on.
+  // Coins for earlier progress were paid as it happened: the mark starts at
+  // her record, or at the speed now.
   if (typeof saved.paid[saved.size] !== 'number') saved.paid[saved.size] = saved.best[saved.size];
   storage.save(GAME_ID, saved);
   $('intro').hidden = true;
@@ -323,14 +330,17 @@ function newRecord() {
   return true;
 }
 
-// Coins for a new record, when it beats the best she's been paid for.
-function payRecord() {
+// STEP_PAY coins for each COIN_STEP the speed score, as shown, is below the
+// coin mark, which moves down by the steps paid. Returns the coins won.
+function payCoins() {
   const n = saved.size;
-  if (!(saved.best[n] < saved.paid[n])) return false;
-  saved.paid[n] = saved.best[n];
+  const mark = hundredths(saved.paid[n]);
+  const steps = Math.floor((mark - hundredths(speed())) / COIN_STEP);
+  if (steps < 1) return 0;
+  saved.paid[n] = (mark - steps * COIN_STEP) / 100;
   storage.save(GAME_ID, saved);
-  coins.earn(GAME_ID, RECORD_PAY);
-  return true;
+  coins.earn(GAME_ID, steps * STEP_PAY);
+  return steps * STEP_PAY;
 }
 
 function right() {
@@ -340,8 +350,8 @@ function right() {
   pad.setEnabled(false);
   const crowned = remember(Math.min(seconds, SLOW));
   const record = newRecord();
-  const paid = record && payRecord();
-  if (record) showSpeed(); // the goal moves on
+  const won = payCoins();
+  if (won) showSpeed(); // the goal moves on
   mark('is-correct');
   sound.correct();
   stars(pad.display);
@@ -354,22 +364,25 @@ function right() {
     setTimeout(sound.trumpet, 250);
     cheerAt += 1300; // after the trumpet
   }
+  if (won) { // the coins come out of the goal, which shows the next one
+    setTimeout(function () {
+      sound.coin();
+      floatCoins($('goal-box'), won);
+      pop($('goal-box'), 'is-record');
+    }, cheerAt);
+    setTimeout(function () {
+      $('goal-box').classList.remove('is-record');
+    }, cheerAt + 1750);
+  }
   if (record) {
     pop($('speed-box'), 'is-record');
     setTimeout(function () {
       sound.cheer();
       zip();
-      if (paid) {
-        floatCoins($('goal-box'), RECORD_PAY);
-        pop($('goal-box'), 'is-record'); // and it shows the next goal
-      }
     }, cheerAt);
     setTimeout(function () {
       $('speed-box').classList.remove('is-record');
     }, 2000);
-    setTimeout(function () {
-      $('goal-box').classList.remove('is-record');
-    }, cheerAt + 1750);
   }
   setTimeout(next, 700);
 }
@@ -417,8 +430,8 @@ function stopHolding() {
   clearLabel('Hold until the bar fills', 1500);
 }
 
-// Forgets every score, for both grid sizes, and the record marks. What
-// she's been paid for stays, so records pay again only past her best ever.
+// Forgets every score, for both grid sizes, and the record marks. The coin
+// marks stay, so coins come again only past them.
 function clearScores() {
   holding = false;
   $('clear-button').classList.remove('is-holding');
@@ -465,8 +478,8 @@ window.addEventListener('pageshow', function (event) {
   if (event.persisted) pause();
 });
 
-$('record-pay').innerHTML = 'New records win ' + RECORD_PAY + ' ' + coins.ICON;
-$('goal-label').innerHTML = 'Win ' + RECORD_PAY + ' ' + coins.ICON + ' at';
+$('record-pay').innerHTML = 'Every ' + (COIN_STEP / 100).toFixed(2) + ' s faster wins ' + STEP_PAY + ' ' + coins.ICON;
+$('goal-label').innerHTML = 'Win ' + STEP_PAY + ' ' + coins.ICON + ' at';
 showSize();
 buildGrid();
 showSpeed();

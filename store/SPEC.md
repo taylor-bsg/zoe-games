@@ -12,8 +12,8 @@ Answers to questions asked before building:
   level: 100, 200, 300, and 400 coins for levels 1–4. (Levels 2A and 2B,
   added later, pay 200 each.)
 - **Zoe Multiplies coins:** 1 coin per right answer on 10×10, 2 on 15×15.
-  (Since 2026-10-30, 10 coins per new record instead; see
-  `01-times-table/SPEC.md`.)
+  (Since 2026-10-30, 10 coins per new record instead, and since 2026-10-31,
+  4 coins for every 0.02 s faster; see `01-times-table/SPEC.md`.)
 - **3D:** real 3D, with no library.
 - **Head start:** yes. Progress from before coins existed counts once, at the
   same rates.
@@ -106,7 +106,7 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
 - **Coins:** a gold coin with a star, drawn in SVG (`coins.ICON`), since
   Apple's 🪙 emoji is a silver coin that looks gray when small.
   - Earning shows a floating "+N" and a coin. Zoe Multiplies floats it from
-    the speed score when a record pays. Zoe Spells floats it from the tally
+    the coin goal beside the speed score. Zoe Spells floats it from the tally
     after the wall celebration, plays a "ching", and says "You won 200
     coins!".
   - Zoe Spells' start screen shows the level's prize: "Finish the wall to
@@ -190,8 +190,8 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     step, and 100% for the priciest. The view's zoom leaves room for Dragon
     King at full size, the biggest with its crown, wings, and big tail.
   - All twelve cost 2,450 coins, plus 490 to hatch them. The six Zoe Spells
-    walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 10 per
-    new record.
+    walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 4 for
+    every 0.02 s faster.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy

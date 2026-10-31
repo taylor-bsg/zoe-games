@@ -117,6 +117,27 @@ and after clearing scores it also has to beat her best ever.
 - It's on the start screen too, so she can see the goal before starting.
 - On phones the two pills shrink, so Home, both pills, and Pause fit across.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Change it so it is 4 coins every 0.02 instead of 10 coins every .06
+
+The 0.06 was the old record step at Zoe's speed (a record had to be about
+2.2% faster on 10×10, which near 2.7 s is 0.06 s). Coins now have their own
+step: every 0.02 s the speed score gets below the coin mark pays 4 coins,
+and the mark moves down 0.02 s. The goal pill reads "Win 4 🪙 at ⏱ 2.83 s",
+and the start card "Every 0.02 s faster wins 4 🪙".
+
+- Coins go by the speed score as shown, to the hundredth: when it shows the
+  goal, the coins come, with a "ching", floating out of the goal pill. An
+  answer that crosses two steps pays 8.
+- "New record!", with the cheer and a zipping animal, still comes at the old
+  step, about three times rarer; it no longer pays.
+- The coin mark starts at her current record. Clearing scores keeps it, so
+  getting fast again doesn't pay twice.
+- The step is 0.02 s on 15×15 too. There each answer moves the speed score
+  about half as much, so coins come about half as often per answer.
+- Going from 5 s to 2.5 s now pays 500 coins on either grid.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
@@ -178,6 +199,6 @@ and after clearing scores it also has to beat her best ever.
   cleared" for 2 s.
 - **Saved data:** under `zoe-games:01-times-table`: `size`; `times` ('AxB' →
   the last 3 scores in seconds); `best` (size → speed at the last cheer);
-  and `paid` (size → the best speed she's been paid coins for, kept when
-  scores are cleared).
+  and `paid` (size → the coin mark: the next coins come 0.02 s below it;
+  kept when scores are cleared).
   Unreadable values are ignored.
