@@ -3,17 +3,17 @@
 // its own dragon; finishing a level opens the next, and levels 2A and 2B open
 // with level 2. See SPEC.md. Play never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.7.18';
-import * as speech from '../shared/speech.js?v=0.7.18';
-import * as storage from '../shared/storage.js?v=0.7.18';
-import * as coins from '../shared/coins.js?v=0.7.18';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.18';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.7.18';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.7.18';
-import { WORDS as WORDS_2A } from './words-2a.js?v=0.7.18';
-import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.18';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.7.18';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.7.18';
+import * as sound from '../shared/sound.js?v=0.7.19';
+import * as speech from '../shared/speech.js?v=0.7.19';
+import * as storage from '../shared/storage.js?v=0.7.19';
+import * as coins from '../shared/coins.js?v=0.7.19';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.7.19';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.7.19';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.7.19';
+import { WORDS as WORDS_2A } from './words-2a.js?v=0.7.19';
+import { WORDS as WORDS_2B } from './words-2b.js?v=0.7.19';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.7.19';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.7.19';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)
@@ -25,6 +25,7 @@ const SAY_AGAIN_AFTER = 500; // ms after the ding before the word is said again,
 const BOLT_HITS = 160; // ms from the wand flash to the brick changing color
 const HOLD_TO_CLEAR = 1500; // ms; matches the fill animation in index.html
 const CLEAR_LABEL = 'Hold to clear the wall';
+const ANSWERS_PER_COIN = 50; // a coin for every 50 right on the first try
 
 // The levels, in order. Each has an id, saved with progress (1-4, or '2a'
 // and '2b' for levels 2A and 2B, which came later); the label it shows; opens, the highest
@@ -69,10 +70,13 @@ const WAND = { x: 316, y: 477 }; // center of the wand's star
 // unlocked: the highest numbered level that's open. wall: the id of the level
 // last chosen. paid: level id -> true once its wall prize is paid; clearing
 // the wall resets it, so a wall that slips and comes back can't pay twice.
+// rights: right answers on the first try ever, in every level; every
+// ANSWERS_PER_COIN pays a coin. Clearing a wall keeps it.
 const LAST = 4; // the highest numbered level
 const saved = storage.load(GAME_ID, { levels: {}, missed: {}, unlocked: 1, wall: 1 });
 if (!isObject(saved.levels)) saved.levels = {};
 if (!isObject(saved.missed)) saved.missed = {};
+if (!(saved.rights >= 0 && saved.rights % 1 === 0)) saved.rights = 0;
 if (!byId(saved.unlocked) || typeof saved.unlocked !== 'number') saved.unlocked = 1;
 if (!byId(saved.wall) || !opened(byId(saved.wall))) saved.wall = 1;
 if (!isObject(saved.paid)) { // walls finished before coins existed were paid by the head start
@@ -430,7 +434,15 @@ function answer(button, text) {
   const after = Math.min(TOP, before + 1);
   const wasComplete = goldCount() === words.length;
   saved.levels[word] = after;
+  saved.rights += 1;
   storage.save(GAME_ID, saved);
+  if (saved.rights % ANSWERS_PER_COIN === 0) { // a coin, out of the button
+    coins.earn(GAME_ID, 1);
+    setTimeout(function () {
+      sound.coin();
+      floatCoins(button, 1);
+    }, 600);
+  }
   const gold = before < TOP && after === TOP;
   const complete = !wasComplete && goldCount() === words.length;
   // Thunder, then a clearly happy sound just after the crack: the trumpet

@@ -278,6 +278,17 @@ Levels 2A and 2B, added later, pay 200 each.
 - **Old saves:** walls finished before coins existed are marked paid. The
   store's one-time head start covered them.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Okay, also make the spelling game give one 1 coin every 50 right answers, don’t add anything to screen saying that.
+
+- Every 50th right answer on the first try pays 1 coin, with a "ching" and a
+  "+1" floating up from the tapped button. A right pick after a miss doesn't
+  count, the same as for a brick climbing, so tapping every button until one
+  is right can't earn coins.
+- The count covers every level and is kept when a wall is cleared. No text
+  on screen mentions it.
+
 ## Implementation notes
 
 - **Launcher tile:** 🪄 "Zoe Spells", "Zap the right spelling!".
@@ -377,3 +388,5 @@ Levels 2A and 2B, added later, pay 200 each.
     spelling was picked. It covers both levels' words and is for the future
     review level. "Hold to clear the wall" keeps it, and nothing removes words
     from it.
+  - `rights`: right answers on the first try, ever, in every level, for the
+    coin every 50.
