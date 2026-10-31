@@ -4,7 +4,7 @@
 // flair too. Each look is what squishy.js draws: colors,
 // size, and parts (see its header). Until Zoe can afford a squishy, the
 // store shows a mystery egg in its size and colors; egg (optional) adds
-// parts to that egg, like Shade's sunglasses. The ids are saved with
+// parts to that egg, like Shade's sunglasses or Butterscotch's cube shape. The ids are saved with
 // purchases, so never change one; names, prices, and looks can change.
 // Every look must fit the view at full squash and stretch: after changing a
 // size or adding flair, check it as described in SPEC.md.
@@ -78,8 +78,9 @@ export const ITEMS = [
   },
   {
     id: 'butterscotch', name: 'Butterscotch', price: 600,
-    look: { size: 0.96, body: '#ffbe55', belly: '#fff1d6', horn: '#ffbe55', wing: '#38c9b0',
-      cheek: '#ff8787', spike: '#38c9b0', eye: '#1d2b53', antennae: true, tail: 1.25, wings: 0.9 },
+    look: { size: 0.96, body: '#ffbe55', belly: '#fff1d6', horn: '#e8890c', wing: '#38c9b0',
+      cheek: '#ff8787', spike: '#38c9b0', eye: '#1d2b53', chubby: true, tail: 1.25, wings: 0.9 },
+    egg: { cube: true },
   },
   {
     id: 'riptide', name: 'Riptide', price: 800,

@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.24';
+//   import { createSquishy } from './squishy.js?v=0.7.25';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,10 +20,9 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
-//   antennae    built like a chubby dragon of the kind with antennae: a big
-//               round body with a head on top, a round snout, stubby arms,
-//               two thin antennae curling forward instead of horns (horn
-//               color), wings up on the back, and a big striped belly
+//   chubby      a big round body with a head on top, a round snout, stubby
+//               arms, floppy dog ears instead of horns (horn color), wings
+//               up on the back, and a big striped belly
 //   serpent     a sea serpent instead of a dragon: a coil on the floor, a
 //               neck rising to a head with a crest and fins (spike color),
 //               whiskers (acc), and a fierce face, and a tail with a fin.
@@ -37,6 +36,7 @@
 //               body color, spots in the belly, wing, and spike colors (gold
 //               stars if stars), and a big question mark in the eye color.
 //               With glasses, it wears them instead of the question mark.
+//   cube        with egg: a soft cube-shaped egg instead of an oval one
 // angle turns the dragon (radians); tilt rocks it sideways about the spot
 // where it touches the floor (radians, small; used for eggs); squish squashes
 // it toward the floor (up to about 1) or stretches it up (negative, down to
@@ -76,7 +76,7 @@ const FRAGMENT = [
   '#define TILT uMore.x',
   '#define TWO_HEADS uMore.y',
   '#define FLUFFY_TAIL uMore.z',
-  '#define KIND uMore.w', // 0 a dragon, 1 a sea serpent, 2 a dragon with antennae
+  '#define KIND uMore.w', // 0 a dragon, 1 a sea serpent, 2 a chubby dragon; for an egg, 3 a cube
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -109,6 +109,21 @@ const FRAGMENT = [
 
   // A ring lying flat (around the y axis); pass p.xzy for one facing forward.
   'float sdTorus(vec3 p, vec2 t) { return length(vec2(length(p.xz) - t.x, p.y)) - t.y; }',
+
+  // A box b across from the middle to each face, with edges rounded by r.
+  'float sdRoundBox(vec3 p, vec3 b, float r) {',
+  '  vec3 q = abs(p) - b + r;',
+  '  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;',
+  '}',
+
+  // A cube egg's own space, centered in the cube. It's 1.24 across with
+  // edges rounded by 0.16, and as it rocks it rises just enough that its
+  // lowest rounded corner stays on the floor, at any turn.
+  'vec3 cubeSpace(vec3 p) {',
+  '  float e = 0.46 * (abs(cos(ANGLE)) + abs(sin(ANGLE)));', // half its bottom, across the rocking
+  '  float lift = (0.16 + e * sin(abs(TILT))) / cos(TILT) - 0.16;',
+  '  return p - vec3(0.0, FLOOR + 0.62 + lift, 0.0);',
+  '}',
 
   'float smin(float a, float b, float k) {',
   '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
@@ -171,10 +186,17 @@ const FRAGMENT = [
   '  vec3 p = local(world);',
   // The mystery egg: rounder and wider at the bottom, resting on the floor.
   // Its taper bends distances a little, so they're scaled down to be safe.
+  // A cube egg is a soft cube, lifted as it rocks so a corner stays on the
+  // floor.
   '  if (EGG > 0.5) {',
-  '    float y = p.y + 0.06;',
-  '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
-  '    vec2 egg = vec2(0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64)), 10.0);',
+  '    vec2 egg;',
+  '    if (KIND > 2.5) {',
+  '      egg = vec2(sdRoundBox(cubeSpace(p), vec3(0.62), 0.16), 10.0);',
+  '    } else {',
+  '      float y = p.y + 0.06;',
+  '      float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
+  '      egg = vec2(0.8 * sdEllipsoid(vec3(p.x / k, y, p.z / k), vec3(0.64, 0.8, 0.64)), 10.0);',
+  '    }',
   // Glasses on an egg, fitted to its curve: each lens faces out from the
   // egg's face, leaning back with it, and the arms wrap back to its sides.
   '    if (GLASSES > 0.5) {',
@@ -200,8 +222,8 @@ const FRAGMENT = [
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   // With one head, the round body is the head. Two heads sit up on long,
   // skinny necks from a lower body, each with its own little horns. A
-  // dragon with antennae has a big round body with a head on top, a snout,
-  // and stubby arms.
+  // chubby dragon has a big round body with a head on top, a snout, and
+  // stubby arms.
   '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
   '  if (TWO_HEADS > 0.5) body = sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8));',
   '  if (KIND > 1.5) {',
@@ -220,10 +242,10 @@ const FRAGMENT = [
   '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.39, 0.35, 0.35)), 0.06);',
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
   '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
-  '  } else if (KIND > 1.5) {', // antennae, curling forward over the face
-  '    float a = min(sdRoundCone(q, vec3(0.12, 0.94, 0.18), vec3(0.16, 1.1, 0.3), 0.042, 0.032),',
-  '      sdRoundCone(q, vec3(0.16, 1.1, 0.3), vec3(0.26, 1.18, 0.5), 0.032, 0.022));',
-  '    res = add(res, a, 2.0, 0.04);',
+  '  } else if (KIND > 1.5) {', // floppy dog ears down the sides of the head
+  '    vec3 ear = q - vec3(0.48, 0.6, 0.0);',
+  '    ear.xy = rot(-0.5) * ear.xy;', // the top tucked in at the head, the tip out
+  '    res = add(res, sdEllipsoid(ear, vec3(0.08, 0.34, 0.2)), 2.0, 0.05);',
   '  } else {',
   '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   '  }',
@@ -344,7 +366,15 @@ const FRAGMENT = [
   // (unless it wears glasses).
   'vec3 eggPaint(vec3 p) {',
   '  vec3 col = uBody;',
-  '  if (STARS > 0.5) {',
+  '  if (KIND > 2.5) {', // a cube: spots scattered on its flat faces
+  '    vec3 c = cubeSpace(p);',
+  '    vec3 f = fract(c * 3.2 + 0.5) - 0.5;', // the faces cut through the spot centers
+  '    vec3 cell = floor(c * 3.2 + 0.5);',
+  '    float h = hash(cell + 7.0);',
+  '    if (hash(cell) > 0.6 && length(f) < 0.26) col = h > 0.66 ? uBelly : (h > 0.33 ? uWing : uSpike);',
+  // The ? below goes in the middle of the front face only.
+  '    p = vec3(c.x, c.y + 0.08, c.z > 0.4 ? 1.0 : 0.0);',
+  '  } else if (STARS > 0.5) {',
   '    vec3 s = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.5 && length(s) < 0.22) col = vec3(1.0, 0.96, 0.75);',
   '  } else {',
@@ -405,7 +435,7 @@ const FRAGMENT = [
   '  return col;',
   '}',
 
-  // The face of a dragon with antennae, on its head and snout: eyes, cheeks,
+  // The face of a chubby dragon, on its head and snout: eyes, cheeks,
   // nostrils, and a smile across the snout.
   'vec3 snoutFace(vec3 p, vec3 col) {',
   '  vec2 e = vec2(abs(p.x), p.y);',
@@ -504,7 +534,7 @@ const FRAGMENT = [
   // squishy (smaller under an egg) and wider when squashed.
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? 0.62 : 1.0));',
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? (KIND > 2.5 ? 0.8 : 0.62) : 1.0));',
   '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
@@ -589,7 +619,7 @@ export function createSquishy(canvas, options) {
     gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
     gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail),
-      look.serpent ? 1 : look.antennae ? 2 : 0);
+      look.serpent ? 1 : look.chubby ? 2 : look.cube ? 3 : 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),

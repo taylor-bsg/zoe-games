@@ -126,6 +126,15 @@ round body with a head on top, a round snout with nostrils and a smile
 across it, stubby arms, a thicker tail, and its small teal wings up on its
 back. The antennae and the striped belly stay.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Make butterscotch come out of a cube shaped egg.
+> Give butterscotch dog ears instead of antennae
+
+Butterscotch's mystery egg is now a soft cube, with rounded edges, spots in
+its colors, and the ? on the front face. Its antennae are now long, floppy
+dog ears hanging down the sides of its head, in a darker orange.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -175,7 +184,8 @@ back. The antennae and the striped belly stay.
   - **Egg colors:** each egg is its squishy's body color, with spots in its
     belly, wing, and spike colors and a big ? on the front: navy, or white
     on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
-    egg wears Shade's pink sunglasses instead of the ?.
+    egg wears Shade's pink sunglasses instead of the ?. Butterscotch's egg
+    is a cube.
   - **Ready** (enough coins to buy it, never hatched): the egg wiggles
     excitedly every 1.6 s. The button reads "🥚 Hatch for 10" (a fifth of
     the price) and the hint "It’s ready to hatch! Tap “Hatch” to see
@@ -213,7 +223,7 @@ back. The antennae and the striped belly stay.
   | Party Puff | 300 | 83% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
   | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
-  | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, antennae, a striped cream belly, and teal wings (new) |
+  | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
   | Riptide | 800 | 100% | A blue sea serpent with a crest, whiskers, and a fierce face (new) |
 
   - Size goes with price, in even steps from 50% for the cheapest to 100%
@@ -256,11 +266,11 @@ back. The antennae and the striped belly stay.
     together, that grow fatter as they curl up behind the back and over to
     one side. It's the body color with a cream (belly color) tip, which
     peeks up beside the head from the front. It replaces the usual tail.
-  - **Antennae** (`antennae`, Butterscotch): a different build. A big round
-    body has a head on top, melted on with no neck, and a round snout on the
-    head; stubby arms tip out from the sides. Two thin antennae, in two
-    segments each, curl up and forward instead of horns, and the wings sit
-    up on the back. The face is painted on the head and snout: eyes, cheeks,
+  - **Chubby build** (`chubby`, Butterscotch): a different build. A big
+    round body has a head on top, melted on with no neck, and a round snout
+    on the head; stubby arms tip out from the sides. Floppy dog ears hang
+    down the sides of the head instead of horns, tucked in at the top and
+    tipped out at the bottom, and the wings sit up on the back. The face is painted on the head and snout: eyes, cheeks,
     two nostrils, and a smile across the snout. The big belly has thin
     stripes across it.
   - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
@@ -286,16 +296,23 @@ back. The antennae and the striped belly stay.
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
     each egg's look from its squishy's size and colors; `egg` in `items.js`
-    adds parts to it, like Shade's sunglasses.
+    adds parts to it, like Shade's sunglasses or Butterscotch's cube.
+  - **Cube egg** (`cube`): a cube 1.24 across with edges rounded by 0.16.
+    As it rocks it rises just enough that its lowest rounded corner stays on
+    the floor, worked out for its turn, so it tips onto a corner instead of
+    sinking in. Its spots and ? are painted in the cube's own space, so they
+    stay put as it rocks; the spots sit where its flat faces cut through
+    them, scattered across about two in five places.
   - **Egg glasses:** fitted to the egg's curve. Each lens faces straight
     out from the egg, leaning back with it, and the arms wrap back to its
     sides.
   - **Fit check:** `fit-check.html` (in this folder, not linked from the
-    store) draws every squishy, and an egg with sunglasses, at full squash,
-    full stretch, and rest, every 6° of turn, in every store layout, and
-    reports how close each comes to the edge. Run it after changing a size
-    or adding flair. At this change, the closest was 1.5% of the view's
-    height (Riptide, fully squashed, on a phone), and the egg 19.2%.
+    store) draws every squishy, an egg with sunglasses, and a cube egg, at
+    full squash, full stretch, and rest, every 6° of turn, in every store
+    layout, and reports how close each comes to the edge. Run it after
+    changing a size or adding flair. At this change, the closest was 1.5%
+    of the view's height (Riptide, fully squashed, on a phone), the eggs
+    19.2% and 11.6%.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.
