@@ -158,6 +158,14 @@ Requested by the user, verbatim (2026-10-31), for both games:
 
 It's now every 25th right answer.
 
+Requested by the user, verbatim (2026-10-31):
+
+> And raise the payout in multiply game for improve best score to 5 coins.
+
+Every 0.02 s faster now pays 5 coins, not 4. The goal pill reads "Win 5 🪙
+at …" and the start card "Every 0.02 s faster wins 5 🪙". Going from 5 s to
+2.5 s pays 625 coins.
+
 ## Implementation notes
 
 - **Launcher tile:** ✖️ "Zoe Multiplies", "Multiply fast!".
