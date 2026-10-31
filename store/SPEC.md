@@ -178,6 +178,13 @@ come next compile in the background. Every squishy and egg looks the same
 as before: compared pixel by pixel, at most 4 single pixels differed, by
 5/255.
 
+Rerun on that Chromebook, each program compiled in 0.2–1.3 s: eggs 0.2 s
+(0.65 s with sunglasses), most squishies 0.35–0.6 s, Shade and Party Puff
+0.8 s, and Riptide, the serpent, 1.3 s. The page didn't freeze. Without the
+crease shading, Party Puff's took 0.66 s instead of 0.81 s, too little to
+give it up. The temporary "Speed check" link came off the main page in
+version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
