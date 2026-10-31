@@ -314,7 +314,11 @@ version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
     show for a couple of frames, then waits for the compile.
   - **Compiling ahead:** once the squishy on screen is drawn, the store
     compiles, one at a time in the background, the squishy inside the egg
-    on screen (for hatching), then the next squishy and the one before.
+    on screen if it's ready to hatch (so it appears in 3D as it hatches),
+    then the next squishy and the one before. An egg that can't hatch yet
+    needs only the egg program, which all plain eggs share. (Asked by the
+    user, verbatim: "If the egg is not hatched yet, you do not need to
+    render it?" Before 0.7.32 it compiled the squishy inside any egg.)
   - Every squishy is drawn with the same zoom, so their sizes compare. The
     zoom is set so the largest still fits; each squishy's size in
     `items.js` keeps it inside. A big tail curves up behind, which keeps it

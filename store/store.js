@@ -8,12 +8,12 @@
 // coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
 // price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.7.31';
-import * as sound from '../shared/sound.js?v=0.7.31';
-import * as storage from '../shared/storage.js?v=0.7.31';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.31';
-import { createSquishy } from './squishy.js?v=0.7.31';
-import { ITEMS } from './items.js?v=0.7.31';
+import * as coins from '../shared/coins.js?v=0.7.32';
+import * as sound from '../shared/sound.js?v=0.7.32';
+import * as storage from '../shared/storage.js?v=0.7.32';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.32';
+import { createSquishy } from './squishy.js?v=0.7.32';
+import { ITEMS } from './items.js?v=0.7.32';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -150,11 +150,12 @@ function showEmoji(on) {
 }
 
 // Where the browser compiles in the background, compiles what's likely to
-// be shown next, one at a time: the squishy in the egg on screen, then the
-// next and the one before.
+// be shown next, one at a time: the squishy in the egg on screen if it's
+// ready to hatch (an egg that isn't needs only its egg), then the next and
+// the one before.
 function compileAhead() {
   if (!stage || !stage.background || stage.compiling()) return;
-  const coming = [picked().look];
+  const coming = stateOf(picked()) === 'ready' ? [picked().look] : [];
   [index + 1, index - 1].forEach(function (n) {
     const i = (n + ITEMS.length) % ITEMS.length;
     coming.push(isEgg(stateOf(ITEMS[i])) ? EGGS[i] : ITEMS[i].look);
