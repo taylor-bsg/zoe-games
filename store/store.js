@@ -8,12 +8,12 @@
 // coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
 // price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.7.27';
-import * as sound from '../shared/sound.js?v=0.7.27';
-import * as storage from '../shared/storage.js?v=0.7.27';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.27';
-import { createSquishy } from './squishy.js?v=0.7.27';
-import { ITEMS } from './items.js?v=0.7.27';
+import * as coins from '../shared/coins.js?v=0.7.28';
+import * as sound from '../shared/sound.js?v=0.7.28';
+import * as storage from '../shared/storage.js?v=0.7.28';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.28';
+import { createSquishy } from './squishy.js?v=0.7.28';
+import { ITEMS } from './items.js?v=0.7.28';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again

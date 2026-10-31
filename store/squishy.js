@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.27';
+//   import { createSquishy } from './squishy.js?v=0.7.28';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.state(); // 'compiling', 'ready', or 'failed'
@@ -15,12 +15,6 @@
 // background (KHR_parallel_shader_compile), state() answers without waiting,
 // so a page can show something else until it's 'ready'; elsewhere it waits.
 // draw() always waits for the compile, and draws nothing if it failed.
-//
-//   warmUp(); // on another page, such as the main page
-//
-// warmUp() compiles the same program in the background where no squishy
-// shows, so the store's compile is quick later: browsers keep what they've
-// compiled.
 //
 // A look has colors (hex strings): body, belly, horn, wing, cheek, spike, eye,
 // and acc and acc2 for accessories. Everything else is optional:
@@ -558,81 +552,12 @@ const FRAGMENT = [
 
 const COLORS = ['body', 'belly', 'horn', 'wing', 'cheek', 'spike', 'eye', 'acc', 'acc2'];
 
-// The same for every context, so a program compiled in one is the same as
-// in another (see warmUp).
-const CONTEXT = { alpha: true, premultipliedAlpha: true, antialias: false };
-
 // Starts compiling a shader; checking it waits for it, so that comes later.
 function shader(gl, type, source) {
   const s = gl.createShader(type);
   gl.shaderSource(s, source);
   gl.compileShader(s);
   return s;
-}
-
-// Starts compiling and linking the program.
-function build(gl) {
-  const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
-  const fragment = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
-  const program = gl.createProgram();
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  return { program: program, vertex: vertex, fragment: fragment };
-}
-
-// Uses the compiled program, with the one big triangle every picture is
-// drawn on.
-function useProgram(gl, program) {
-  gl.useProgram(program);
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const aPos = gl.getAttribLocation(program, 'aPos');
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-}
-
-// Compiles the program in the background on a hidden one-pixel canvas, and
-// draws one pixel with it, since some graphics drivers finish compiling only
-// then. Only where the browser compiles in the background, so the page never
-// waits for it; elsewhere it does nothing.
-export function warmUp() {
-  let gl = null;
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    gl = canvas.getContext('webgl', CONTEXT);
-  } catch (e) {
-    gl = null;
-  }
-  if (!gl) return;
-  const lose = gl.getExtension('WEBGL_lose_context');
-  const parallel = gl.getExtension('KHR_parallel_shader_compile');
-  function done() {
-    if (lose) lose.loseContext();
-  }
-  if (!parallel) {
-    done();
-    return;
-  }
-  const program = build(gl).program;
-  const started = Date.now();
-  (function check() {
-    if (!gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
-      if (Date.now() - started < 60000) setTimeout(check, 200);
-      else done();
-      return;
-    }
-    if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      useProgram(gl, program);
-      gl.uniform2f(gl.getUniformLocation(program, 'uRes'), 1, 1);
-      gl.uniform4f(gl.getUniformLocation(program, 'uView'), 2, 0, 0, 0);
-      gl.uniform4f(gl.getUniformLocation(program, 'uShape'), 1, 1, 1, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-    setTimeout(done, 10000); // once the drawing is surely done
-  })();
 }
 
 function rgb(hex) {
@@ -648,14 +573,18 @@ export function createSquishy(canvas, options) {
   const opts = options || {};
   let gl = null;
   try {
-    gl = canvas.getContext('webgl', CONTEXT);
+    gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
   } catch (e) {
     gl = null;
   }
   if (!gl) return null;
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
-  const built = build(gl);
-  const program = built.program;
+  const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
+  const fragment = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+  const program = gl.createProgram();
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
   let status = 'compiling';
   const u = {};
   const maxRatio = opts.maxRatio || 2;
@@ -664,13 +593,19 @@ export function createSquishy(canvas, options) {
   function finish() {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       if (window.console) {
-        console.error('squishy: ' + (gl.getShaderInfoLog(built.fragment) || gl.getShaderInfoLog(built.vertex) ||
+        console.error('squishy: ' + (gl.getShaderInfoLog(fragment) || gl.getShaderInfoLog(vertex) ||
           gl.getProgramInfoLog(program)));
       }
       status = 'failed';
       return;
     }
-    useProgram(gl, program);
+    gl.useProgram(program);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
       u[name] = gl.getUniformLocation(program, name);
     });
