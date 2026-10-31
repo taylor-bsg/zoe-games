@@ -98,6 +98,25 @@ of its egg even when she can't afford it. Only the button hatches, so
 tapping an egg can't spend coins by accident. (The same message asked
 about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
 
+Requested by the user, verbatim (2026-10-31):
+
+> Let’s add some new squishies, even more expensive. Something gyrados like and something dragonite like.
+
+Asked, the user chose their prices, 600 and 800, and the names Butterscotch
+and Riptide. They're original designs that only borrow those creatures'
+looks, with original names, since the site is public.
+
+- **Butterscotch** (600): a chubby orange dragon with two thin antennae
+  curling forward instead of horns, a big cream belly with stripes across
+  it, and teal wings.
+- **Riptide** (800): a blue sea serpent coiled on the floor. Its neck rises
+  to a head with a white crest, swept-back fins, and long whiskers, and a
+  fierce face: frowning brows and an open mouth with two fangs. A yellow
+  belly runs down its neck in scale bands, and its tail curls up at the back
+  with a fin.
+- Sizes still go from 50% to 100% by price, in even steps, so the others
+  shrank a little; Riptide is the biggest.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -115,9 +134,9 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
   yellow ◀ ▶ arrows (80px; 64px on phones) floating over the left and right
   edges of the view. The arrows wrap around from the last squishy to
   the first, and the left and right arrow keys work too, for a laptop.
-  - Under the squishy (beside it in landscape): the name, a dot for each of
-    the eight (the one on screen is ringed, owned ones are gold), a hint,
-    and the buy button.
+  - Under the squishy (beside it in landscape): the name, a dot for each
+    squishy (the one on screen is ringed, owned ones are gold), a hint, and
+    the buy button.
   - "My coins" is in the top bar, and "Earned … · Spent …" sits at the
     bottom.
   - A new squishy hops in with a little wobble, facing three-quarters
@@ -174,28 +193,31 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
   | Squishy | Coins | Size | Look and flair |
   | --- | --- | --- | --- |
   | Sprout | 50 | 50% | Green, like the level 1 dragon |
-  | Bubblegum | 75 | 55% | Pink |
-  | Sunny | 75 | 55% | Yellow |
-  | Frosty | 100 | 60% | Ice blue, like the level 2 dragon |
-  | Ember | 150 | 65% | Red, like the level 3 dragon; bigger wings |
-  | Shade | 200 | 70% | Shadow purple, like the level 4 dragon; pink sunglasses |
-  | Professor | 225 | 75% | Mint; round glasses and a red bow tie (new) |
-  | Galaxy | 250 | 80% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
-  | DJ Bop | 275 | 85% | Cyan with pink spikes; headphones (new) |
-  | Party Puff | 300 | 90% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
-  | Angel | 350 | 95% | Sky blue; a glowing halo and big gold wings (new) |
-  | Dragon King | 400 | 100% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
+  | Bubblegum | 75 | 54% | Pink |
+  | Sunny | 75 | 54% | Yellow |
+  | Frosty | 100 | 58% | Ice blue, like the level 2 dragon |
+  | Ember | 150 | 63% | Red, like the level 3 dragon; bigger wings |
+  | Shade | 200 | 67% | Shadow purple, like the level 4 dragon; pink sunglasses |
+  | Professor | 225 | 71% | Mint; round glasses and a red bow tie (new) |
+  | Galaxy | 250 | 75% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
+  | DJ Bop | 275 | 79% | Cyan with pink spikes; headphones (new) |
+  | Party Puff | 300 | 83% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
+  | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
+  | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
+  | Butterscotch | 600 | 96% | Orange; antennae, a striped cream belly, and teal wings (new) |
+  | Riptide | 800 | 100% | A blue sea serpent with a crest, whiskers, and a fierce face (new) |
 
-  - Size goes with price: 50% for the cheapest, 5% more for each price
-    step, and 100% for the priciest. The view's zoom leaves room for Dragon
-    King at full size, the biggest with its crown, wings, and big tail.
-  - All twelve cost 2,450 coins, plus 490 to hatch them. The six Zoe Spells
+  - Size goes with price, in even steps from 50% for the cheapest to 100%
+    for the priciest. The view's zoom leaves room for a full-size Dragon
+    King, with its crown, wings, and big tail, and Riptide fits inside it.
+  - All fourteen cost 3,850 coins, plus 770 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
     every 0.01 s faster. Both games also pay 1 for every 25 right answers.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy
-  has two heads on long necks instead (see Flair parts).
+  has two heads on long necks instead, and Riptide is a sea serpent (see
+  Flair parts).
   - It's lit like soft fabric: wrapped light, darker creases, a rim glow,
     and a faint fuzz.
   - The face (eyes, cheeks, a smile) and the belly are painted on, so they
@@ -204,7 +226,7 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     at any turn, even fully squashed or stretched.
   - Checked: every squishy at full squash, full stretch, and rest, every 6°
     of turn, in every store layout from phone to 12.9-inch iPad. Nothing
-    reaches the edge; the closest is 6px, Dragon King fully squashed on a
+    reaches the edge; the closest is 7px, Riptide fully squashed on a
     phone.
   - Squashing and stretching keep the 3D surface exact, with no holes.
   - The view renders at up to 1.25× pixel density and 30 frames a second
@@ -225,6 +247,17 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     together, that grow fatter as they curl up behind the back and over to
     one side. It's the body color with a cream (belly color) tip, which
     peeks up beside the head from the front. It replaces the usual tail.
+  - **Antennae** (`antennae`, Butterscotch): two thin antennae, in two
+    segments each, curl up and forward over the face instead of horns. The
+    belly is bigger, with thin stripes across it.
+  - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
+    dragon's. A ring lying on the floor is the coil, and a neck in two
+    tapering segments rises from its front to an oval head. On the head are
+    a crest of three spikes, two swept-back fins, and whiskers in two
+    segments. The tail rises from the back of the coil to a fin. The face is
+    painted fierce: narrowed eyes, frowning brows, and an open dark-red mouth
+    with two fangs. The yellow belly widens down the neck, in scale bands.
+    It has no wings, feet, or horns.
   - **Two heads** (`heads: 2`): a lower body with two round heads up on
     long, skinny necks that lean apart. The heads turn a little away from
     each other and tip out. Each has its own painted face, at 47% of the
@@ -235,7 +268,7 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads. Two
     heads on necks cost little: at the same size, Galaxy draws in 1.0–1.2×
-    plain Sprout's time.
+    plain Sprout's time. Riptide takes about 1.2× and Butterscotch 0.85×.
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
@@ -248,8 +281,8 @@ about Zoe Multiplies' coins; see `01-times-table/SPEC.md`.)
     store) draws every squishy, and an egg with sunglasses, at full squash,
     full stretch, and rest, every 6° of turn, in every store layout, and
     reports how close each comes to the edge. Run it after changing a size
-    or adding flair. At this change, the closest was 1.3% of the view's
-    height (Dragon King, fully squashed, on a phone), and the egg 19.2%.
+    or adding flair. At this change, the closest was 1.5% of the view's
+    height (Riptide, fully squashed, on a phone), and the egg 19.2%.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.

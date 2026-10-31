@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.22';
+//   import { createSquishy } from './squishy.js?v=0.7.23';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //
@@ -20,6 +20,12 @@
 //   hat         a party hat striped acc and acc2, with a white pom-pom
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
+//   antennae    two thin antennae curling forward instead of horns (horn
+//               color), and a big belly with stripes across it
+//   serpent     a sea serpent instead of a dragon: a coil on the floor, a
+//               neck rising to a head with a crest and fins (spike color),
+//               whiskers (acc), and a fierce face, and a tail with a fin.
+//               No wings, feet, horns, or other flair.
 //   fluffyTail  a big, bushy tail like a chinchilla's, curling up behind,
 //               with a tip in the belly color (instead of the usual tail)
 //   heads       2 for two heads up on long, skinny necks, each with a face
@@ -44,7 +50,7 @@ const FRAGMENT = [
   // Packed four to a vector, to stay within the 16 uniform vectors every
   // WebGL device has.
   'uniform vec4 uView;', // zoom, turn, squish, egg
-  'uniform vec4 uMore;', // tilt, two heads, fluffy tail, and one to spare
+  'uniform vec4 uMore;', // tilt, two heads, fluffy tail, kind
   'uniform vec4 uShape;', // size, wing size, tail size, tail tip
   'uniform vec4 uExtras;', // spikes, crown, stars, bow tie
   'uniform vec4 uGear;', // glasses (1 round, 2 sun), headphones, hat, halo
@@ -68,6 +74,7 @@ const FRAGMENT = [
   '#define TILT uMore.x',
   '#define TWO_HEADS uMore.y',
   '#define FLUFFY_TAIL uMore.z',
+  '#define KIND uMore.w', // 0 a dragon, 1 a sea serpent, 2 a dragon with antennae
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -130,6 +137,31 @@ const FRAGMENT = [
   '  return h;',
   '}',
 
+  // A sea serpent: a coil on the floor, a neck rising from its front to a
+  // head with a crest, fins, and whiskers, and a tail curling up at the back
+  // with a fin. Materials as in map.
+  'vec2 serpent(vec3 p) {',
+  '  vec3 q = vec3(abs(p.x), p.y, p.z);',
+  '  float coil = sdTorus(p - vec3(0.0, -0.62, -0.12), vec2(0.56, 0.24));',
+  '  coil = -smin(-coil, p.y - FLOOR - 0.04, 0.08);', // flat underneath
+  '  vec2 res = vec2(coil, 1.0);',
+  '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.52, 0.4), vec3(0.0, -0.1, 0.38), 0.25, 0.27), 0.1);',
+  '  res.x = smin(res.x, sdRoundCone(p, vec3(0.0, -0.1, 0.38), vec3(0.0, 0.18, 0.18), 0.27, 0.3), 0.1);',
+  '  res.x = smin(res.x, sdEllipsoid(p - vec3(0.0, 0.36, 0.14), vec3(0.56, 0.5, 0.52)), 0.12);',
+  '  res.x = smin(res.x, sdRoundCone(p, vec3(-0.42, -0.58, -0.42), vec3(-0.62, -0.08, -0.68), 0.2, 0.07), 0.1);',
+  '  vec3 f = p - vec3(-0.66, 0.08, -0.72);', // the tail's fin
+  '  f.xz = rot(0.6) * f.xz;',
+  '  res = add(res, sdEllipsoid(f, vec3(0.04, 0.22, 0.3)), 4.0, 0.04);',
+  '  res = add(res, sdRoundCone(p, vec3(0.0, 0.78, 0.02), vec3(0.0, 1.2, -0.12), 0.1, 0.03), 4.0, 0.04);', // the crest
+  '  res = add(res, sdRoundCone(q, vec3(0.2, 0.76, 0.04), vec3(0.34, 1.06, -0.08), 0.08, 0.025), 4.0, 0.04);',
+  '  vec3 g = q - vec3(0.5, 0.46, -0.06);', // fins on the head, swept back
+  '  g.yz = rot(0.55) * g.yz;',
+  '  res = add(res, sdEllipsoid(g, vec3(0.035, 0.11, 0.26)), 4.0, 0.03);',
+  '  float whisker = min(sdRoundCone(q, vec3(0.3, 0.2, 0.55), vec3(0.62, 0.1, 0.62), 0.045, 0.034),',
+  '    sdRoundCone(q, vec3(0.62, 0.1, 0.62), vec3(0.82, -0.12, 0.5), 0.034, 0.024));',
+  '  return add(res, whisker, 5.0, 0.02);',
+  '}',
+
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
   // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg,
   // 11 fluffy tail.
@@ -158,6 +190,11 @@ const FRAGMENT = [
   '    egg.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
   '    return egg;',
   '  }',
+  '  if (KIND > 0.5 && KIND < 1.5) {',
+  '    vec2 s = serpent(p);',
+  '    s.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
+  '    return s;',
+  '  }',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
   // With one head, the round body is the head. Two heads sit up on long,
   // skinny necks from a lower body, each with its own little horns.
@@ -171,6 +208,10 @@ const FRAGMENT = [
   '    res.x = smin(res.x, sdEllipsoid(h, vec3(0.39, 0.35, 0.35)), 0.06);',
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
   '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
+  '  } else if (KIND > 1.5) {', // antennae, curling forward over the face
+  '    float a = min(sdRoundCone(q, vec3(0.16, 0.78, 0.12), vec3(0.22, 1.06, 0.26), 0.045, 0.034),',
+  '      sdRoundCone(q, vec3(0.22, 1.06, 0.26), vec3(0.34, 1.18, 0.46), 0.034, 0.022));',
+  '    res = add(res, a, 2.0, 0.04);',
   '  } else {',
   '    res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   '  }',
@@ -326,6 +367,31 @@ const FRAGMENT = [
   '  return col;',
   '}',
 
+  // A sea serpent's colors: a pale belly down the front of its neck, and a
+  // fierce face: narrowed eyes under frowning brows, and an open mouth with
+  // two fangs.
+  'vec3 serpentPaint(vec3 p) {',
+  '  vec3 col = uBody;',
+  '  if (p.y < 0.08 && p.z > 0.3 && abs(p.x) < 0.13 + 0.12 * clamp(0.08 - p.y, 0.0, 0.6)) {',
+  '    col = uBelly;', // wider lower down, in bands like belly scales
+  '    if (fract((p.y + 0.62) / 0.1) < 0.12) col = mix(uBelly, uBody, 0.35);',
+  '  }',
+  '  vec3 h = p - vec3(0.0, 0.36, 0.14);',
+  '  if (h.z < 0.2) return col;',
+  '  vec2 e = vec2(abs(h.x), h.y);',
+  '  if (length((e - vec2(0.2, 0.08)) / vec2(0.08, 0.065)) < 1.0) {',
+  '    col = vec3(1.0);',
+  '    if (length(e - vec2(0.19, 0.07)) < 0.042) col = uEye;',
+  '    if (length(e - vec2(0.175, 0.09)) < 0.014) col = vec3(1.0);',
+  '  }',
+  '  if (sdSegment(e, vec2(0.08, 0.15), vec2(0.3, 0.21)) < 0.026) col = mix(uEye, uBody, 0.2);', // brows
+  '  if (length((h.xy - vec2(0.0, -0.17)) / vec2(0.2, 0.09)) < 1.0) {', // the mouth
+  '    col = vec3(0.45, 0.07, 0.13);',
+  '    if (h.y > -0.17 && abs(e.x - 0.09) < 0.035 * (h.y + 0.17) / 0.09) col = vec3(1.0);', // fangs
+  '  }',
+  '  return col;',
+  '}',
+
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
   '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
@@ -343,6 +409,7 @@ const FRAGMENT = [
   '  if (m > 2.5) return uWing;',
   '  if (m > 1.5) return uHorn;',
   '  vec3 p = local(world);',
+  '  if (KIND > 0.5 && KIND < 1.5) return serpentPaint(p);',
   '  vec3 col = uBody;',
   '  if (STARS > 0.5) {',
   '    vec3 f = fract(p * 5.0) - 0.5;',
@@ -353,7 +420,14 @@ const FRAGMENT = [
   '    vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
   '    if (h.z > 0.1) col = face(h.xy / 0.47, col);',
   '  } else if (p.z > 0.15) {',
-  '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
+  '    if (KIND > 1.5) {', // a big belly with stripes across it
+  '      if (length((p.xy - vec2(0.0, -0.38)) / vec2(0.54, 0.36)) < 1.0) {',
+  '        col = uBelly;',
+  '        if (fract((p.y + 0.74) / 0.12) < 0.15) col = mix(uBelly, uBody, 0.5);',
+  '      }',
+  '    } else if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) {',
+  '      col = uBelly;',
+  '    }',
   '    col = face(p.xy, col);',
   '  }',
   '  return col;',
@@ -485,7 +559,8 @@ export function createSquishy(canvas, options) {
     // stretch, every 6° of turn.
     gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
-    gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail), 0);
+    gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail),
+      look.serpent ? 1 : look.antennae ? 2 : 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),
