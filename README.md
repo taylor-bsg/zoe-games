@@ -21,7 +21,7 @@ silent mode, so use the speaker button on the main page to mute every game.
 
 ## Coins and the store
 
-Zoe Multiplies and Zoe Spells pay coins: 5 for every 0.02 s faster speed
+Zoe Multiplies and Zoe Spells pay coins: 5 for every 0.01 s faster speed
 score in Zoe Multiplies, 100–400 for each finished Zoe Spells wall, and in
 both, 1 for every 25 right answers. The Store button on the main page shows
 the coins and leads to the Squishy Store. There, Zoe can spin, squish, and buy
