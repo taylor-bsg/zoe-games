@@ -8,12 +8,12 @@
 // coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
 // price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.7.25';
-import * as sound from '../shared/sound.js?v=0.7.25';
-import * as storage from '../shared/storage.js?v=0.7.25';
-import { confetti, stars } from '../shared/celebrate.js?v=0.7.25';
-import { createSquishy } from './squishy.js?v=0.7.25';
-import { ITEMS } from './items.js?v=0.7.25';
+import * as coins from '../shared/coins.js?v=0.7.26';
+import * as sound from '../shared/sound.js?v=0.7.26';
+import * as storage from '../shared/storage.js?v=0.7.26';
+import { confetti, stars } from '../shared/celebrate.js?v=0.7.26';
+import { createSquishy } from './squishy.js?v=0.7.26';
+import { ITEMS } from './items.js?v=0.7.26';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -55,7 +55,11 @@ let lastDraw = 0;
 let wallet = coins.totals();
 const owned = {}; // id -> true
 const hatched = {}; // id -> true once its egg is hatched; it stays hatched
-const stage = createSquishy($('stage'), { maxRatio: 1.25 });
+// The 3D view starts compiling now, which can take seconds on a slower
+// computer. Until it's ready (and for good without WebGL), an emoji stands in.
+let stage = createSquishy($('stage'), { maxRatio: 1.25 });
+let stageReady = false;
+let framesShown = 0;
 
 function picked() {
   return ITEMS[index];
@@ -129,9 +133,25 @@ function eggTilt(now, ready) {
   return t < 0.6 ? 0.22 * Math.sin(t * 26) * (1 - t / 0.6) : 0;
 }
 
+// Swaps in the 3D view once it has compiled. Asks only after a couple of
+// frames, so the store shows first even where asking waits for the compile.
+function checkStage() {
+  framesShown += 1;
+  if (!stage || stageReady || framesShown < 3) return;
+  const status = stage.state();
+  if (status === 'failed') {
+    stage = null;
+  } else if (status === 'ready') {
+    stageReady = true;
+    const fallback = document.querySelector('.stage-fallback');
+    if (fallback) fallback.parentNode.removeChild(fallback);
+  }
+}
+
 function frame(now) {
   const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0;
   lastFrame = now;
+  checkStage();
   const state = stateOf(picked());
   const shaking = now - hatchAt < HATCH_MS;
   if (popping && !shaking) pop();
@@ -152,7 +172,7 @@ function frame(now) {
   }
   const idle = !shaking && state !== 'ready' && held === null && now - touchedAt > IDLE_AFTER &&
     now - squishAt > 1600; // still moving, but slowly enough for fewer pictures
-  if (stage && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
+  if (stageReady && !document.hidden && (!idle || now - lastDraw >= IDLE_FRAME)) {
     stage.draw(egg ? EGGS[index] : picked().look, { angle: angle, tilt: tilt, squish: squash });
     lastDraw = now;
   }
@@ -178,7 +198,7 @@ function showPicked() {
   else if (short) buy.innerHTML = 'Need ' + (item.price - wallet.balance) + ' more ' + coins.ICON;
   else buy.innerHTML = 'Buy for ' + item.price + ' ' + coins.ICON;
   $('stage-hint').innerHTML = state === 'ready' ? READY_HINT : state === 'locked' ? LOCKED_HINT : HINT;
-  const fallback = document.querySelector('.stage-fallback'); // without WebGL
+  const fallback = document.querySelector('.stage-fallback'); // until the 3D view is ready
   if (fallback) fallback.textContent = isEgg(state) ? '🥚' : '🐉';
   Array.prototype.forEach.call($('dots').children, function (dot, i) {
     dot.classList.toggle('is-here', i === index);
@@ -227,7 +247,7 @@ function pop() {
   squishAt = performance.now();
   squishBy = POP;
   sound.celebrate();
-  if (stage) stars($('stage'));
+  stars($('stage') || document.querySelector('.stage-fallback'));
   showPicked();
   $('stage-hint').textContent = 'Meet ' + picked().name + '! 🎉';
 }
@@ -365,12 +385,10 @@ document.addEventListener('keydown', function (event) {
 $('buy').addEventListener('click', buy);
 
 refresh();
-if (!stage) {
-  const canvas = $('stage');
-  const fallback = document.createElement('div');
-  fallback.className = 'stage-fallback';
-  canvas.parentNode.replaceChild(fallback, canvas);
-}
+const fallback = document.createElement('div');
+fallback.className = 'stage-fallback';
+if (stage) $('stage').parentNode.appendChild(fallback); // over the canvas until the 3D view is ready
+else $('stage').parentNode.replaceChild(fallback, $('stage'));
 // Start on an egg that's ready to hatch, if there is one, then on the first
 // squishy Zoe doesn't own, then on the first.
 const first = ITEMS.filter(function (item) {
@@ -380,7 +398,5 @@ const first = ITEMS.filter(function (item) {
 })[0] || ITEMS[0];
 show(ITEMS.indexOf(first));
 showBalance();
-if (stage) {
-  watchStage();
-  requestAnimationFrame(frame);
-}
+if (stage) watchStage();
+requestAnimationFrame(frame); // even with an emoji, since hatching finishes there

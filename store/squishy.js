@@ -5,9 +5,16 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.7.25';
+//   import { createSquishy } from './squishy.js?v=0.7.26';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
+//   view.state(); // 'compiling', 'ready', or 'failed'
+//
+// Compiling the 3D program can take seconds on a slower computer, such as a
+// Chromebook. createSquishy only starts it. Where the browser compiles in the
+// background (KHR_parallel_shader_compile), state() answers without waiting,
+// so a page can show something else until it's 'ready'; elsewhere it waits.
+// draw() always waits for the compile, and draws nothing if it failed.
 //
 // A look has colors (hex strings): body, belly, horn, wing, cheek, spike, eye,
 // and acc and acc2 for accessories. Everything else is optional:
@@ -545,14 +552,12 @@ const FRAGMENT = [
 
 const COLORS = ['body', 'belly', 'horn', 'wing', 'cheek', 'spike', 'eye', 'acc', 'acc2'];
 
-function compile(gl, type, source) {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(gl.getShaderInfoLog(shader));
-  }
-  return shader;
+// Starts compiling a shader; checking it waits for it, so that comes later.
+function shader(gl, type, source) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, source);
+  gl.compileShader(s);
+  return s;
 }
 
 function rgb(hex) {
@@ -573,33 +578,53 @@ export function createSquishy(canvas, options) {
     gl = null;
   }
   if (!gl) return null;
+  const parallel = gl.getExtension('KHR_parallel_shader_compile');
+  const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
+  const fragment = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
   const program = gl.createProgram();
-  try {
-    gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERTEX));
-    gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAGMENT));
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-  } catch (e) {
-    if (window.console) console.error('squishy: ' + e.message);
-    return null;
-  }
-  gl.useProgram(program);
-  const buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const aPos = gl.getAttribLocation(program, 'aPos');
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+  let status = 'compiling';
   const u = {};
-  ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
-    u[name] = gl.getUniformLocation(program, name);
-  });
-  COLORS.forEach(function (part) {
-    u[part] = gl.getUniformLocation(program, 'u' + part.charAt(0).toUpperCase() + part.slice(1));
-  });
   const maxRatio = opts.maxRatio || 2;
 
+  // Once compiled: checks the program and sets up what drawing needs.
+  function finish() {
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      if (window.console) {
+        console.error('squishy: ' + (gl.getShaderInfoLog(fragment) || gl.getShaderInfoLog(vertex) ||
+          gl.getProgramInfoLog(program)));
+      }
+      status = 'failed';
+      return;
+    }
+    gl.useProgram(program);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    ['uRes', 'uView', 'uMore', 'uShape', 'uExtras', 'uGear'].forEach(function (name) {
+      u[name] = gl.getUniformLocation(program, name);
+    });
+    COLORS.forEach(function (part) {
+      u[part] = gl.getUniformLocation(program, 'u' + part.charAt(0).toUpperCase() + part.slice(1));
+    });
+    status = 'ready';
+  }
+
+  function state() {
+    if (status === 'compiling' && (!parallel || gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR))) {
+      finish();
+    }
+    return status;
+  }
+
   function draw(look, state) {
+    if (status === 'compiling') finish();
+    if (status !== 'ready') return;
     const ratio = Math.min(window.devicePixelRatio || 1, maxRatio);
     const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
     const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
@@ -633,5 +658,5 @@ export function createSquishy(canvas, options) {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  return { canvas: canvas, draw: draw };
+  return { canvas: canvas, draw: draw, state: state };
 }

@@ -135,6 +135,18 @@ Butterscotch's mystery egg is now a soft cube, with rounded edges, spots in
 its colors, and the ? on the front face. Its antennae are now long, floppy
 dog ears hanging down the sides of its head, in a darker orange.
 
+Reported by the user, verbatim (2026-10-31):
+
+> There is a big delay when you get to the store, on a Chromebook. Is this because it pre-renders everything?
+
+It doesn't pre-render: the store only draws the squishy on screen. The
+delay was the one-time compile of the 3D program, which the store waited
+for before showing anything. On a Mac it takes about 0.15 s, but it's
+processor work, and a budget Chromebook's processor and graphics drivers
+can take seconds. Now the store shows at once, with the squishy as a big
+emoji (🥚 or 🐉) while the 3D view compiles in the background; then the 3D
+squishy takes its place. Everything works meanwhile, including hatching.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -251,7 +263,12 @@ dog ears hanging down the sides of its head, in a darker orange.
   - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
     while the app is in the background.
-  - Without WebGL, a 🐉 stands in (a 🥚 for a mystery egg).
+  - Until the 3D view has compiled, a 🐉 stands in (a 🥚 for a mystery
+    egg), and without WebGL, or if the compile fails, for good. Where the
+    browser compiles in the background (`KHR_parallel_shader_compile`, as
+    Chrome does), the store checks each frame without waiting; elsewhere it
+    first lets the store show for a couple of frames, then waits for the
+    compile.
   - Every squishy is drawn with the same zoom, so their sizes compare. The
     zoom is set so the largest still fits; each squishy's size in
     `items.js` keeps it inside. A big tail curves up behind, which keeps it
