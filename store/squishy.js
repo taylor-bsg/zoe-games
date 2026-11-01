@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.8.4';
+//   import { createSquishy } from './squishy.js?v=0.8.5';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.status(look); // 'compiling', 'ready', or 'failed'
@@ -44,6 +44,10 @@
 //   heads       2 for two heads up on long, skinny necks, each with a face
 //               and horns. Spikes, crown, glasses, headphones, hat, and halo
 //               are placed for one head.
+//   lawyer      a lawyer: a suit (belly color) over her body instead of a
+//               belly, with a white shirt and gold buttons, eyelashes, a
+//               hair bun (acc) with a pencil through it, and a briefcase
+//               (acc2) standing at her side. Placed for one head.
 //   hearts      a love dragon: heart-shaped wings and a heart on the tail
 //               (wing color), a heart-shaped belly and cheeks, and little
 //               hearts (acc) over its back and sides, placed for one head.
@@ -246,9 +250,19 @@ const FRAGMENT = [
   '}',
   '#endif',
 
+  // A lawyer's briefcase's own space: centered, its broad sides facing out
+  // and forward.
+  '#ifdef HAS_LAWYER',
+  'vec3 briefcase(vec3 p) {',
+  '  vec3 b = p - vec3(-0.92, FLOOR + 0.2, 0.1);',
+  '  b.xz = rot(0.6) * b.xz;',
+  '  return b;',
+  '}',
+  '#endif',
+
   // Distance to the dragon, and its material: 1 body, 2 horn, 3 wing, 4 spike,
   // 5 acc, 6 acc2, 7 halo, 8 striped hat, 9 white pom-pom, 10 egg,
-  // 11 fluffy tail.
+  // 11 fluffy tail, 12 pencil, 13 briefcase.
   'vec2 map(vec3 world) {',
   '  vec3 p = local(world);',
   // The mystery egg: rounder and wider at the bottom, resting on the floor.
@@ -445,6 +459,18 @@ const FRAGMENT = [
   '    res = add(res, length(p - vec3(0.0, -0.17, 0.865)) - 0.042, 6.0, 0.02);',
   '  }',
   '#endif',
+  // A lawyer's hair bun on top of her head, with a pencil through it, and
+  // her briefcase standing on the floor at her side, turned to the front.
+  '#ifdef HAS_LAWYER',
+  '  res = add(res, length(p - vec3(0.0, 0.9, -0.16)) - 0.19, 5.0, 0.06);',
+  '  res = add(res, min(sdRoundCone(p, vec3(-0.34, 0.93, -0.08), vec3(0.22, 1.02, -0.2), 0.034, 0.034),',
+  '    sdRoundCone(p, vec3(0.22, 1.02, -0.2), vec3(0.31, 1.035, -0.22), 0.034, 0.006)), 12.0, 0.01);',
+  '  {',
+  '    vec3 b = briefcase(p);',
+  '    res = add(res, sdRoundBox(b, vec3(0.09, 0.2, 0.3), 0.05), 13.0, 0.02);',
+  '    res = add(res, max(sdTorus((b - vec3(0.0, 0.25, 0.0)).yxz, vec2(0.09, 0.025)), 0.25 - b.y), 13.0, 0.01);', // the handle
+  '  }',
+  '#endif',
   // Squashing, stretching, and size change distances; scale down to the
   // smallest factor so the march never steps past the surface.
   '  res.x *= SIZE * min(1.0 - 0.3 * SQUISH, 1.0 + 0.18 * SQUISH);',
@@ -571,6 +597,13 @@ const FRAGMENT = [
   '    col = uEye;',
   '    if (length(e - vec2(0.29, 0.17)) < 0.035) col = vec3(1.0);',
   '  }',
+  '#ifdef HAS_LAWYER',
+  '  for (int i = 0; i < 3; i++) {', // eyelashes off the top outer edge of each eye
+  '    float a = 0.45 + 0.45 * float(i);',
+  '    vec2 l = vec2(0.31 + 0.085 * cos(a), 0.12 + 0.115 * sin(a));',
+  '    if (sdSegment(e, l, l + 0.065 * vec2(cos(a - 0.2), sin(a - 0.2))) < 0.013) col = uEye;',
+  '  }',
+  '#endif',
   '  float arc = abs(length(f - vec2(0.0, 0.03)) - 0.12);',
   '  if (f.y < -0.03 && arc < 0.017) col = mix(uEye, uBody, 0.25);',
   '  return col;',
@@ -624,6 +657,21 @@ const FRAGMENT = [
 
   // The colors on the surface: parts, then a belly and a face on the front.
   'vec3 paint(vec3 world, float m) {',
+  '#ifdef HAS_LAWYER',
+  '  if (m > 12.5) {', // the briefcase: leather with a gold clasp on each side
+  '    vec3 b = briefcase(local(world));',
+  '    if (abs(b.z) < 0.07 && b.y > 0.07 && b.y < 0.16) return vec3(1.0, 0.8, 0.3);',
+  '    return uAcc2;',
+  '  }',
+  '  if (m > 11.5) {', // the pencil: eraser, metal band, yellow paint, bare wood, and lead
+  '    float t = dot(local(world) - vec3(-0.34, 0.93, -0.08), vec3(0.966, 0.156, -0.208));',
+  '    if (t < 0.07) return vec3(1.0, 0.6, 0.65);',
+  '    if (t < 0.11) return vec3(0.8, 0.8, 0.85);',
+  '    if (t < 0.58) return vec3(1.0, 0.8, 0.2);',
+  '    if (t < 0.645) return vec3(0.93, 0.78, 0.55);',
+  '    return vec3(0.25, 0.25, 0.28);',
+  '  }',
+  '#endif',
   '#ifdef HAS_FLUFFY_TAIL',
   '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
   '#endif',
@@ -676,10 +724,31 @@ const FRAGMENT = [
   '    return snoutFace(p, col);',
   '  }',
   '#else',
+  '#ifdef HAS_LAWYER',
+  // A suit over her body below the face (but not on her feet or tail), its
+  // top edge rising toward the sides and back. At the front, a white shirt
+  // shows in a V, its collar points over the lapels, which have a darker
+  // edge, and two gold buttons are below.
+  '  {',
+  '    float top = -0.22 + 0.12 * p.x * p.x + 0.1 * clamp(-p.z, 0.0, 1.0);',
+  '    if (p.y < top && p.z > -0.72 &&',
+  '        length((vec3(abs(p.x), p.y, p.z) - vec3(0.42, -0.72, 0.42)) / vec3(0.25, 0.16, 0.23)) > 1.0) {',
+  '      col = uBelly;',
+  '      if (p.z > 0.3) {',
+  '        vec2 c = vec2(abs(p.x), p.y - top);', // across, and down from the top edge
+  '        float v = 0.2 + 0.6 * c.y;', // the V's half width here
+  '        if (c.x < v) col = vec3(1.0);',
+  '        else if (c.x < v + 0.035) col = uBelly * 0.7;',
+  '        if (c.x > 0.04 - 0.857 * c.y && c.x < 0.24 + 0.571 * c.y) col = vec3(1.0);', // collar point
+  '        if (length(vec2(p.x, p.y + 0.63)) < 0.03 || length(vec2(p.x, p.y + 0.73)) < 0.03) col = vec3(1.0, 0.8, 0.3);',
+  '      }',
+  '    }',
+  '  }',
+  '#endif',
   '  if (p.z > 0.15) {',
-  '#ifdef HAS_HEARTS',
+  '#if defined(HAS_HEARTS)',
   '    if (sdHeart((p.xy - vec2(0.0, -0.78)) / 0.55) < 0.0) col = uBelly;',
-  '#else',
+  '#elif !defined(HAS_LAWYER)',
   '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
   '#endif',
   '    col = face(p.xy, col);',
@@ -764,6 +833,7 @@ function parts(look) {
     if (look.hat) list.push('HAS_HAT');
     if (look.halo) list.push('HAS_HALO');
     if (look.bowtie) list.push('HAS_BOWTIE');
+    if (look.lawyer) list.push('HAS_LAWYER');
   }
   if (look.glasses) list.push('HAS_GLASSES');
   if (look.stars) list.push('HAS_STARS');

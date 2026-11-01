@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.8.4">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.5">
   <style>
     .purse {
       display: flex;
@@ -152,16 +152,19 @@
       line-height: 1.1;
     }
 
-    /* Which squishy this is: one dot each; owned ones are gold. */
+    /* Which squishy this is: one dot each; owned ones are gold. They wrap
+       onto a second line where there isn't room for one. */
     .dots {
       display: flex;
-      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
       margin: 2px 0 4px;
     }
 
     .dot {
-      width: 13px;
-      height: 13px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: #d6ddf5;
       transition: transform 0.2s ease;
@@ -267,6 +270,6 @@
     <p class="ledger" id="ledger"></p>
   </div>
 
-  <script type="module" src="store.js?v=0.8.4"></script>
+  <script type="module" src="store.js?v=0.8.5"></script>
 </body>
 </html>

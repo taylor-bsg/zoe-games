@@ -220,6 +220,20 @@ Requested by the user, verbatim (2026-11-01):
 
 Butterscotch's floppy dog ears are gone, so nothing is on its round head.
 
+Requested by the user, verbatim (2026-11-01):
+
+> Create a female lawyer squishmellow
+
+Asked, the user chose her price, 500 (between Dragon King and
+Butterscotch), and her name, Justice. Justice is a lavender dragon in a
+navy skirt suit with a white shirt collar and gold buttons, with long
+eyelashes and a hair bun with a pencil through it, and her brown briefcase
+stands at her side. Her egg is a plain one in her colors. Sizes still go
+from 50% to 100% by price, in even steps, so most of the others shrank a
+little. With sixteen squishies, the dots under the name are a little
+smaller and closer together, and wrap onto a second line where there isn't
+room for one.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -238,8 +252,9 @@ Butterscotch's floppy dog ears are gone, so nothing is on its round head.
   edges of the view. The arrows wrap around from the last squishy to
   the first, and the left and right arrow keys work too, for a laptop.
   - Under the squishy (beside it in landscape): the name, a dot for each
-    squishy (the one on screen is ringed, owned ones are gold), a hint, and
-    the buy button.
+    squishy (the one on screen is ringed, owned ones are gold; they wrap
+    onto a second line where there isn't room for one), a hint, and the
+    buy button.
   - "My coins" is in the top bar, and "Earned … · Spent …" sits at the
     bottom.
   - A new squishy hops in with a little wobble, facing three-quarters
@@ -300,16 +315,17 @@ Butterscotch's floppy dog ears are gone, so nothing is on its round head.
   | Sprout | 50 | 50% | Green, like the level 1 dragon |
   | Bubblegum | 75 | 54% | Pink |
   | Sunny | 75 | 54% | Yellow |
-  | Frosty | 100 | 58% | Ice blue, like the level 2 dragon |
-  | Ember | 150 | 62% | Red, like the level 3 dragon; bigger wings |
-  | Shade | 200 | 65% | Shadow purple, like the level 4 dragon; pink sunglasses |
-  | Professor | 225 | 69% | Mint; round glasses and a red bow tie (new) |
-  | Galaxy | 250 | 73% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
-  | DJ Bop | 275 | 77% | Cyan with pink spikes; headphones (new) |
-  | Party Puff | 300 | 81% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
-  | Angel | 350 | 85% | Sky blue; a glowing halo and big gold wings (new) |
-  | Dragon King | 400 | 88% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
-  | Butterscotch | 600 | 92% | Orange; a round body with a head on top, a snout, stubby arms, a striped cream belly, and teal wings; hatches from a cube (new) |
+  | Frosty | 100 | 57% | Ice blue, like the level 2 dragon |
+  | Ember | 150 | 61% | Red, like the level 3 dragon; bigger wings |
+  | Shade | 200 | 64% | Shadow purple, like the level 4 dragon; pink sunglasses |
+  | Professor | 225 | 68% | Mint; round glasses and a red bow tie (new) |
+  | Galaxy | 250 | 71% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
+  | DJ Bop | 275 | 75% | Cyan with pink spikes; headphones (new) |
+  | Party Puff | 300 | 79% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
+  | Angel | 350 | 82% | Sky blue; a glowing halo and big gold wings (new) |
+  | Dragon King | 400 | 86% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
+  | Justice | 500 | 89% | Lavender; a lawyer in a navy skirt suit, with eyelashes, a hair bun with a pencil, and a briefcase (new) |
+  | Butterscotch | 600 | 93% | Orange; a round body with a head on top, a snout, stubby arms, a striped cream belly, and teal wings; hatches from a cube (new) |
   | Riptide | 800 | 96% | A blue sea serpent with a crest, fins, and a big smile; hatches from a ball (new) |
   | Valentine | 1000 | 100% | Rose pink; red heart wings, a red heart on its tail, a heart-shaped belly and cheeks, and little white hearts; hatches from a heart (new) |
 
@@ -317,7 +333,7 @@ Butterscotch's floppy dog ears are gone, so nothing is on its round head.
     for the priciest. The view's zoom leaves room for a full-size Dragon
     King, with its crown, wings, and big tail, and Riptide and Valentine
     fit inside it.
-  - All fifteen cost 4,850 coins, plus 970 to hatch them. The six Zoe Spells
+  - All sixteen cost 5,350 coins, plus 1,070 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
     every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both also pay
     1 for every 25 right answers. Zoe Writes pays 2 for each perfect word
@@ -393,6 +409,17 @@ Butterscotch's floppy dog ears are gone, so nothing is on its round head.
     usual size, and two small horns; the belly is painted on the body.
     Spikes, crown, glasses, headphones, hat, and halo are placed for one
     head, so a two-headed squishy can't wear them yet.
+  - **Lawyer** (`lawyer`, Justice): a suit is painted over her body below
+    the face, in the belly color instead of a belly, its top edge rising a
+    little toward the sides and back, leaving her feet and tail bare. At
+    the front, a white shirt shows in a V between the lapels, which have a
+    darker edge, with a white collar point over each lapel and two gold
+    buttons below. Three eyelashes curl off the top outer edge of each
+    eye. A round hair bun (acc) sits on top of her head, with a pencil
+    through it: pink eraser, metal band, yellow paint, bare wood, and lead.
+    Her briefcase (acc2) is a rounded box with a handle and a gold clasp on
+    each side, standing on the floor at her left side, turned to face
+    forward, so it shows when she first appears.
   - **Love dragon** (`hearts`, Valentine): its wings are puffy hearts, in
     the wing color, their points at the shoulders and their lobes out and
     up, facing front and back: big hearts from behind, peeking over the
@@ -407,8 +434,8 @@ Butterscotch's floppy dog ears are gone, so nothing is on its round head.
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads. Two
     heads on necks cost little: at the same size, Galaxy draws in 1.0–1.2×
-    plain Sprout's time. Riptide takes about 1.0×, Butterscotch 0.85×, and
-    Valentine 0.8× (measured on a Mac in version 0.8.3).
+    plain Sprout's time. Riptide and Justice take about 1.0×, Butterscotch
+    0.75×, and Valentine 0.8× (measured on a Mac in version 0.8.5).
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
