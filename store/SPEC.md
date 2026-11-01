@@ -111,9 +111,10 @@ looks, with original names, since the site is public.
   it, and teal wings.
 - **Riptide** (800): a blue sea serpent coiled on the floor. Its neck rises
   to a head with a white crest and swept-back fins (and long whiskers,
-  taken off later at the user's request), and a fierce face: frowning brows and an open mouth with two fangs. A yellow
-  belly runs down its neck in scale bands, and its tail curls up at the back
-  with a fin.
+  taken off later at the user's request), and a fierce face: frowning
+  brows and an open mouth with two fangs (later a smile, at the user's
+  request). A yellow belly runs down its neck in scale bands, and its tail
+  curls up at the back with a fin.
 - Sizes still go from 50% to 100% by price, in even steps, so the others
   shrank a little; Riptide is the biggest.
 
@@ -191,6 +192,15 @@ Requested by the user, verbatim (2026-10-31):
 
 Riptide no longer has whiskers.
 
+Requested by the user, verbatim (2026-10-31):
+
+> Riptide should smile; also his egg should be a sphere
+
+Riptide now smiles: round eyes and a big open smile with a pink tongue and
+its two fangs, now little ones. The frowning brows are gone, and it has
+rosy cheeks like the other squishies (added to go with the smile). Its
+mystery egg is a ball instead of an oval.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -241,7 +251,7 @@ Riptide no longer has whiskers.
     belly, wing, and spike colors and a big ? on the front: navy, or white
     on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
     egg wears Shade's pink sunglasses instead of the ?. Butterscotch's egg
-    is a cube.
+    is a cube, and Riptide's a ball.
   - **Ready** (enough coins to buy it, never hatched): the egg wiggles
     excitedly every 1.6 s. The button reads "🥚 Hatch for 10" (a fifth of
     the price) and the hint "It’s ready to hatch! Tap “Hatch” to see
@@ -280,7 +290,7 @@ Riptide no longer has whiskers.
   | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
   | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
-  | Riptide | 800 | 100% | A blue sea serpent with a crest, fins, and a fierce face (new) |
+  | Riptide | 800 | 100% | A blue sea serpent with a crest, fins, and a big smile; hatches from a ball (new) |
 
   - Size goes with price, in even steps from 50% for the cheapest to 100%
     for the priciest. The view's zoom leaves room for a full-size Dragon
@@ -345,22 +355,23 @@ Riptide no longer has whiskers.
     round body has a head on top, melted on with no neck, and a round snout
     on the head; stubby arms tip out from the sides. Floppy dog ears hang
     down the sides of the head instead of horns, tucked in at the top and
-    tipped out at the bottom, and the wings sit up on the back. The face is painted on the head and snout: eyes, cheeks,
-    two nostrils, and a smile across the snout. The big belly has thin
-    stripes across it.
+    tipped out at the bottom, and the wings sit up on the back. The face is
+    painted on the head and snout: eyes, cheeks, two nostrils, and a smile
+    across the snout. The big belly has thin stripes across it.
   - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
     dragon's. A ring lying on the floor is the coil, and a neck in two
     tapering segments rises from its front to an oval head. On the head are
-    a crest of three spikes and two swept-back fins. The tail rises from the back of the coil to a fin. The face is
-    painted fierce: narrowed eyes, frowning brows, and an open dark-red mouth
-    with two fangs. The yellow belly widens down the neck, in scale bands.
-    It has no wings, feet, or horns.
+    a crest of three spikes and two swept-back fins. The tail rises from
+    the back of the coil to a fin. The face is painted friendly: round
+    eyes, rosy cheeks, and a big open dark-red smile with a pink tongue and
+    two little fangs. The yellow belly widens down the neck, in scale
+    bands. It has no wings, feet, or horns.
   - **Two heads** (`heads: 2`): a lower body with two round heads up on
     long, skinny necks that lean apart. The heads turn a little away from
     each other and tip out. Each has its own painted face, at 47% of the
-    usual size, and two small horns; the belly is painted on the body. Spikes, crown, glasses,
-    headphones, hat, and halo are placed for one head, so a two-headed
-    squishy can't wear them yet.
+    usual size, and two small horns; the belly is painted on the body.
+    Spikes, crown, glasses, headphones, hat, and halo are placed for one
+    head, so a two-headed squishy can't wear them yet.
   - **Draw cost:** the most elaborate squishy (Shade: sunglasses and spikes)
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads. Two
@@ -370,23 +381,28 @@ Riptide no longer has whiskers.
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
     each egg's look from its squishy's size and colors; `egg` in `items.js`
-    adds parts to it, like Shade's sunglasses or Butterscotch's cube.
+    adds parts to it, like Shade's sunglasses, Butterscotch's cube, or
+    Riptide's ball.
   - **Cube egg** (`cube`): a cube 1.24 across with edges rounded by 0.16.
     As it rocks it rises just enough that its lowest rounded corner stays on
     the floor, worked out for its turn, so it tips onto a corner instead of
     sinking in. Its spots and ? are painted in the cube's own space, so they
     stay put as it rocks; the spots sit where its flat faces cut through
     them, scattered across about two in five places.
+  - **Ball egg** (`sphere`): a ball 1.48 across, a little wider than the
+    usual egg and not as tall. It doesn't roll away as it rocks: the ball
+    stays put and its spots and ? turn about its middle, so it rocks by
+    turning in place.
   - **Egg glasses:** fitted to the egg's curve. Each lens faces straight
     out from the egg, leaning back with it, and the arms wrap back to its
     sides.
   - **Fit check:** `fit-check.html` (in this folder, not linked from the
-    store) draws every squishy, an egg with sunglasses, and a cube egg, at
-    full squash, full stretch, and rest, every 6° of turn, in every store
-    layout, and reports how close each comes to the edge. Run it after
-    changing a size or adding flair. At this change, the closest was 1.5%
-    of the view's height (Riptide, fully squashed, on a phone), the eggs
-    19.2% and 11.6%.
+    store) draws every squishy, an egg with sunglasses, a cube egg, and a
+    ball egg, at full squash, full stretch, and rest, every 6° of turn, in
+    every store layout, and reports how close each comes to the edge. Run
+    it after changing a size or adding flair. At this change, the closest
+    was 1.5% of the view's height (Riptide, fully squashed, on a phone),
+    the eggs 19.2%, 11.6%, and 17.6%.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.

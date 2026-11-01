@@ -4,16 +4,16 @@
 // are Zoe Spells', in its levels 1, 2, 2A, and 2B. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.8.1';
-import * as speech from '../shared/speech.js?v=0.8.1';
-import * as storage from '../shared/storage.js?v=0.8.1';
-import * as coins from '../shared/coins.js?v=0.8.1';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.1';
-import { createKeyboard } from './keyboard.js?v=0.8.1';
-import { WORDS as WORDS_1 } from '../02-spelling/words-1.js?v=0.8.1';
-import { WORDS as WORDS_2 } from '../02-spelling/words-2.js?v=0.8.1';
-import { WORDS as WORDS_2A } from '../02-spelling/words-2a.js?v=0.8.1';
-import { WORDS as WORDS_2B } from '../02-spelling/words-2b.js?v=0.8.1';
+import * as sound from '../shared/sound.js?v=0.8.2';
+import * as speech from '../shared/speech.js?v=0.8.2';
+import * as storage from '../shared/storage.js?v=0.8.2';
+import * as coins from '../shared/coins.js?v=0.8.2';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.2';
+import { createKeyboard } from './keyboard.js?v=0.8.2';
+import { WORDS as WORDS_1 } from '../02-spelling/words-1.js?v=0.8.2';
+import { WORDS as WORDS_2 } from '../02-spelling/words-2.js?v=0.8.2';
+import { WORDS as WORDS_2A } from '../02-spelling/words-2a.js?v=0.8.2';
+import { WORDS as WORDS_2B } from '../02-spelling/words-2b.js?v=0.8.2';
 
 const GAME_ID = '03-writing'; // the folder name; also the save key
 // The levels, with Zoe Spells' ids and the Zoe Spells level that must be

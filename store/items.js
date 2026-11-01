@@ -1,11 +1,11 @@
 // The squishy dragons for sale, cheapest first. Four are plush versions of
 // the dragons in Zoe Spells; the rest are new. Size goes with price, in even
 // steps from 0.5 for the cheapest to 1 for the priciest. The pricier ones get
-// flair too. Each look is what squishy.js draws: colors,
-// size, and parts (see its header). Until Zoe can afford a squishy, the
-// store shows a mystery egg in its size and colors; egg (optional) adds
-// parts to that egg, like Shade's sunglasses or Butterscotch's cube shape. The ids are saved with
-// purchases, so never change one; names, prices, and looks can change.
+// flair too. Each look is what squishy.js draws: colors, size, and parts (see
+// its header). Until Zoe can afford a squishy, the store shows a mystery egg
+// in its size and colors; egg (optional) adds parts to that egg, like Shade's
+// sunglasses, Butterscotch's cube shape, or Riptide's ball. The ids are saved
+// with purchases, so never change one; names, prices, and looks can change.
 // Every look must fit the view at full squash and stretch: after changing a
 // size or adding flair, check it as described in SPEC.md.
 
@@ -85,6 +85,7 @@ export const ITEMS = [
   {
     id: 'riptide', name: 'Riptide', price: 800,
     look: { size: 1, body: '#228be6', belly: '#ffe066', wing: '#1c7ed6', spike: '#e7f5ff',
-      eye: '#1d2b53', serpent: true },
+      cheek: '#ff8fab', eye: '#1d2b53', serpent: true },
+    egg: { sphere: true },
   },
 ];

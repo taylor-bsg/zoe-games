@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.8.1';
+//   import { createSquishy } from './squishy.js?v=0.8.2';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.status(look); // 'compiling', 'ready', or 'failed'
@@ -37,8 +37,8 @@
 //               up on the back, and a big striped belly
 //   serpent     a sea serpent instead of a dragon: a coil on the floor, a
 //               neck rising to a head with a crest and fins (spike color)
-//               and a fierce face, and a tail with a fin. No wings, feet,
-//               horns, or other flair.
+//               and a big smile with two little fangs, and a tail with a
+//               fin. No wings, feet, horns, or other flair.
 //   fluffyTail  a big, bushy tail like a chinchilla's, curling up behind,
 //               with a tip in the belly color (instead of the usual tail)
 //   heads       2 for two heads up on long, skinny necks, each with a face
@@ -49,6 +49,8 @@
 //               stars if stars), and a big question mark in the eye color.
 //               With glasses, it wears them instead of the question mark.
 //   cube        with egg: a soft cube-shaped egg instead of an oval one
+//   sphere      with egg: a ball instead of an oval egg; it rocks by turning
+//               in place
 // angle turns the dragon (radians); tilt rocks it sideways about the spot
 // where it touches the floor (radians, small; used for eggs); squish squashes
 // it toward the floor (up to about 1) or stretches it up (negative, down to
@@ -158,6 +160,24 @@ const FRAGMENT = [
   '  return p;',
   '}',
 
+  // A ball egg (radius BALL, on the floor) doesn't roll away when it rocks:
+  // its shape stays put, without the rocking, and its paint turns about its
+  // middle instead (in ball's space).
+  '#ifdef IS_SPHERE',
+  'const float BALL = 0.74;',
+  'vec3 upright(vec3 p) {',
+  '  p.xz = rot(ANGLE) * p.xz;',
+  '  p.y = (p.y - FLOOR) / ((1.0 - 0.3 * SQUISH) * SIZE) + FLOOR;',
+  '  p.xz /= (1.0 + 0.18 * SQUISH) * SIZE;',
+  '  return p;',
+  '}',
+  'vec3 ball(vec3 world) {',
+  '  vec3 c = upright(world) - vec3(0.0, FLOOR + BALL, 0.0);',
+  '  c.xy = rot(TILT) * c.xy;',
+  '  return c;',
+  '}',
+  '#endif',
+
   // A two-headed dragon's head on this side (q is the dragon's space with x
   // made positive), in the head's own space: centered, turned a little away
   // from the other head, and tipped out.
@@ -202,12 +222,14 @@ const FRAGMENT = [
   // The mystery egg: rounder and wider at the bottom, resting on the floor.
   // Its taper bends distances a little, so they're scaled down to be safe.
   // A cube egg is a soft cube, lifted as it rocks so a corner stays on the
-  // floor.
+  // floor, and a ball egg is a ball that stays put (see ball).
   '#ifdef IS_EGG',
   '  {',
   '    vec2 egg;',
-  '#ifdef IS_CUBE',
+  '#if defined(IS_CUBE)',
   '    egg = vec2(sdRoundBox(cubeSpace(p), vec3(0.62), 0.16), 10.0);',
+  '#elif defined(IS_SPHERE)',
+  '    egg = vec2(length(upright(world) - vec3(0.0, FLOOR + BALL, 0.0)) - BALL, 10.0);',
   '#else',
   '    float y = p.y + 0.06;',
   '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
@@ -416,7 +438,11 @@ const FRAGMENT = [
   // The egg: in the squishy's colors, with a big question mark on the front
   // (unless it wears glasses).
   '#ifdef IS_EGG',
-  'vec3 eggPaint(vec3 p) {',
+  'vec3 eggPaint(vec3 world) {',
+  '  vec3 p = local(world);',
+  '#ifdef IS_SPHERE',
+  '  p = ball(world) + vec3(0.0, 0.08, 0.0);', // the ? centered on the ball's front
+  '#endif',
   '  vec3 col = uBody;',
   '#if defined(IS_CUBE)',
   '  {', // a cube: spots scattered on its flat faces
@@ -474,8 +500,8 @@ const FRAGMENT = [
   '#endif',
 
   // A sea serpent's colors: a pale belly down the front of its neck, and a
-  // fierce face: narrowed eyes under frowning brows, and an open mouth with
-  // two fangs.
+  // friendly face: round eyes, rosy cheeks, and a big open smile with a pink
+  // tongue and two little fangs.
   '#ifdef IS_SERPENT',
   'vec3 serpentPaint(vec3 p) {',
   '  vec3 col = uBody;',
@@ -486,15 +512,16 @@ const FRAGMENT = [
   '  vec3 h = p - vec3(0.0, 0.36, 0.14);',
   '  if (h.z < 0.2) return col;',
   '  vec2 e = vec2(abs(h.x), h.y);',
-  '  if (length((e - vec2(0.2, 0.08)) / vec2(0.08, 0.065)) < 1.0) {',
+  '  if (length((e - vec2(0.2, 0.08)) / vec2(0.075, 0.08)) < 1.0) {',
   '    col = vec3(1.0);',
   '    if (length(e - vec2(0.19, 0.07)) < 0.042) col = uEye;',
   '    if (length(e - vec2(0.175, 0.09)) < 0.014) col = vec3(1.0);',
   '  }',
-  '  if (sdSegment(e, vec2(0.08, 0.15), vec2(0.3, 0.21)) < 0.026) col = mix(uEye, uBody, 0.2);', // brows
-  '  if (length((h.xy - vec2(0.0, -0.17)) / vec2(0.2, 0.09)) < 1.0) {', // the mouth
+  '  if (length((e - vec2(0.32, -0.06)) / vec2(0.07, 0.045)) < 1.0) col = uCheek;',
+  '  if (h.y < -0.1 && length((h.xy - vec2(0.0, -0.1)) / vec2(0.22, 0.15)) < 1.0) {', // the smile
   '    col = vec3(0.45, 0.07, 0.13);',
-  '    if (h.y > -0.17 && abs(e.x - 0.09) < 0.035 * (h.y + 0.17) / 0.09) col = vec3(1.0);', // fangs
+  '    if (length((h.xy - vec2(0.0, -0.22)) / vec2(0.11, 0.05)) < 1.0) col = vec3(1.0, 0.45, 0.55);', // tongue
+  '    if (h.y > -0.16 && abs(e.x - 0.1) < 0.03 * (h.y + 0.16) / 0.06) col = vec3(1.0);', // fangs
   '  }',
   '  return col;',
   '}',
@@ -523,7 +550,7 @@ const FRAGMENT = [
   '  if (m > 10.5) return mix(uBody, uBelly, smoothstep(0.7, 0.95, local(world).y));', // fluffy tail, pale tip
   '#endif',
   '#ifdef IS_EGG',
-  '  if (m > 9.5) return eggPaint(local(world));',
+  '  if (m > 9.5) return eggPaint(world);',
   '#endif',
   '#ifdef HAS_HAT',
   '  if (m > 8.5) return vec3(1.0, 0.98, 0.95);',
@@ -616,7 +643,7 @@ const FRAGMENT = [
   // squishy (smaller under an egg) and wider when squashed.
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? (KIND > 2.5 ? 0.8 : 0.62) : 1.0));',
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? (KIND > 3.5 ? 0.88 : KIND > 2.5 ? 0.8 : 0.62) : 1.0));',
   '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
@@ -634,6 +661,7 @@ function parts(look) {
   if (look.egg) {
     list.push('IS_EGG');
     if (look.cube) list.push('IS_CUBE');
+    if (look.sphere) list.push('IS_SPHERE');
   } else if (look.serpent) {
     list.push('IS_SERPENT');
   } else {
@@ -779,7 +807,7 @@ export function createSquishy(canvas, options) {
     gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
     gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail),
-      look.serpent ? 1 : look.chubby ? 2 : look.cube ? 3 : 0);
+      look.serpent ? 1 : look.chubby ? 2 : look.cube ? 3 : look.sphere ? 4 : 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),
