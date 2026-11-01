@@ -201,6 +201,18 @@ its two fangs, now little ones. The frowning brows are gone, and it has
 rosy cheeks like the other squishies (added to go with the smile). Its
 mystery egg is a ball instead of an oval.
 
+Requested by the user, verbatim (2026-11-01):
+
+> Create a new squish dragon which comes from a heart shaped egg and is a love dragon
+
+Asked, the user chose its price, 1000, which makes it the priciest and the
+biggest, and its name, Valentine. Valentine is a rose-pink dragon with red
+heart-shaped wings, a red heart on the end of its tail, a heart-shaped
+belly and cheeks, and little white hearts over its back and sides. Its
+mystery egg is a puffy pink heart standing on its point, with little
+hearts on it. Sizes still go from 50% to 100% by price, in even steps, so
+the others shrank a little.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -251,7 +263,8 @@ mystery egg is a ball instead of an oval.
     belly, wing, and spike colors and a big ? on the front: navy, or white
     on a dark egg. Galaxy's egg has gold stars instead of spots. Shade's
     egg wears Shade's pink sunglasses instead of the ?. Butterscotch's egg
-    is a cube, and Riptide's a ball.
+    is a cube, Riptide's a ball, and Valentine's a heart, with little hearts
+    in its other colors instead of spots.
   - **Ready** (enough coins to buy it, never hatched): the egg wiggles
     excitedly every 1.6 s. The button reads "🥚 Hatch for 10" (a fifth of
     the price) and the hint "It’s ready to hatch! Tap “Hatch” to see
@@ -281,21 +294,23 @@ mystery egg is a ball instead of an oval.
   | Bubblegum | 75 | 54% | Pink |
   | Sunny | 75 | 54% | Yellow |
   | Frosty | 100 | 58% | Ice blue, like the level 2 dragon |
-  | Ember | 150 | 63% | Red, like the level 3 dragon; bigger wings |
-  | Shade | 200 | 67% | Shadow purple, like the level 4 dragon; pink sunglasses |
-  | Professor | 225 | 71% | Mint; round glasses and a red bow tie (new) |
-  | Galaxy | 250 | 75% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
-  | DJ Bop | 275 | 79% | Cyan with pink spikes; headphones (new) |
-  | Party Puff | 300 | 83% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
-  | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
-  | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
-  | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
-  | Riptide | 800 | 100% | A blue sea serpent with a crest, fins, and a big smile; hatches from a ball (new) |
+  | Ember | 150 | 62% | Red, like the level 3 dragon; bigger wings |
+  | Shade | 200 | 65% | Shadow purple, like the level 4 dragon; pink sunglasses |
+  | Professor | 225 | 69% | Mint; round glasses and a red bow tie (new) |
+  | Galaxy | 250 | 73% | Purple with gold stars; two heads on long, skinny necks, and bigger wings |
+  | DJ Bop | 275 | 77% | Cyan with pink spikes; headphones (new) |
+  | Party Puff | 300 | 81% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
+  | Angel | 350 | 85% | Sky blue; a glowing halo and big gold wings (new) |
+  | Dragon King | 400 | 88% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
+  | Butterscotch | 600 | 92% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
+  | Riptide | 800 | 96% | A blue sea serpent with a crest, fins, and a big smile; hatches from a ball (new) |
+  | Valentine | 1000 | 100% | Rose pink; red heart wings, a red heart on its tail, a heart-shaped belly and cheeks, and little white hearts; hatches from a heart (new) |
 
   - Size goes with price, in even steps from 50% for the cheapest to 100%
     for the priciest. The view's zoom leaves room for a full-size Dragon
-    King, with its crown, wings, and big tail, and Riptide fits inside it.
-  - All fourteen cost 3,850 coins, plus 770 to hatch them. The six Zoe Spells
+    King, with its crown, wings, and big tail, and Riptide and Valentine
+    fit inside it.
+  - All fifteen cost 4,850 coins, plus 970 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
     every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both also pay
     1 for every 25 right answers. Zoe Writes pays 2 for each perfect word
@@ -313,8 +328,8 @@ mystery egg is a ball instead of an oval.
     at any turn, even fully squashed or stretched.
   - Checked: every squishy at full squash, full stretch, and rest, every 6°
     of turn, in every store layout from phone to 12.9-inch iPad. Nothing
-    reaches the edge; the closest is 7px, Riptide fully squashed on a
-    phone.
+    reaches the edge; the closest is 7px, Valentine's tail fully squashed
+    on a phone.
   - Squashing and stretching keep the 3D surface exact, with no holes.
   - The view renders at up to 1.25× pixel density and 30 frames a second
     while just spinning (full rate while touched or squishing). It stops
@@ -372,17 +387,28 @@ mystery egg is a ball instead of an oval.
     usual size, and two small horns; the belly is painted on the body.
     Spikes, crown, glasses, headphones, hat, and halo are placed for one
     head, so a two-headed squishy can't wear them yet.
+  - **Love dragon** (`hearts`, Valentine): its wings are puffy hearts, in
+    the wing color, their points at the shoulders and their lobes out and
+    up, facing front and back: big hearts from behind, peeking over the
+    shoulders from the front. A smaller puffy heart on the end of the tail
+    faces the sides. The belly patch and cheeks are painted as hearts, and
+    little hearts (acc color) are printed upright over the back and sides,
+    in rows around the body, but not on the face. Each heart's outline is
+    an exact 2D heart (after Inigo Quilez's distance functions). The wings
+    are placed and sized so they fit the view at any turn, squash, or
+    stretch.
   - **Draw cost:** the most elaborate squishy (Shade: sunglasses and spikes)
     takes about 1.3× as long to draw as a plain one. The glasses are only
     worked out near the face, which keeps that down on older iPads. Two
     heads on necks cost little: at the same size, Galaxy draws in 1.0–1.2×
-    plain Sprout's time. Riptide takes about 1.2× and Butterscotch 1.0×.
+    plain Sprout's time. Riptide takes about 1.0×, Butterscotch 0.85×, and
+    Valentine 0.8× (measured on a Mac in version 0.8.3).
   - **The egg:** drawn by the same renderer (`egg` in a look), with the
     spots and question mark painted on so they turn with the egg. A tilt
     rocks it about the spot where it touches the floor. `store.js` makes
     each egg's look from its squishy's size and colors; `egg` in `items.js`
-    adds parts to it, like Shade's sunglasses, Butterscotch's cube, or
-    Riptide's ball.
+    adds parts to it, like Shade's sunglasses, Butterscotch's cube,
+    Riptide's ball, or Valentine's heart.
   - **Cube egg** (`cube`): a cube 1.24 across with edges rounded by 0.16.
     As it rocks it rises just enough that its lowest rounded corner stays on
     the floor, worked out for its turn, so it tips onto a corner instead of
@@ -393,16 +419,22 @@ mystery egg is a ball instead of an oval.
     usual egg and not as tall. It doesn't roll away as it rocks: the ball
     stays put and its spots and ? turn about its middle, so it rocks by
     turning in place.
+  - **Heart egg** (`heart`): a puffy heart standing on its rounded point,
+    about 1.55 tall, 1.75 across, and 0.85 deep: a rounded cone from the
+    point up to each round lobe, melted together, less at the point so it
+    stays slim. It rocks on its point. Its little hearts are printed like
+    Valentine's, in its belly, wing, and acc colors, but none near the ?
+    or the point.
   - **Egg glasses:** fitted to the egg's curve. Each lens faces straight
     out from the egg, leaning back with it, and the arms wrap back to its
     sides.
   - **Fit check:** `fit-check.html` (in this folder, not linked from the
-    store) draws every squishy, an egg with sunglasses, a cube egg, and a
-    ball egg, at full squash, full stretch, and rest, every 6° of turn, in
-    every store layout, and reports how close each comes to the edge. Run
-    it after changing a size or adding flair. At this change, the closest
-    was 1.5% of the view's height (Riptide, fully squashed, on a phone),
-    the eggs 19.2%, 11.6%, and 17.6%.
+    store) draws every squishy, an egg with sunglasses, a cube egg, a ball
+    egg, and a heart egg, at full squash, full stretch, and rest, every 6°
+    of turn, in every store layout, and reports how close each comes to
+    the edge. Run it after changing a size or adding flair. At this
+    change, the closest was 1.5% of the view's height (Valentine's tail,
+    fully squashed, on a phone), the eggs 19.2%, 11.6%, 17.6%, and 13.9%.
 - **Head start:** given once, the first time any page loads after the
   update. It's recorded as a separate "head start" source.
   - Zoe Spells: the wall prize for every level below the highest open one.

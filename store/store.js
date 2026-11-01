@@ -8,12 +8,12 @@
 // coins to buy one, its egg wiggles, and she can hatch it for a fifth of the
 // price. A hatched squishy stays out of its egg, bought or not.
 
-import * as coins from '../shared/coins.js?v=0.8.2';
-import * as sound from '../shared/sound.js?v=0.8.2';
-import * as storage from '../shared/storage.js?v=0.8.2';
-import { confetti, stars } from '../shared/celebrate.js?v=0.8.2';
-import { createSquishy } from './squishy.js?v=0.8.2';
-import { ITEMS } from './items.js?v=0.8.2';
+import * as coins from '../shared/coins.js?v=0.8.3';
+import * as sound from '../shared/sound.js?v=0.8.3';
+import * as storage from '../shared/storage.js?v=0.8.3';
+import { confetti, stars } from '../shared/celebrate.js?v=0.8.3';
+import { createSquishy } from './squishy.js?v=0.8.3';
+import { ITEMS } from './items.js?v=0.8.3';
 
 const SPIN = 0.5; // radians per second while nobody is touching it
 const IDLE_AFTER = 2500; // ms after a drag before it starts spinning again
@@ -76,13 +76,13 @@ function brightness(hex) {
 }
 
 // A squishy's mystery egg: its size, its body color, spots in its other
-// colors (stars on a starry one), a question mark that stands out (white on
-// a dark egg), and any egg parts from items.js.
+// colors (stars on a starry one, hearts on a love dragon's), a question mark
+// that stands out (white on a dark egg), and any egg parts from items.js.
 const EGGS = ITEMS.map(function (item) {
   const look = item.look;
   const egg = { egg: true, size: look.size, body: look.body, belly: look.belly, wing: look.wing,
     spike: look.spike, eye: brightness(look.body) < 0.45 ? '#ffffff' : '#1d2b53', stars: look.stars,
-    acc: look.acc, acc2: look.acc2 };
+    hearts: look.hearts, acc: look.acc, acc2: look.acc2 };
   Object.keys(item.egg || {}).forEach(function (part) {
     egg[part] = item.egg[part];
   });

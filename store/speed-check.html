@@ -43,8 +43,8 @@
   <pre id="out"></pre>
 
   <script type="module">
-    import { VERSION } from '../version.js?v=0.8.2';
-    import { ITEMS } from './items.js?v=0.8.2';
+    import { VERSION } from '../version.js?v=0.8.3';
+    import { ITEMS } from './items.js?v=0.8.3';
 
     const out = document.getElementById('out');
     const lines = [];
@@ -143,6 +143,8 @@
         looks.push(['egg with stars', { egg: true, body: '#5f3dc4', stars: true }]);
         looks.push(['egg with sunglasses', { egg: true, body: '#3b2f63', glasses: 'sun' }]);
         looks.push(['cube egg', { egg: true, body: '#ffbe55', cube: true }]);
+        looks.push(['ball egg', { egg: true, body: '#228be6', sphere: true }]);
+        looks.push(['heart egg', { egg: true, body: '#f06595', heart: true, hearts: true }]);
         await run('as in the store', looks);
         const party = ITEMS.filter(function (item) {
           return item.id === 'party';

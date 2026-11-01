@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.8.2';
+//   import { createSquishy } from './squishy.js?v=0.8.3';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.status(look); // 'compiling', 'ready', or 'failed'
@@ -44,13 +44,20 @@
 //   heads       2 for two heads up on long, skinny necks, each with a face
 //               and horns. Spikes, crown, glasses, headphones, hat, and halo
 //               are placed for one head.
+//   hearts      a love dragon: heart-shaped wings and a heart on the tail
+//               (wing color), a heart-shaped belly and cheeks, and little
+//               hearts (acc) over its back and sides, placed for one head.
+//               On an egg, little hearts instead of spots.
 //   egg         draws a mystery egg instead of a dragon, at the look's size:
 //               body color, spots in the belly, wing, and spike colors (gold
-//               stars if stars), and a big question mark in the eye color.
+//               stars if stars, hearts in the belly, wing, and acc colors if
+//               hearts), and a big question mark in the eye color.
 //               With glasses, it wears them instead of the question mark.
 //   cube        with egg: a soft cube-shaped egg instead of an oval one
 //   sphere      with egg: a ball instead of an oval egg; it rocks by turning
 //               in place
+//   heart       with egg: a puffy heart standing on its point instead of an
+//               oval egg
 // angle turns the dragon (radians); tilt rocks it sideways about the spot
 // where it touches the floor (radians, small; used for eggs); squish squashes
 // it toward the floor (up to about 1) or stretches it up (negative, down to
@@ -90,7 +97,7 @@ const FRAGMENT = [
   '#define TILT uMore.x',
   '#define TWO_HEADS uMore.y',
   '#define FLUFFY_TAIL uMore.z',
-  '#define KIND uMore.w', // 0 a dragon, 1 a sea serpent, 2 a chubby dragon; for an egg, 3 a cube
+  '#define KIND uMore.w', // 0 a dragon, 1 a sea serpent, 2 a chubby dragon; for an egg, 3 a cube, 4 a ball, 5 a heart
   'const float FLOOR = -0.86;',
 
   'mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
@@ -141,6 +148,18 @@ const FRAGMENT = [
   '}',
   '#endif',
 
+  // A heart in 2D, its point at the origin, 1.1 tall and 1.2 across: exact
+  // distance (after Inigo Quilez's 2D distance functions).
+  '#if defined(HAS_HEARTS) || defined(IS_HEART)',
+  'float sdHeart(vec2 p) {',
+  '  p.x = abs(p.x);',
+  '  if (p.y + p.x > 1.0) return length(p - vec2(0.25, 0.75)) - 0.35355;',
+  '  vec2 a = p - vec2(0.0, 1.0);',
+  '  vec2 b = p - 0.5 * max(p.x + p.y, 0.0);',
+  '  return sqrt(min(dot(a, a), dot(b, b))) * sign(p.x - p.y);',
+  '}',
+  '#endif',
+
   'float smin(float a, float b, float k) {',
   '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
   '  return mix(b, a, h) - k * h * (1.0 - h);',
@@ -175,6 +194,19 @@ const FRAGMENT = [
   '  vec3 c = upright(world) - vec3(0.0, FLOOR + BALL, 0.0);',
   '  c.xy = rot(TILT) * c.xy;',
   '  return c;',
+  '}',
+  '#endif',
+
+  // A heart egg, standing on its rounded point on the floor: a rounded cone
+  // from the point up to each of its two round lobes, melted together, a
+  // little flatter front to back.
+  '#ifdef IS_HEART',
+  'float heartEgg(vec3 p) {',
+  '  vec3 q = vec3(p.x, p.y - FLOOR, p.z * 1.2);',
+  '  float d = smin(sdRoundCone(q, vec3(0.0, 0.08, 0.0), vec3(0.37, 1.04, 0.0), 0.08, 0.5),',
+  '    sdRoundCone(q, vec3(0.0, 0.08, 0.0), vec3(-0.37, 1.04, 0.0), 0.08, 0.5),',
+  '    0.02 + 0.1 * clamp(q.y / 0.5, 0.0, 1.0));', // less melting at the point, which stays slim
+  '  return d / 1.2;',
   '}',
   '#endif',
 
@@ -230,6 +262,8 @@ const FRAGMENT = [
   '    egg = vec2(sdRoundBox(cubeSpace(p), vec3(0.62), 0.16), 10.0);',
   '#elif defined(IS_SPHERE)',
   '    egg = vec2(length(upright(world) - vec3(0.0, FLOOR + BALL, 0.0)) - BALL, 10.0);',
+  '#elif defined(IS_HEART)',
+  '    egg = vec2(heartEgg(p), 10.0);',
   '#else',
   '    float y = p.y + 0.06;',
   '    float k = 1.0 - 0.14 * clamp(y / 0.8, -1.0, 1.0);',
@@ -323,9 +357,23 @@ const FRAGMENT = [
   '#ifdef HAS_TAIL_TIP',
   '    if (TAIL_TIP > 0.5) res = add(res, length(p - tip) - 0.11 * TAIL, 6.0, 0.04);',
   '#endif',
+  '#ifdef HAS_HEARTS',
+  '    float d = sdHeart(vec2(p.z - tip.z, p.y - tip.y + 0.06) / 0.3) * 0.3;', // a puffy heart, facing the sides
+  '    res = add(res, length(vec2(max(d + 0.05, 0.0), p.x)) - 0.05, 3.0, 0.04);',
+  '#endif',
   '  }',
   '#endif',
-  // Wings: bigger ones reach further up and out.
+  // Wings: bigger ones reach further up and out. A love dragon's are puffy
+  // hearts, their points at the shoulders and their lobes out and up,
+  // facing front and back.
+  '#ifdef HAS_HEARTS',
+  '  {',
+  '    vec3 k = q - vec3(0.28, 0.22, -0.55);',
+  '    vec2 h = vec2(dot(k, vec3(-0.819, 0.574, 0.0)), dot(k, vec3(0.565, 0.808, -0.168)));',
+  '    float d = sdHeart(h / (0.68 * WINGS)) * 0.68 * WINGS;',
+  '    res = add(res, length(vec2(max(d + 0.07, 0.0), dot(k, vec3(0.096, 0.137, 0.986)))) - 0.07, 3.0, 0.04);',
+  '  }',
+  '#else',
   '  float big = WINGS - 1.0;',
   '  vec3 w = q - vec3(0.74 + 0.24 * big, 0.2 + 0.24 * big - 0.18 * TWO_HEADS, -0.44 - 0.08 * big);',
   '#ifdef IS_CHUBBY',
@@ -334,6 +382,7 @@ const FRAGMENT = [
   '  w.xy = rot(-0.5 - 0.15 * big) * w.xy;',
   '  w.xz = rot(0.5) * w.xz;',
   '  res = add(res, sdEllipsoid(w, vec3(0.08 + 0.03 * big, 0.34 * WINGS, 0.26 * WINGS)), 3.0, 0.06);',
+  '#endif',
   '#ifdef HAS_SPIKES',
   '  if (SPIKES > 0.5) {',
   '    for (int i = 0; i < 3; i++) {',
@@ -435,6 +484,29 @@ const FRAGMENT = [
   '  return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));',
   '}',
 
+  // Little hearts printed around a middle, upright, about the same size and
+  // spacing everywhere: in rows of latitude, with fewer in a row nearer the
+  // top or bottom. d is the direction from the middle. None where a heart's
+  // direction is within a cone around the direction away (where dot > most).
+  // Gives the heart's random 0-1 value, or -1 off the hearts.
+  '#ifdef HAS_HEARTS',
+  'float heartPrint(vec3 d, float rows, vec3 away, float most) {',
+  '  float band = 3.1416 / rows;',
+  '  float lat = asin(clamp(d.y, -1.0, 1.0));',
+  '  float row = floor(lat / band + 0.5);',
+  '  if (abs(row * band) > 1.1) return -1.0;', // none on the top or bottom
+  '  float count = floor(2.0 * rows * cos(row * band) + 0.5);',
+  '  float lon = atan(d.x, d.z) * count / 6.2832;', // in hearts around
+  '  float col = floor(lon + 0.5);',
+  '  float a = col * 6.2832 / count;',
+  '  if (dot(vec3(cos(row * band) * sin(a), sin(row * band), cos(row * band) * cos(a)), away) > most) return -1.0;',
+  '  float h = hash(vec3(row, mod(col, count), rows));',
+  '  if (h < 0.4) return -1.0;',
+  '  vec2 uv = vec2((lon - col) * 6.2832 / count * cos(lat), lat - row * band) / band;',
+  '  return sdHeart(uv / 0.5 + vec2(0.0, 0.55)) < 0.0 ? h : -1.0;',
+  '}',
+  '#endif',
+
   // The egg: in the squishy's colors, with a big question mark on the front
   // (unless it wears glasses).
   '#ifdef IS_EGG',
@@ -459,12 +531,20 @@ const FRAGMENT = [
   '    vec3 s = fract(p * 5.0) - 0.5;',
   '    if (hash(floor(p * 5.0)) > 0.5 && length(s) < 0.22) col = vec3(1.0, 0.96, 0.75);',
   '  }',
+  '#elif defined(HAS_HEARTS)',
+  '  {', // little hearts in its other colors, but none by the ? or the point
+  '    float h = heartPrint(normalize((p - vec3(0.0, FLOOR + 0.85, 0.0)) * vec3(1.0, 1.0, 2.0)), 6.0, vec3(0.0, -0.45, 0.89), 0.5);',
+  '    if (h > 0.0) col = h > 0.8 ? uBelly : (h > 0.6 ? uWing : uAcc);',
+  '  }',
   '#else',
   '  {',
   '    vec3 f = fract(p * 3.2) - 0.5;',
   '    float h = hash(floor(p * 3.2));',
   '    if (length(f) < 0.26) col = h > 0.66 ? uBelly : (h > 0.33 ? uWing : uSpike);',
   '  }',
+  '#endif',
+  '#ifdef IS_HEART',
+  '  p = vec3(p.x, p.y + 0.14, p.z > 0.1 ? 1.0 : 0.0);', // the ? on the front, a little lower
   '#endif',
   '#ifndef HAS_GLASSES',
   '  if (p.z > 0.25 && GLASSES < 0.5) {',
@@ -488,7 +568,11 @@ const FRAGMENT = [
   '#if !defined(IS_EGG) && !defined(IS_SERPENT)',
   'vec3 face(vec2 f, vec3 col) {',
   '  vec2 e = vec2(abs(f.x), f.y);',
+  '#ifdef HAS_HEARTS',
+  '  if (sdHeart((e - vec2(0.56, -0.19)) / 0.13) < 0.0) col = uCheek;',
+  '#else',
   '  if (length((e - vec2(0.56, -0.1)) / vec2(0.12, 0.07)) < 1.0) col = uCheek;',
+  '#endif',
   '  if (length((e - vec2(0.31, 0.12)) / vec2(0.085, 0.115)) < 1.0) {',
   '    col = uEye;',
   '    if (length(e - vec2(0.29, 0.17)) < 0.035) col = vec3(1.0);',
@@ -579,6 +663,12 @@ const FRAGMENT = [
   '    if (hash(floor(p * 5.0)) > 0.55 && length(f) < 0.17) col = vec3(1.0, 0.96, 0.75);',
   '  }',
   '#endif',
+  '#ifdef HAS_HEARTS',
+  '  {',
+  '    float h = heartPrint(normalize(p - vec3(0.0, -0.02, 0.0)), 7.0, vec3(0.0, 0.0, 1.0), 0.25);',
+  '    if (h > 0.0) col = uAcc;',
+  '  }',
+  '#endif',
   '#if defined(HAS_TWO_HEADS)',
   '  if (p.z > 0.15 && length((p.xy - vec2(0.0, -0.4)) / vec2(0.44, 0.27)) < 1.0) col = uBelly;',
   '  vec3 h = headSpace(vec3(abs(p.x), p.y, p.z));',
@@ -593,7 +683,11 @@ const FRAGMENT = [
   '  }',
   '#else',
   '  if (p.z > 0.15) {',
+  '#ifdef HAS_HEARTS',
+  '    if (sdHeart((p.xy - vec2(0.0, -0.78)) / 0.55) < 0.0) col = uBelly;',
+  '#else',
   '    if (length((p.xy - vec2(0.0, -0.33)) / vec2(0.46, 0.31)) < 1.0) col = uBelly;',
+  '#endif',
   '    col = face(p.xy, col);',
   '  }',
   '#endif',
@@ -643,7 +737,7 @@ const FRAGMENT = [
   // squishy (smaller under an egg) and wider when squashed.
   '  if (rd.y < 0.0) {',
   '    vec3 p = ro + rd * ((FLOOR - ro.y) / rd.y);',
-  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? (KIND > 3.5 ? 0.88 : KIND > 2.5 ? 0.8 : 0.62) : 1.0));',
+  '    vec2 q = p.xz * vec2(1.0, 1.4) / ((1.0 + 0.18 * SQUISH) * SIZE * (EGG > 0.5 ? (KIND > 4.5 ? 0.8 : KIND > 3.5 ? 0.88 : KIND > 2.5 ? 0.8 : 0.62) : 1.0));',
   '    float a = 0.26 * (1.0 - smoothstep(0.3, 1.25, length(q)));',
   '    gl_FragColor = vec4(0.0, 0.0, 0.0, a);',
   '    return;',
@@ -662,6 +756,7 @@ function parts(look) {
     list.push('IS_EGG');
     if (look.cube) list.push('IS_CUBE');
     if (look.sphere) list.push('IS_SPHERE');
+    if (look.heart) list.push('IS_HEART');
   } else if (look.serpent) {
     list.push('IS_SERPENT');
   } else {
@@ -678,6 +773,7 @@ function parts(look) {
   }
   if (look.glasses) list.push('HAS_GLASSES');
   if (look.stars) list.push('HAS_STARS');
+  if (look.hearts) list.push('HAS_HEARTS');
   return list;
 }
 
@@ -807,7 +903,7 @@ export function createSquishy(canvas, options) {
     gl.uniform4f(u.uView, Math.min(3.7 / 1.69, (3.7 * width) / height / 1.67),
       (state && state.angle) || 0, (state && state.squish) || 0, flag(look.egg));
     gl.uniform4f(u.uMore, (state && state.tilt) || 0, flag(look.heads === 2), flag(look.fluffyTail),
-      look.serpent ? 1 : look.chubby ? 2 : look.cube ? 3 : look.sphere ? 4 : 0);
+      look.serpent ? 1 : look.chubby ? 2 : look.cube ? 3 : look.sphere ? 4 : look.heart ? 5 : 0);
     gl.uniform4f(u.uShape, look.size || 1, look.wings || 1, look.tail || 1, flag(look.tailTip));
     gl.uniform4f(u.uExtras, flag(look.spikes), flag(look.crown), flag(look.stars), flag(look.bowtie));
     gl.uniform4f(u.uGear, look.glasses === 'sun' ? 2 : flag(look.glasses), flag(look.headphones),
