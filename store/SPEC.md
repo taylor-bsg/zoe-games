@@ -110,8 +110,8 @@ looks, with original names, since the site is public.
   curling forward instead of horns, a big cream belly with stripes across
   it, and teal wings.
 - **Riptide** (800): a blue sea serpent coiled on the floor. Its neck rises
-  to a head with a white crest, swept-back fins, and long whiskers, and a
-  fierce face: frowning brows and an open mouth with two fangs. A yellow
+  to a head with a white crest and swept-back fins (and long whiskers,
+  taken off later at the user's request), and a fierce face: frowning brows and an open mouth with two fangs. A yellow
   belly runs down its neck in scale bands, and its tail curls up at the back
   with a fin.
 - Sizes still go from 50% to 100% by price, in even steps, so the others
@@ -184,6 +184,12 @@ Rerun on that Chromebook, each program compiled in 0.2–1.3 s: eggs 0.2 s
 crease shading, Party Puff's took 0.66 s instead of 0.81 s, too little to
 give it up. The temporary "Speed check" link came off the main page in
 version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
+
+Requested by the user, verbatim (2026-10-31):
+
+> Get rid of riptide’s whiskers
+
+Riptide no longer has whiskers.
 
 ## Implementation notes
 
@@ -274,7 +280,7 @@ version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
   | Angel | 350 | 88% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 92% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
   | Butterscotch | 600 | 96% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
-  | Riptide | 800 | 100% | A blue sea serpent with a crest, whiskers, and a fierce face (new) |
+  | Riptide | 800 | 100% | A blue sea serpent with a crest, fins, and a fierce face (new) |
 
   - Size goes with price, in even steps from 50% for the cheapest to 100%
     for the priciest. The view's zoom leaves room for a full-size Dragon
@@ -345,8 +351,7 @@ version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
   - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
     dragon's. A ring lying on the floor is the coil, and a neck in two
     tapering segments rises from its front to an oval head. On the head are
-    a crest of three spikes, two swept-back fins, and whiskers in two
-    segments. The tail rises from the back of the coil to a fin. The face is
+    a crest of three spikes and two swept-back fins. The tail rises from the back of the coil to a fin. The face is
     painted fierce: narrowed eyes, frowning brows, and an open dark-red mouth
     with two fangs. The yellow belly widens down the neck, in scale bands.
     It has no wings, feet, or horns.

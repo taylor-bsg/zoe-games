@@ -85,6 +85,6 @@ export const ITEMS = [
   {
     id: 'riptide', name: 'Riptide', price: 800,
     look: { size: 1, body: '#228be6', belly: '#ffe066', wing: '#1c7ed6', spike: '#e7f5ff',
-      eye: '#1d2b53', acc: '#fff3bf', serpent: true },
+      eye: '#1d2b53', serpent: true },
   },
 ];

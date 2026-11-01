@@ -3,17 +3,17 @@
 // its own dragon; finishing a level opens the next, and levels 2A and 2B open
 // with level 2. See SPEC.md. Play never ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.8.0';
-import * as speech from '../shared/speech.js?v=0.8.0';
-import * as storage from '../shared/storage.js?v=0.8.0';
-import * as coins from '../shared/coins.js?v=0.8.0';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.0';
-import { WORDS as WORDS_1 } from './words-1.js?v=0.8.0';
-import { WORDS as WORDS_2 } from './words-2.js?v=0.8.0';
-import { WORDS as WORDS_2A } from './words-2a.js?v=0.8.0';
-import { WORDS as WORDS_2B } from './words-2b.js?v=0.8.0';
-import { WORDS as WORDS_3 } from './words-3.js?v=0.8.0';
-import { WORDS as WORDS_4 } from './words-4.js?v=0.8.0';
+import * as sound from '../shared/sound.js?v=0.8.1';
+import * as speech from '../shared/speech.js?v=0.8.1';
+import * as storage from '../shared/storage.js?v=0.8.1';
+import * as coins from '../shared/coins.js?v=0.8.1';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.1';
+import { WORDS as WORDS_1 } from './words-1.js?v=0.8.1';
+import { WORDS as WORDS_2 } from './words-2.js?v=0.8.1';
+import { WORDS as WORDS_2A } from './words-2a.js?v=0.8.1';
+import { WORDS as WORDS_2B } from './words-2b.js?v=0.8.1';
+import { WORDS as WORDS_3 } from './words-3.js?v=0.8.1';
+import { WORDS as WORDS_4 } from './words-4.js?v=0.8.1';
 
 const GAME_ID = '02-spelling'; // the folder name; also the save key
 const TOP = 2; // brick levels: 0, 1, 2 (gold)

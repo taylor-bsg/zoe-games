@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.8.0';
+//   import { createSquishy } from './squishy.js?v=0.8.1';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.status(look); // 'compiling', 'ready', or 'failed'
@@ -36,9 +36,9 @@
 //               arms, floppy dog ears instead of horns (horn color), wings
 //               up on the back, and a big striped belly
 //   serpent     a sea serpent instead of a dragon: a coil on the floor, a
-//               neck rising to a head with a crest and fins (spike color),
-//               whiskers (acc), and a fierce face, and a tail with a fin.
-//               No wings, feet, horns, or other flair.
+//               neck rising to a head with a crest and fins (spike color)
+//               and a fierce face, and a tail with a fin. No wings, feet,
+//               horns, or other flair.
 //   fluffyTail  a big, bushy tail like a chinchilla's, curling up behind,
 //               with a tip in the belly color (instead of the usual tail)
 //   heads       2 for two heads up on long, skinny necks, each with a face
@@ -171,8 +171,8 @@ const FRAGMENT = [
   '#endif',
 
   // A sea serpent: a coil on the floor, a neck rising from its front to a
-  // head with a crest, fins, and whiskers, and a tail curling up at the back
-  // with a fin. Materials as in map.
+  // head with a crest and fins, and a tail curling up at the back with a
+  // fin. Materials as in map.
   '#ifdef IS_SERPENT',
   'vec2 serpent(vec3 p) {',
   '  vec3 q = vec3(abs(p.x), p.y, p.z);',
@@ -190,10 +190,7 @@ const FRAGMENT = [
   '  res = add(res, sdRoundCone(q, vec3(0.2, 0.76, 0.04), vec3(0.34, 1.06, -0.08), 0.08, 0.025), 4.0, 0.04);',
   '  vec3 g = q - vec3(0.5, 0.46, -0.06);', // fins on the head, swept back
   '  g.yz = rot(0.55) * g.yz;',
-  '  res = add(res, sdEllipsoid(g, vec3(0.035, 0.11, 0.26)), 4.0, 0.03);',
-  '  float whisker = min(sdRoundCone(q, vec3(0.3, 0.2, 0.55), vec3(0.62, 0.1, 0.62), 0.045, 0.034),',
-  '    sdRoundCone(q, vec3(0.62, 0.1, 0.62), vec3(0.82, -0.12, 0.5), 0.034, 0.024));',
-  '  return add(res, whisker, 5.0, 0.02);',
+  '  return add(res, sdEllipsoid(g, vec3(0.035, 0.11, 0.26)), 4.0, 0.03);',
   '}',
   '#endif',
 
