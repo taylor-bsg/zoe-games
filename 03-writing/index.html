@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>Zoe Writes · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.0">
+  <style>
+    /* Sticker count, in the middle of the top bar. */
+    .tally {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 22px 6px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .tally-label {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.7;
+    }
+
+    .tally-value {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    /* As wide as the Home button, so the tally stays centered. */
+    .topbar-balance {
+      width: var(--tap);
+    }
+
+    .board {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-top: 12px;
+    }
+
+    /* The start screen: the notebook page, with the title and the controls
+       beside it (above and below it in portrait). */
+    .start {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas: "intro" "notebook" "panel";
+      gap: 16px;
+    }
+
+    @media (orientation: landscape) {
+      .start {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas: "notebook intro" "notebook panel";
+      }
+    }
+
+    .intro {
+      grid-area: intro;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 18px 24px;
+      text-align: center;
+    }
+
+    .intro h1 {
+      font-size: clamp(36px, 5.5vmin, 64px);
+      text-shadow: none;
+    }
+
+    .prize {
+      font-size: 20px;
+      font-weight: 800;
+      color: #e67700;
+    }
+
+    /* A page of a notebook: ruled lines and a red margin, with a space for
+       each of the level's words, filled by its sticker once earned. */
+    .notebook {
+      grid-area: notebook;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, transparent 30px, rgba(240, 62, 62, 0.35) 30px,
+          rgba(240, 62, 62, 0.35) 32px, transparent 32px),
+        repeating-linear-gradient(180deg, #ffffff 0, #ffffff 27px, #d0e4ff 27px, #d0e4ff 28px);
+      box-shadow: var(--shadow);
+    }
+
+    .stickers {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      grid-template-rows: repeat(10, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed rgba(29, 43, 83, 0.14);
+      border-radius: 22%;
+      font-size: var(--emoji, 24px);
+      line-height: 1;
+    }
+
+    .slot.has-sticker {
+      border: 0;
+      background: var(--white);
+      box-shadow: 0 2px 4px rgba(29, 43, 83, 0.25);
+      transform: rotate(var(--tilt, 0deg));
+    }
+
+    .panel {
+      grid-area: panel;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .panel .btn {
+      width: 100%;
+    }
+
+    .level-picker {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* As many columns as fit at 64px or more. */
+    .level-buttons {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+      gap: 12px;
+    }
+
+    @media (orientation: landscape) {
+      .level-picker {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+    }
+
+    .level-caption {
+      font-size: 26px;
+      font-weight: 800;
+      text-shadow: 0 2px 0 rgba(29, 43, 83, 0.2);
+    }
+
+    .panel .level-button {
+      width: auto;
+      min-width: 0;
+      padding: 0;
+      font-size: 32px;
+    }
+
+    .level-button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    /* Not open yet: tapping it says how to open it. */
+    .level-button.is-locked {
+      background: rgba(255, 255, 255, 0.55);
+      color: #59627d;
+    }
+
+    .level-button.is-nudged {
+      animation: wiggle 0.45s ease;
+    }
+
+    /* Writing a word: the sentence, the boxes, and the keyboard below. */
+    .play {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .writing {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 18px 24px;
+      text-align: center;
+    }
+
+    /* Clear of the Say it again button on either side, staying centered. */
+    .sentence {
+      padding: 0 56px;
+      font-size: clamp(24px, 4.2vmin, 40px);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    /* The gap in the sentence; it shows the word once written. */
+    .gap {
+      display: inline-block;
+      min-width: 3.2em;
+      padding: 0 0.15em;
+      border-bottom: 0.12em solid var(--ink);
+      border-radius: 0.1em;
+      line-height: 1.1;
+    }
+
+    .gap.is-filled {
+      border-bottom-color: var(--good);
+      background: var(--good-bg);
+      color: var(--good);
+    }
+
+    .say-again {
+      position: absolute;
+      top: 14px;
+      right: 12px;
+      box-shadow: inset 0 0 0 3px #d6ddf5;
+    }
+
+    /* One box per letter, sized to fit the word (see fitBoxes). */
+    .boxes {
+      display: flex;
+      justify-content: center;
+      gap: var(--box-gap, 8px);
+    }
+
+    .box {
+      flex: none;
+      width: var(--box, 64px);
+      height: calc(var(--box, 64px) * 1.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #d6ddf5;
+      border-radius: 12px;
+      background: #f1f4fb;
+      color: var(--ink);
+      font-size: calc(var(--box, 64px) * 0.68);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    /* Given as help. */
+    .box.is-given {
+      color: #7c87a8;
+      background: #f8f9fc;
+    }
+
+    .box.is-right {
+      color: var(--good);
+      background: var(--good-bg);
+      border-color: #8ce99a;
+    }
+
+    /* Where the next letter goes. */
+    .box.is-here {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(72, 149, 239, 0.35);
+    }
+
+    /* A hint: the letter, faintly, to copy. */
+    .box.is-ghost {
+      color: rgba(29, 43, 83, 0.28);
+    }
+
+    .box.is-wrong {
+      color: var(--oops);
+      background: var(--oops-bg);
+      border-color: #ffc078;
+      animation: wiggle 0.45s ease;
+    }
+
+    /* "Look, cover, write": the word to look at. */
+    .box.is-look {
+      color: var(--blue);
+      background: #e7f5ff;
+      border-color: #a5d8ff;
+    }
+
+    .message {
+      min-height: 1.3em;
+      font-size: clamp(22px, 3.6vmin, 32px);
+      font-weight: 800;
+    }
+
+    .message.good { color: var(--good); }
+    .message.oops { color: var(--oops); }
+    .message.look { color: var(--blue); }
+
+    /* A new sticker, big over the card for a moment. */
+    .sticker-pop {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.94);
+      font-size: 32px;
+      font-weight: 900;
+      animation: pop 0.5s ease;
+    }
+
+    .sticker-big {
+      padding: 10px 18px;
+      border-radius: 28px;
+      background: var(--white);
+      box-shadow: 0 4px 10px rgba(29, 43, 83, 0.3);
+      font-size: clamp(80px, 16vmin, 140px);
+      line-height: 1.1;
+      transform: rotate(-6deg);
+    }
+
+    /* The on-screen keyboard (keyboard.js): three rows of ten columns. */
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      touch-action: none; /* no scrolling or zooming from the keys */
+    }
+
+    .keyboard-row {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .keyboard-key {
+      -webkit-appearance: none;
+      appearance: none;
+      height: clamp(46px, 8.5vh, 80px);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 14px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-size: clamp(22px, 4vmin, 34px);
+      font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+
+    .keyboard-space {
+      grid-column: span 3;
+      font-size: clamp(16px, 2.6vmin, 24px);
+    }
+
+    .keyboard-key.is-pressed {
+      transform: translateY(4px);
+      box-shadow: var(--shadow-pressed);
+      background: #e8efff;
+    }
+
+    .keyboard.is-disabled .keyboard-key {
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="tally">
+        <span class="tally-label" id="tally-label">Stickers</span>
+        <span class="tally-value" id="tally"></span>
+      </div>
+      <div class="topbar-balance"></div>
+    </header>
+
+    <main class="board">
+      <section class="start" id="start">
+        <div class="notebook" id="notebook">
+          <div class="stickers" id="stickers" aria-hidden="true"></div>
+        </div>
+        <div class="card intro">
+          <h1>Zoe Writes</h1>
+          <p id="intro-text">Write the missing word!</p>
+          <p class="prize" id="prize"></p>
+        </div>
+        <div class="panel">
+          <div class="level-picker">
+            <span class="level-caption">Level</span>
+            <div class="level-buttons">
+              <button type="button" class="btn btn-white level-button" data-level="1">1</button>
+              <button type="button" class="btn btn-white level-button" data-level="2">2</button>
+              <button type="button" class="btn btn-white level-button" data-level="2a">2A</button>
+              <button type="button" class="btn btn-white level-button" data-level="2b">2B</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-big" id="start-button">Start</button>
+        </div>
+      </section>
+
+      <section class="play" id="play" hidden>
+        <div class="card writing" id="writing">
+          <p class="sentence" id="sentence"></p>
+          <div class="boxes" id="boxes"></div>
+          <p class="message" id="message"></p>
+          <button type="button" class="btn btn-icon say-again" id="say-again" aria-label="Say it again">🔊</button>
+          <div class="sticker-pop" id="sticker-pop" hidden>
+            <span class="sticker-big" id="sticker-big"></span>
+            <span>New sticker!</span>
+          </div>
+        </div>
+        <div id="keyboard"></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="game.js?v=0.8.0"></script>
+</body>
+</html>

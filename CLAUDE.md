@@ -86,6 +86,9 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
 - **Default feel,** unless a spec says otherwise: immediate feedback;
   encouraging and gentle on wrong answers (soft sound, orange rather than red,
   "try again" wording, no lost progress); big readable text.
+- **Games can share data.** Zoe Writes (`03-writing`) uses Zoe Spells'
+  word lists (`02-spelling/words-*.js`) and reads its saved `unlocked` and
+  `missed`. Changing those changes Zoe Writes too.
 - **Keep `shared/` APIs backward-compatible.** Additions are fine. If
   something must change, update and recheck every game.
 - **The site is public:** no personal details about Zoe (last name, photos,

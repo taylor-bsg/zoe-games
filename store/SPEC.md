@@ -281,7 +281,9 @@ version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
     King, with its crown, wings, and big tail, and Riptide fits inside it.
   - All fourteen cost 3,850 coins, plus 770 to hatch them. The six Zoe Spells
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
-    every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both games also pay 1 for every 25 right answers.
+    every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both also pay
+    1 for every 25 right answers. Zoe Writes pays 2 for each perfect word
+    until its sticker: at most 6 a word, 2,400 for its four levels.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy
@@ -388,7 +390,7 @@ version 0.7.31; `speed-check.html` stays, unlinked, like `fit-check.html`.
 - **Saved data:** under `zoe-games:store`: `hatched`, the ids of the
   squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,
-    `02-spelling`, and `head start`.
+    `02-spelling`, `03-writing`, and `head start`.
   - `spent`: one `{ item, price, at }` per purchase. Hatching an egg is one
     too, with the item `hatch:` plus the squishy's id (e.g. `hatch:sprout`).
     A squishy counts as hatched if either list has it.

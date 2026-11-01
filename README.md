@@ -21,14 +21,15 @@ silent mode, so use the speaker button on the main page to mute every game.
 
 ## Coins and the store
 
-Zoe Multiplies and Zoe Spells pay coins: 5 for every 0.01 s faster speed
-score in Zoe Multiplies (0.02 s over 3 s, 0.03 s over 4 s), 100–400 for each
-finished Zoe Spells wall, and in both, 1 for every 25 right answers. The
-Store button on the main page shows the coins and leads to the Squishy
-Store. There, Zoe can spin, squish, and buy squishy plush dragons drawn in
-3D. Each one stays a mystery egg, in its own size and colors, until she has
-enough coins for it. Then she can hatch it for a fifth of its price, and it
-stays hatched. The bottom of the store shows the coins earned and spent.
+The games pay coins: 5 for every 0.01 s faster speed score in Zoe Multiplies
+(0.02 s over 3 s, 0.03 s over 4 s), 100–400 for each finished Zoe Spells
+wall, in both, 1 for every 25 right answers, and in Zoe Writes, 2 for each
+word written perfectly until it earns its sticker. The Store button on the
+main page shows the coins and leads to the Squishy Store. There, Zoe can
+spin, squish, and buy squishy plush dragons drawn in 3D. Each one stays a
+mystery egg, in its own size and colors, until she has enough coins for it.
+Then she can hatch it for a fifth of its price, and it stays hatched. The
+bottom of the store shows the coins earned and spent.
 
 ## Test locally
 

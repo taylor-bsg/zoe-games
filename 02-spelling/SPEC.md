@@ -383,6 +383,10 @@ It's now every 25th right answer.
 - **Testing:** in Safari, `…/02-spelling/?level=2` (or `=2a`, `=2b`, `=3`,
   `=4`) opens that level for the visit, even when it's locked, without
   unlocking it.
+- **Shared with Zoe Writes:** `03-writing` uses these word lists (levels 1,
+  2, 2A, and 2B, with their sentences and wrong spellings) and reads
+  `unlocked` and `missed` from the saved data below, without changing them.
+  Keep those working for it.
 - **Saved data:** under `zoe-games:02-spelling`:
   - `levels`: word → 0–2, for the words of both levels (no word is in both).
     Unanswered words, and any unreadable values, count as 1.

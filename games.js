@@ -9,4 +9,5 @@
 export const games = [
   { id: '01-times-table', title: 'Zoe Multiplies', emoji: '✖️', description: 'Multiply fast!' },
   { id: '02-spelling', title: 'Zoe Spells', emoji: '🪄', description: 'Zap the right spelling!' },
+  { id: '03-writing', title: 'Zoe Writes', emoji: '✏️', description: 'Write the missing word!' },
 ];
