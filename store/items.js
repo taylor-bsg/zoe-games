@@ -79,7 +79,7 @@ export const ITEMS = [
   },
   {
     id: 'butterscotch', name: 'Butterscotch', price: 600,
-    look: { size: 0.92, body: '#ffbe55', belly: '#fff1d6', horn: '#e8890c', wing: '#38c9b0',
+    look: { size: 0.92, body: '#ffbe55', belly: '#fff1d6', wing: '#38c9b0',
       cheek: '#ff8787', spike: '#38c9b0', eye: '#1d2b53', chubby: true, tail: 1.25, wings: 0.9 },
     egg: { cube: true },
   },

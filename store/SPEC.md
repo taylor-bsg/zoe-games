@@ -134,7 +134,8 @@ Requested by the user, verbatim (2026-10-31):
 
 Butterscotch's mystery egg is now a soft cube, with rounded edges, spots in
 its colors, and the ? on the front face. Its antennae are now long, floppy
-dog ears hanging down the sides of its head, in a darker orange.
+dog ears hanging down the sides of its head, in a darker orange (taken off
+later at the user's request).
 
 Reported by the user, verbatim (2026-10-31):
 
@@ -212,6 +213,12 @@ belly and cheeks, and little white hearts over its back and sides. Its
 mystery egg is a puffy pink heart standing on its point, with little
 hearts on it. Sizes still go from 50% to 100% by price, in even steps, so
 the others shrank a little.
+
+Requested by the user, verbatim (2026-11-01):
+
+> Get rid of the ears on butterscotch
+
+Butterscotch's floppy dog ears are gone, so nothing is on its round head.
 
 ## Implementation notes
 
@@ -302,7 +309,7 @@ the others shrank a little.
   | Party Puff | 300 | 81% | Orange; a striped party hat with a pom-pom, and a big chinchilla tail (new) |
   | Angel | 350 | 85% | Sky blue; a glowing halo and big gold wings (new) |
   | Dragon King | 400 | 88% | Gold; a crown, bigger wings, and a big tail with a ruby ball |
-  | Butterscotch | 600 | 92% | Orange; a round body with a head on top, a snout, stubby arms, floppy dog ears, a striped cream belly, and teal wings; hatches from a cube (new) |
+  | Butterscotch | 600 | 92% | Orange; a round body with a head on top, a snout, stubby arms, a striped cream belly, and teal wings; hatches from a cube (new) |
   | Riptide | 800 | 96% | A blue sea serpent with a crest, fins, and a big smile; hatches from a ball (new) |
   | Valentine | 1000 | 100% | Rose pink; red heart wings, a red heart on its tail, a heart-shaped belly and cheeks, and little white hearts; hatches from a heart (new) |
 
@@ -368,11 +375,10 @@ the others shrank a little.
     peeks up beside the head from the front. It replaces the usual tail.
   - **Chubby build** (`chubby`, Butterscotch): a different build. A big
     round body has a head on top, melted on with no neck, and a round snout
-    on the head; stubby arms tip out from the sides. Floppy dog ears hang
-    down the sides of the head instead of horns, tucked in at the top and
-    tipped out at the bottom, and the wings sit up on the back. The face is
-    painted on the head and snout: eyes, cheeks, two nostrils, and a smile
-    across the snout. The big belly has thin stripes across it.
+    on the head; stubby arms tip out from the sides. It has no horns or
+    ears, and the wings sit up on the back. The face is painted on the
+    head and snout: eyes, cheeks, two nostrils, and a smile across the
+    snout. The big belly has thin stripes across it.
   - **Sea serpent** (`serpent`, Riptide): its own shape instead of a
     dragon's. A ring lying on the floor is the coil, and a neck in two
     tapering segments rises from its front to an oval head. On the head are

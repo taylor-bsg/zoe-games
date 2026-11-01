@@ -5,7 +5,7 @@
 // like soft fabric. The face and belly are painted on by position, so they
 // turn with the body.
 //
-//   import { createSquishy } from './squishy.js?v=0.8.3';
+//   import { createSquishy } from './squishy.js?v=0.8.4';
 //   const view = createSquishy(canvas, { maxRatio: 1.25 }); // null without WebGL
 //   view.draw(look, { angle: 0.4, squish: 0 });
 //   view.status(look); // 'compiling', 'ready', or 'failed'
@@ -33,8 +33,8 @@
 //   halo        a glowing ring above the head (acc)
 //   bowtie      acc2
 //   chubby      a big round body with a head on top, a round snout, stubby
-//               arms, floppy dog ears instead of horns (horn color), wings
-//               up on the back, and a big striped belly
+//               arms, no horns, wings up on the back, and a big striped
+//               belly
 //   serpent     a sea serpent instead of a dragon: a coil on the floor, a
 //               neck rising to a head with a crest and fins (spike color)
 //               and a big smile with two little fangs, and a tail with a
@@ -299,7 +299,7 @@ const FRAGMENT = [
   // With one head, the round body is the head. Two heads sit up on long,
   // skinny necks from a lower body, each with its own little horns. A
   // chubby dragon has a big round body with a head on top, a snout, and
-  // stubby arms.
+  // stubby arms, and nothing on its head.
   '  float body = sdEllipsoid(p - vec3(0.0, -0.02, 0.0), vec3(1.0, 0.86, 0.84));',
   '#ifdef HAS_TWO_HEADS',
   '  if (TWO_HEADS > 0.5) body = sdEllipsoid(p - vec3(0.0, -0.22, 0.0), vec3(0.96, 0.66, 0.8));',
@@ -324,13 +324,7 @@ const FRAGMENT = [
   '    vec3 hq = vec3(abs(h.x), h.y, h.z);',
   '    res = add(res, sdRoundCone(hq, vec3(0.11, 0.22, -0.02), vec3(0.16, 0.39, -0.05), 0.055, 0.022), 2.0, 0.03);',
   '  }',
-  '#elif defined(IS_CHUBBY)',
-  '  if (KIND > 1.5) {', // floppy dog ears down the sides of the head
-  '    vec3 ear = q - vec3(0.48, 0.6, 0.0);',
-  '    ear.xy = rot(-0.5) * ear.xy;', // the top tucked in at the head, the tip out
-  '    res = add(res, sdEllipsoid(ear, vec3(0.08, 0.34, 0.2)), 2.0, 0.05);',
-  '  }',
-  '#else',
+  '#elif !defined(IS_CHUBBY)',
   '  res = add(res, sdRoundCone(q, vec3(0.34, 0.6, -0.02), vec3(0.5, 1.02, -0.1), 0.14, 0.05), 2.0, 0.05);',
   '#endif',
   '  res.x = smin(res.x, sdEllipsoid(q - vec3(0.42, -0.72, 0.42), vec3(0.22, 0.13, 0.2)), 0.08);',
