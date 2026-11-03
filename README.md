@@ -33,7 +33,9 @@ bottom of the store shows the coins earned and spent. The My shelf button,
 on the main page and in the store, shows every squishy she has bought,
 standing on a bookcase; tapping one spins it and says its name. The 🐒
 button there turns the bookcase into a monkey maze, where her squishies
-climb up, jumping over barrels, and slide back down.
+climb up, jumping over barrels (or getting knocked off a ladder), and slide
+back down. The monkey's call is a recording of a chimpanzee by Bidone on
+freesound.org (CC0); every other sound is synthesized.
 
 ## Test locally
 

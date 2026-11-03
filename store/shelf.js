@@ -5,12 +5,12 @@
 // says its name. The 🐒 button turns the bookcase into a monkey maze
 // (maze.js), with the same pictures climbing it.
 
-import * as coins from '../shared/coins.js?v=0.8.7';
-import * as sound from '../shared/sound.js?v=0.8.7';
-import * as speech from '../shared/speech.js?v=0.8.7';
-import { createMaze } from './maze.js?v=0.8.7';
-import { createSquishy } from './squishy.js?v=0.8.7';
-import { ITEMS } from './items.js?v=0.8.7';
+import * as coins from '../shared/coins.js?v=0.8.8';
+import * as sound from '../shared/sound.js?v=0.8.8';
+import * as speech from '../shared/speech.js?v=0.8.8';
+import { createMaze } from './maze.js?v=0.8.8';
+import { createSquishy } from './squishy.js?v=0.8.8';
+import { ITEMS } from './items.js?v=0.8.8';
 
 const ANGLE = 0.5; // facing three-quarters forward, as in the store
 const SPIN_MS = 1200; // how long a tapped squishy takes to turn all the way around
@@ -184,6 +184,7 @@ function setFun(on) {
     maze = createMaze($('maze'), spots.map(function (spot) {
       return {
         name: spot.item.name,
+        size: spot.item.look.size,
         picture: function () {
           return spot.picture.hidden ? null : spot.picture;
         },
@@ -198,7 +199,9 @@ $('empty').hidden = mine.length > 0;
 $('fun').hidden = !mine.length;
 $('fun').addEventListener('click', function () {
   sound.unlock();
-  setFun($('maze').hidden);
+  const on = $('maze').hidden;
+  setFun(on);
+  if (on) sound.monkey(); // the monkey says hello
 });
 if (view && spots.length) {
   fitLens();

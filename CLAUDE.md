@@ -12,7 +12,9 @@ https://taylor-bsg.github.io/zoe-games/.
   the repo.
 - **No external requests:** no CDNs, web fonts, analytics, or remote images.
   Everything ships in the repo. Pictures are emoji or inline SVG; sounds are
-  synthesized.
+  synthesized, except a few short recordings the user asked for, in
+  `shared/sounds/` (AAC `.m4a`, mono). A recording must be free to use (CC0
+  or public domain), with its source in `sound.js` next to where it plays.
 - **Hosting:** GitHub Pages serves the root of `main` at
   https://taylor-bsg.github.io/zoe-games/. The site lives under `/zoe-games/`,
   so every URL is relative (`../shared/base.css`, `01-times-table/`), never
@@ -51,6 +53,7 @@ shared/speech.js      reads text aloud with the device's voice
 shared/storage.js     per-game save/load
 shared/celebrate.js   confetti/star burst
 shared/coins.js       coins: earned by games, spent in the store
+shared/sounds/        the few recorded sounds (the monkey's call)
 store/                Squishy Store: plush dragons in 3D, bought with coins, and
                       shelf.html, the ones she has bought, with a monkey maze
                       fun mode (SPEC.md)
@@ -161,11 +164,13 @@ Each file's header comment documents its API. In brief:
   fanfare), `zap()` (lightning: a sharp crack and a short, rattling boom), `bounce()`
   (a crack and a "boing", for a bolt that bounces off), `coin()` (a "ching"),
   `squeak()` (a squeaky toy), `whee()` (a slide whistle), `hop()` (a soft
-  "hup"), `isMuted()`, `setMuted(on)`.
-  `unlock()` sets Safari's audio session to "playback" (iOS 17 and later),
-  so sounds play through the iPad's silent mode, like the read-aloud voice
-  does. The launcher's speaker button turns everything off. Synthesized with Web Audio, no audio files.
-  Mute is site-wide and remembered; the launcher has the toggle.
+  "hup"), `monkey()` (a recorded chimpanzee call), `isMuted()`,
+  `setMuted(on)`. `unlock()` sets Safari's audio session to "playback" (iOS
+  17 and later), so sounds play through the iPad's silent mode, like the
+  read-aloud voice does. The launcher's speaker button turns everything
+  off. All but `monkey()` are synthesized with Web Audio; it plays a file
+  from `shared/sounds/`, fetched the first time. Mute is site-wide and
+  remembered; the launcher has the toggle.
 - **speech.js:** `speak(text)` and `stop()`, using the Web Speech API's
   built-in voices (US English, no network). The first `speak()` must come
   from a tap, such as the Start button. It's silent while muted.

@@ -254,6 +254,17 @@ squishies climb up, jumping over the barrels, and ride a slide back down.
 Tapping a squishy makes it hop and say its name; tapping the monkey makes
 it throw a barrel.
 
+Requested by the user, verbatim (2026-11-03):
+
+> The monkey sounds needs an actual recording of a monkey. Also when the barrels hit the squish dragons coming up the ladder, it should cause them to fall upside down to the lower level.
+
+The monkey's call is now a real recording, a chimpanzee at the Leipzig
+Zoo, instead of the read-aloud "Ooh ooh, ah ah!". It plays when the maze
+opens and when the monkey is tapped. And a barrel rolling past the top of
+a ladder now knocks off a squishy climbing it: it falls upside down to
+the level below, lies there kicking, flips back up, and waits for the
+coast to be clear before climbing again.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -555,17 +566,33 @@ it throw a barrel.
     left), so the pricier ones are bigger.
   - **Jumping:** a squishy jumps when a barrel coming its way will reach it
     in half a jump (0.55 s, 0.42 units high), so the barrel passes under it
-    at the top. Near a ladder, barrels roll behind the ladder and whoever
-    is on it, so there's no jumping there. A barrel that still touches a
-    squishy would squash it with a squeak; in testing (90 s, and 60 s on
-    phone, portrait, and with all sixteen), none did.
+    at the top. Walking near a ladder, there's no jumping, and barrels roll
+    behind it. A barrel that still touches a walking squishy would squash
+    it with a squeak; in testing (90 s, and 60 s on phone, portrait, and
+    with all sixteen), none did.
+  - **Knocked off a ladder:** a barrel rolling along the shelf at the top
+    of a ladder knocks off a squishy climbing it if the squishy's body
+    (half a unit tall at full size, so smaller ones less) is up where the
+    barrel passes. With a soft "uh-oh" (`sound.wrong()`), it drops to the
+    level below, turning upside down as it falls, lands on its head with a
+    squeak and a squash, and lies there kicking for 1 s. Then it flips back
+    onto its feet with a hop (0.4 s), back at the bottom of that ladder.
+    The first try up a ladder is blind, but after a fall it waits at the
+    bottom until no barrel will pass the top while it's up there: each
+    barrel's way down is known, so it looks ahead at all of them, and at
+    the monkey's next throw. With six squishies, about seven falls a minute,
+    and none fell twice at the same ladder in a row.
   - **Speeds:** walking 1.3 units a second, barrels 2.1, climbing 0.6
     levels a second; the slide takes 3.2 s, slow at the top and fast in
     the middle.
   - **Sounds:** a soft "hup" for a jump (at most one every 0.35 s, so a
     crowd doesn't chatter) and a slide whistle down the slide
     (`sound.hop()` and `sound.whee()`). Tapping a squishy squeaks and says
-    its name, and the monkey says "Ooh ooh, ah ah!".
+    its name. The monkey calls out with a real recording (`sound.monkey()`)
+    when the maze opens and when it's tapped: a chimpanzee at the Leipzig
+    Zoo, recorded by Bidone, freesound.org sound 67361 (CC0, no rights
+    reserved), trimmed to its 2.85 s call with short fades, at a steady
+    level, as a 27 KB mono AAC file (`shared/sounds/monkey.m4a`).
   - **Drawing:** a 2D canvas over the bookcase, redrawn every frame (not
     while the page is hidden): the planks, ladders, and slide are drawn
     once for each size, and emoji once into little pictures, so a frame

@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.8.7';
+//   import * as sound from '../shared/sound.js?v=0.8.8';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -13,6 +13,7 @@
 //   sound.squeak();
 //   sound.whee();
 //   sound.hop();
+//   sound.monkey(); // a recording, not synthesized
 //
 // iOS keeps Web Audio silent until the page calls unlock() from a tap: use a
 // click handler (pointerdown doesn't count). After that, sounds can play at
@@ -24,7 +25,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.8.7';
+import * as storage from './storage.js?v=0.8.8';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -406,4 +407,47 @@ export function whee() {
 export function hop() {
   if (!canPlay()) return;
   note(380, 0, 0.11, 'triangle', 0.08, 760);
+}
+
+// Recordings, in sounds/ next to this file. Each is fetched and decoded the
+// first time it's played, then plays through the same volume and limiter as
+// everything else. One asked for while it loads plays when it's ready.
+const recordings = {}; // file name -> { buffer, waiting: volume or 0 }
+
+function playRecording(file, volume) {
+  if (!canPlay()) return;
+  let recording = recordings[file];
+  if (!recording) {
+    recording = recordings[file] = { buffer: null, waiting: 0 };
+    fetch(new URL('sounds/' + file, import.meta.url).href)
+      .then(function (response) {
+        return response.arrayBuffer();
+      })
+      .then(function (data) {
+        ctx.decodeAudioData(data, function (buffer) {
+          recording.buffer = buffer;
+          if (recording.waiting) startRecording(buffer, recording.waiting);
+          recording.waiting = 0;
+        }, function () {});
+      })
+      .catch(function () {});
+  }
+  if (recording.buffer) startRecording(recording.buffer, volume);
+  else recording.waiting = volume;
+}
+
+function startRecording(buffer, volume) {
+  const source = ctx.createBufferSource();
+  const level = ctx.createGain();
+  source.buffer = buffer;
+  level.gain.value = volume;
+  source.connect(level);
+  level.connect(output);
+  source.start(ctx.currentTime);
+}
+
+// A chimpanzee calling: a recording made at the Leipzig Zoo by Bidone,
+// freesound.org sound 67361 (CC0, no rights reserved), trimmed to 2.85 s.
+export function monkey() {
+  playRecording('monkey.m4a', 0.3);
 }
