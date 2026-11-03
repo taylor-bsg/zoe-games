@@ -2,7 +2,7 @@
 // instead of the device's own keyboard, which covers half the screen and
 // suggests or autocorrects words. A real keyboard works too, everywhere.
 //
-//   import { createKeyboard } from './keyboard.js?v=0.8.6';
+//   import { createKeyboard } from './keyboard.js?v=0.8.7';
 //   const keys = createKeyboard(container, { onKey: function (ch) {} });
 //   keys.setEnabled(false);
 //

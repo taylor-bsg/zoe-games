@@ -31,7 +31,9 @@ mystery egg, in its own size and colors, until she has enough coins for it.
 Then she can hatch it for a fifth of its price, and it stays hatched. The
 bottom of the store shows the coins earned and spent. The My shelf button,
 on the main page and in the store, shows every squishy she has bought,
-standing on a bookcase; tapping one spins it and says its name.
+standing on a bookcase; tapping one spins it and says its name. The 🐒
+button there turns the bookcase into a monkey maze, where her squishies
+climb up, jumping over barrels, and slide back down.
 
 ## Test locally
 

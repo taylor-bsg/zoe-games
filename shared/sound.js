@@ -1,6 +1,6 @@
 // Sound effects synthesized with Web Audio, so there are no audio files.
 //
-//   import * as sound from '../shared/sound.js?v=0.8.6';
+//   import * as sound from '../shared/sound.js?v=0.8.7';
 //   startButton.addEventListener('click', () => { sound.unlock(); ... });
 //   sound.correct();
 //   sound.wrong();
@@ -11,6 +11,8 @@
 //   sound.bounce();
 //   sound.coin();
 //   sound.squeak();
+//   sound.whee();
+//   sound.hop();
 //
 // iOS keeps Web Audio silent until the page calls unlock() from a tap: use a
 // click handler (pointerdown doesn't count). After that, sounds can play at
@@ -22,7 +24,7 @@
 // like the read-aloud voice, so the launcher's speaker button is the way to
 // turn them off. Older iOS versions mute them in silent mode.
 
-import * as storage from './storage.js?v=0.8.6';
+import * as storage from './storage.js?v=0.8.7';
 
 const settings = storage.load('sound', { muted: false });
 
@@ -391,4 +393,17 @@ export function squeak() {
   if (!canPlay()) return;
   note(560, 0, 0.13, 'triangle', 0.25, 930);
   note(760, 0.1, 0.1, 'triangle', 0.15, 1120);
+}
+
+// A slide whistle swooping down, "wheee!", for going down a slide.
+export function whee() {
+  if (!canPlay()) return;
+  note(1500, 0, 0.8, 'sine', 0.14, 380);
+  note(3000, 0, 0.8, 'sine', 0.02, 760); // a breathy overtone
+}
+
+// A soft, quick "hup", for a jump.
+export function hop() {
+  if (!canPlay()) return;
+  note(380, 0, 0.11, 'triangle', 0.08, 760);
 }

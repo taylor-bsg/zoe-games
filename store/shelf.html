@@ -12,8 +12,19 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.8.6">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.7">
   <style>
+    /* The buttons on each side of the top bar, as wide on the left as on
+       the right, so the count stays in the middle. */
+    .topbar-side {
+      display: flex;
+      gap: 12px;
+    }
+
+    .topbar-spacer {
+      width: var(--tap);
+    }
+
     /* How many she has, in the middle of the top bar. */
     .count {
       display: flex;
@@ -37,6 +48,21 @@
     .count-value {
       font-size: 30px;
       font-weight: 900;
+    }
+
+    /* Phone-sized screens: a smaller count, off center, so it all fits. */
+    @media (max-width: 500px) {
+      .topbar-spacer {
+        display: none;
+      }
+
+      .count {
+        padding: 4px 14px 6px;
+      }
+
+      .count-value {
+        font-size: 24px;
+      }
     }
 
     /* A bookcase: a wooden frame around the shelves, which scroll when
@@ -154,6 +180,19 @@
       white-space: nowrap;
     }
 
+    /* Fun mode: the monkey maze (maze.js) fills the bookcase instead. */
+    .case.is-fun {
+      overflow: hidden;
+    }
+
+    .maze {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
     /* The 3D view draws each picture here, off screen, at a spot's size. */
     .lens {
       position: fixed;
@@ -165,16 +204,23 @@
 <body ontouchstart="">
   <div class="page fit">
     <header class="topbar">
-      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="topbar-side">
+        <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+        <span class="topbar-spacer"></span>
+      </div>
       <div class="count">
         <span class="count-label">My squishies</span>
         <span class="count-value" id="count"></span>
       </div>
-      <a class="btn btn-icon" href="./" aria-label="Store">🛍️</a>
+      <div class="topbar-side">
+        <button type="button" class="btn btn-icon" id="fun" aria-label="Monkey maze">🐒</button>
+        <a class="btn btn-icon" href="./" aria-label="Store">🛍️</a>
+      </div>
     </header>
 
     <main class="case" id="case">
       <div class="shelves" id="shelves"></div>
+      <canvas class="maze" id="maze" hidden></canvas>
       <div class="card empty" id="empty" hidden>
         <p class="empty-title">🧸 No squishies yet!</p>
         <p>Squishies you buy in the store will sit here.</p>
@@ -184,6 +230,6 @@
   </div>
   <canvas class="lens" id="lens" aria-hidden="true"></canvas>
 
-  <script type="module" src="shelf.js?v=0.8.6"></script>
+  <script type="module" src="shelf.js?v=0.8.7"></script>
 </body>
 </html>

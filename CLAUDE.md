@@ -52,7 +52,8 @@ shared/storage.js     per-game save/load
 shared/celebrate.js   confetti/star burst
 shared/coins.js       coins: earned by games, spent in the store
 store/                Squishy Store: plush dragons in 3D, bought with coins, and
-                      shelf.html, the ones she has bought (SPEC.md)
+                      shelf.html, the ones she has bought, with a monkey maze
+                      fun mode (SPEC.md)
 template/             minimal working game to copy for new games; not in games.js
 NN-skill/             one folder per game: SPEC.md, index.html, game.js
 ```
@@ -159,7 +160,8 @@ Each file's header comment documents its API. In brief:
   fanfare), `cheer()` (crowd, claps, and "woo!"s), `trumpet()` (a royal
   fanfare), `zap()` (lightning: a sharp crack and a short, rattling boom), `bounce()`
   (a crack and a "boing", for a bolt that bounces off), `coin()` (a "ching"),
-  `squeak()` (a squeaky toy), `isMuted()`, `setMuted(on)`.
+  `squeak()` (a squeaky toy), `whee()` (a slide whistle), `hop()` (a soft
+  "hup"), `isMuted()`, `setMuted(on)`.
   `unlock()` sets Safari's audio session to "playback" (iOS 17 and later),
   so sounds play through the iPad's silent mode, like the read-aloud voice
   does. The launcher's speaker button turns everything off. Synthesized with Web Audio, no audio files.

@@ -2,13 +2,15 @@
 // order she got them. See SPEC.md. Each is a still picture, drawn in 3D once
 // its program has compiled (an emoji stands in until then, and for good
 // without WebGL). Tapping one spins it around with a squish and a squeak, and
-// says its name.
+// says its name. The 🐒 button turns the bookcase into a monkey maze
+// (maze.js), with the same pictures climbing it.
 
-import * as coins from '../shared/coins.js?v=0.8.6';
-import * as sound from '../shared/sound.js?v=0.8.6';
-import * as speech from '../shared/speech.js?v=0.8.6';
-import { createSquishy } from './squishy.js?v=0.8.6';
-import { ITEMS } from './items.js?v=0.8.6';
+import * as coins from '../shared/coins.js?v=0.8.7';
+import * as sound from '../shared/sound.js?v=0.8.7';
+import * as speech from '../shared/speech.js?v=0.8.7';
+import { createMaze } from './maze.js?v=0.8.7';
+import { createSquishy } from './squishy.js?v=0.8.7';
+import { ITEMS } from './items.js?v=0.8.7';
 
 const ANGLE = 0.5; // facing three-quarters forward, as in the store
 const SPIN_MS = 1200; // how long a tapped squishy takes to turn all the way around
@@ -39,6 +41,7 @@ const lens = $('lens');
 const view = createSquishy(lens, { maxRatio: 2 });
 let frames = 0;
 let resizeTimer = 0;
+let maze = null;
 
 // A spot on the shelf: the picture, an emoji until it's drawn, and the name.
 const spots = mine.map(function (item) {
@@ -152,19 +155,58 @@ function tap(spot) {
   spot.emoji.classList.add('is-bounced');
 }
 
+// A new size (turning the iPad, say) redraws every picture to fit. The
+// shelves are hidden in fun mode, so that waits until they're back.
+function refit() {
+  if (!view || !spots.length || $('shelves').hidden) return;
+  const before = lens.style.width;
+  fitLens();
+  if (lens.style.width === before) return;
+  spots.forEach(function (spot) {
+    if (!spot.picture.hidden) spot.drawn = false;
+  });
+}
+
+// Fun mode: the monkey maze in place of the shelves, or the shelves again.
+function setFun(on) {
+  $('case').classList.toggle('is-fun', on);
+  $('case').scrollTop = 0;
+  $('shelves').hidden = on;
+  $('maze').hidden = !on;
+  $('fun').textContent = on ? '🧸' : '🐒';
+  $('fun').setAttribute('aria-label', on ? 'Shelf' : 'Monkey maze');
+  if (!on) {
+    if (maze) maze.stop();
+    refit();
+    return;
+  }
+  if (!maze) {
+    maze = createMaze($('maze'), spots.map(function (spot) {
+      return {
+        name: spot.item.name,
+        picture: function () {
+          return spot.picture.hidden ? null : spot.picture;
+        },
+      };
+    }));
+  }
+  maze.start();
+}
+
 $('count').textContent = mine.length + ' of ' + ITEMS.length;
 $('empty').hidden = mine.length > 0;
+$('fun').hidden = !mine.length;
+$('fun').addEventListener('click', function () {
+  sound.unlock();
+  setFun($('maze').hidden);
+});
 if (view && spots.length) {
   fitLens();
-  // A new size (turning the iPad, say) redraws every picture to fit.
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () {
-      fitLens();
-      spots.forEach(function (spot) {
-        if (!spot.picture.hidden) spot.drawn = false;
-      });
-    }, 200);
+    resizeTimer = setTimeout(refit, 200);
   });
   requestAnimationFrame(frame);
 }
+// ?fun=1 opens in fun mode, for testing.
+if (mine.length && /[?&]fun=1/.test(location.search)) setFun(true);

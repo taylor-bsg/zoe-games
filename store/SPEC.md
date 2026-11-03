@@ -243,6 +243,17 @@ store; only the squishies she has bought, with a count like "5 of 16"; and
 tapping one makes it spin around once with a squish and a squeak, and say
 its name.
 
+Requested by the user, verbatim (2026-11-03):
+
+> Can we prototype a fun mode for the bookshelf, where there is a donkey Kong like maze pattern to the bookshelf, and a monkey that throws barrels down and the squish mellows jump over them? The squish mellows move up the maze but then take a slide down to the bottom.
+
+A first version, to try and change: a 🐒 button on the shelf turns the
+bookcase into a monkey maze, which plays by itself. A monkey at the top
+throws barrels that roll down slanted shelves into a basket, while her
+squishies climb up, jumping over the barrels, and ride a slide back down.
+Tapping a squishy makes it hop and say its name; tapping the monkey makes
+it throw a barrel.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -516,6 +527,50 @@ its name.
     store will sit here.", and a pink "🛍️ Go to the store" button.
   - **Which ones:** hers are the items bought (`coins.purchases()`, oldest
     first), not ones only hatched.
+- **Monkey maze** (`maze.js`, fun mode on the shelf; a prototype):
+  - **Getting there:** the 🐒 button at the top right of the shelf (left
+    of 🛍️, with a matching space at the left so the count stays in the
+    middle) switches to the maze; there it's 🧸, back to the shelves. It
+    shows only when she has a squishy. `shelf.html?fun=1` opens in the
+    maze, for testing.
+  - **The maze:** the bookcase's back with six levels of wooden planks: the
+    floor, four shelves slanting one way and the next alternately, each
+    open at its low end, and the top. The monkey (🐒) sits on its own ledge
+    at the top left, next to a pile of three barrels, with an opening
+    beside it. Wooden ladders join the levels at the far ends from the
+    openings, and a pink slide winds down the right side, from the top to
+    the floor. A basket (🧺) at the bottom left catches the barrels.
+  - **Barrels:** every 2.6–4.4 s the monkey holds one up for half a second,
+    then tosses it down through the opening onto the top slanted shelf. It
+    rolls to the shelf's open end, drops to the next shelf, rolls back the
+    other way, and so on, into the basket. Six are already on their way
+    when the maze opens.
+  - **Squishies:** all of hers, spread evenly around the way, which goes
+    along the floor from the slide, up each ladder and along each shelf
+    (so they always walk toward the barrels), along the top past the
+    monkey, and down the slide. They hop along as they walk, sway as they
+    climb, and lean into the slide's turns. Sizes are in units of a
+    full-size squishy's width: 95% of a level's height, or less on narrow
+    screens; each is drawn with its shelf picture (mirrored when walking
+    left), so the pricier ones are bigger.
+  - **Jumping:** a squishy jumps when a barrel coming its way will reach it
+    in half a jump (0.55 s, 0.42 units high), so the barrel passes under it
+    at the top. Near a ladder, barrels roll behind the ladder and whoever
+    is on it, so there's no jumping there. A barrel that still touches a
+    squishy would squash it with a squeak; in testing (90 s, and 60 s on
+    phone, portrait, and with all sixteen), none did.
+  - **Speeds:** walking 1.3 units a second, barrels 2.1, climbing 0.6
+    levels a second; the slide takes 3.2 s, slow at the top and fast in
+    the middle.
+  - **Sounds:** a soft "hup" for a jump (at most one every 0.35 s, so a
+    crowd doesn't chatter) and a slide whistle down the slide
+    (`sound.hop()` and `sound.whee()`). Tapping a squishy squeaks and says
+    its name, and the monkey says "Ooh ooh, ah ah!".
+  - **Drawing:** a 2D canvas over the bookcase, redrawn every frame (not
+    while the page is hidden): the planks, ladders, and slide are drawn
+    once for each size, and emoji once into little pictures, so a frame
+    is mostly copying pictures. Everything moves by the clock, so where
+    each squishy and barrel is depends only on the time.
 - **Saved data:** under `zoe-games:store`: `hatched`, the ids of the
   squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,
