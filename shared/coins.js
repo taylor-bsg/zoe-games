@@ -1,11 +1,12 @@
 // Coins: earned by playing games, spent in the store (store/). Shared by
 // every page.
 //
-//   import * as coins from '../shared/coins.js?v=0.8.5';
+//   import * as coins from '../shared/coins.js?v=0.8.6';
 //   coins.earn('01-times-table', 2);  // returns the new balance
 //   coins.balance();                  // earned minus spent
 //   coins.spend('sprout', 50);        // false if it's owned or she can't afford it
 //   coins.owns('sprout');
+//   coins.purchases();                // [{ item, price, at }], oldest first
 //   coins.totals();                   // { earned, spent, balance }
 //   el.innerHTML = '12 ' + coins.ICON; // a little gold coin, sized to the text
 //
@@ -15,7 +16,7 @@
 // 'hatch:' plus the squishy's id.) Everything is under one storage key and re-read
 // before every change, so pages never overwrite each other's coins.
 
-import * as storage from './storage.js?v=0.8.5';
+import * as storage from './storage.js?v=0.8.6';
 
 const KEY = 'coins';
 
@@ -83,6 +84,14 @@ export function earn(source, coins) {
 export function owns(item) {
   return read().spent.some(function (buy) {
     return buy.item === item;
+  });
+}
+
+// Everything bought, oldest first, with the price paid and when (ms since
+// 1970; 0 if unknown). Hatching an egg is in it too.
+export function purchases() {
+  return read().spent.map(function (buy) {
+    return { item: buy.item, price: amount(buy.price), at: typeof buy.at === 'number' ? buy.at : 0 };
   });
 }
 

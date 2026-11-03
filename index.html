@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="shared/base.css?v=0.8.5">
+  <link rel="stylesheet" href="shared/base.css?v=0.8.6">
   <style>
     .tiles {
       display: grid;
@@ -78,7 +78,8 @@
       text-align: center;
     }
 
-    /* On narrow screens the store and mute buttons wrap under the title. */
+    /* On narrow screens the shelf, store, and mute buttons wrap under the
+       title. */
     .topbar {
       flex-wrap: wrap;
       row-gap: 12px;
@@ -86,18 +87,37 @@
 
     .topbar-right {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       align-items: center;
       gap: 12px;
       margin-left: auto;
     }
 
-    /* The way to the store, with the coins to spend there. */
-    .store-button {
+    /* The way to the store, with the coins to spend there, and to the shelf
+       of squishies bought there. */
+    .store-button,
+    .shelf-button {
       gap: 0.3em;
       padding: 0 0.8em;
       background: #ff8fab;
       font-size: 26px;
       white-space: nowrap;
+    }
+
+    .shelf-button {
+      background: #b197fc;
+    }
+
+    /* Phone-sized screens: just the bear, so the three buttons fit in a row. */
+    @media (max-width: 500px) {
+      .shelf-button {
+        padding: 0;
+      }
+
+      .shelf-label {
+        display: none;
+      }
     }
 
     .version {
@@ -115,6 +135,7 @@
     <header class="topbar">
       <h1>Zoe's Games</h1>
       <div class="topbar-right">
+        <a class="btn shelf-button" href="store/shelf.html" aria-label="My shelf">🧸<span class="shelf-label">My shelf</span></a>
         <a class="btn store-button" href="store/">🛍️ Store <span id="coins"></span></a>
         <button type="button" class="btn btn-icon" id="mute" aria-label="Mute"></button>
       </div>
@@ -128,10 +149,10 @@
   <p class="version" id="version"></p>
 
   <script type="module">
-    import { games } from './games.js?v=0.8.5';
-    import { VERSION } from './version.js?v=0.8.5';
-    import * as sound from './shared/sound.js?v=0.8.5';
-    import * as coins from './shared/coins.js?v=0.8.5';
+    import { games } from './games.js?v=0.8.6';
+    import { VERSION } from './version.js?v=0.8.6';
+    import * as sound from './shared/sound.js?v=0.8.6';
+    import * as coins from './shared/coins.js?v=0.8.6';
 
     const tiles = document.getElementById('tiles');
     games.forEach(function (game) {

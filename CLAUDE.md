@@ -51,7 +51,8 @@ shared/speech.js      reads text aloud with the device's voice
 shared/storage.js     per-game save/load
 shared/celebrate.js   confetti/star burst
 shared/coins.js       coins: earned by games, spent in the store
-store/                Squishy Store: plush dragons in 3D, bought with coins (SPEC.md)
+store/                Squishy Store: plush dragons in 3D, bought with coins, and
+                      shelf.html, the ones she has bought (SPEC.md)
 template/             minimal working game to copy for new games; not in games.js
 NN-skill/             one folder per game: SPEC.md, index.html, game.js
 ```
@@ -172,7 +173,8 @@ Each file's header comment documents its API. In brief:
   must work when nothing is saved, and saved data can vanish. Also, the Home
   Screen app and Safari keep separate storage.
 - **coins.js:** `earn(source, n)`, `balance()`, `spend(item, price)`,
-  `owns(item)`, `totals()` (earned, spent, balance), and `ICON`, a gold coin
+  `owns(item)`, `purchases()` (every `{ item, price, at }`, oldest first),
+  `totals()` (earned, spent, balance), and `ICON`, a gold coin
   SVG to show next to amounts (not the 🪙 emoji, which is silver). Earned
   coins are kept per source (a game id) and purchases as a list, under
   `zoe-games:coins`.

@@ -29,7 +29,9 @@ main page shows the coins and leads to the Squishy Store. There, Zoe can
 spin, squish, and buy squishy plush dragons drawn in 3D. Each one stays a
 mystery egg, in its own size and colors, until she has enough coins for it.
 Then she can hatch it for a fifth of its price, and it stays hatched. The
-bottom of the store shows the coins earned and spent.
+bottom of the store shows the coins earned and spent. The My shelf button,
+on the main page and in the store, shows every squishy she has bought,
+standing on a bookcase; tapping one spins it and says its name.
 
 ## Test locally
 

@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.8.5">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.6">
   <style>
     .purse {
       display: flex;
@@ -40,11 +40,6 @@
 
     .purse.is-paid {
       animation: pop 0.5s ease;
-    }
-
-    /* As wide as the Home button, so the purse stays centered. */
-    .topbar-balance {
-      width: var(--tap);
     }
 
     /* One squishy at a time, as big as fits, with arrows to the others.
@@ -243,7 +238,7 @@
         <span class="purse-label">My coins</span>
         <span class="purse-value" id="balance"></span>
       </div>
-      <div class="topbar-balance"></div>
+      <a class="btn btn-icon" href="shelf.html" aria-label="My shelf">🧸</a>
     </header>
 
     <main class="card stage">
@@ -270,6 +265,6 @@
     <p class="ledger" id="ledger"></p>
   </div>
 
-  <script type="module" src="store.js?v=0.8.5"></script>
+  <script type="module" src="store.js?v=0.8.6"></script>
 </body>
 </html>

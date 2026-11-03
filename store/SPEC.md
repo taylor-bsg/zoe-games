@@ -234,6 +234,15 @@ little. With sixteen squishies, the dots under the name are a little
 smaller and closer together, and wrap onto a second line where there isn't
 room for one.
 
+Requested by the user, verbatim (2026-11-02):
+
+> Okay, Zoe would like to see a shelf that has all of the squish dragons she has acquired so far.
+
+Asked, the user chose: a "My shelf" button on the main page and one in the
+store; only the squishies she has bought, with a count like "5 of 16"; and
+tapping one makes it spin around once with a squish and a squeak, and say
+its name.
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -473,6 +482,40 @@ room for one.
   - Zoe Spells: the wall prize for every level below the highest open one.
   - Zoe Multiplies: 1 or 2 coins for each saved try under 5 s. Only the
     last 3 tries per problem are saved, and wrong tries are saved as 5 s.
+- **The shelf** (`shelf.html`, `shelf.js`): a wooden bookcase with
+  every squishy she has bought standing on its shelves, in the order she
+  bought them, each with its name on the front of its plank.
+  - **Getting there:** a purple "🧸 My shelf" button beside the Store
+    button on the main page (just 🧸 on phone-sized screens, so the three
+    buttons fit in a row), and a 🧸 button at the top right of the store.
+    The shelf has 🏠 at the top left and 🛍️ (to the store) at the top right.
+  - **Top bar:** "My squishies" and how many of all of them she has,
+    like "5 of 16".
+  - **Bookcase:** a wooden frame around a cream back, with a plank under
+    each row of squishies, all the way across, and empty shelves filling
+    the rest. Spots are 21% of the screen's shorter side wide (94–170px),
+    as many to a row as fit, centered. When there are more rows than fit,
+    the shelves scroll.
+  - **Pictures:** each squishy is a still 3D picture, facing
+    three-quarters forward as in the store, at its size from `items.js`,
+    so the pricier ones are bigger. The store's view leaves room for
+    squashing, stretching, and turning, so the shelf zooms in 1.2× and
+    leaves out most of the room above and everything below the floor, so
+    each squishy stands on its plank with its shadow. One 3D view draws
+    them off screen, one after another, and copies each picture in.
+  - **Drawing:** a 🐉 stands in until a squishy's program has compiled.
+    Where the browser compiles in the background, the shelf compiles one
+    program at a time and draws each squishy as soon as its program is
+    ready; elsewhere, one squishy a frame, so the page keeps moving.
+    Without WebGL, the 🐉s stay. Turning the iPad redraws the pictures at
+    the new size.
+  - **Tapping one:** it squeaks, says its name, and turns all the way
+    around in 1.2 s, easing in and out, with a wobbly squish (0.35 at
+    first, bouncing back). A 🐉 stand-in bounces instead.
+  - **Empty shelf:** "🧸 No squishies yet!", "Squishies you buy in the
+    store will sit here.", and a pink "🛍️ Go to the store" button.
+  - **Which ones:** hers are the items bought (`coins.purchases()`, oldest
+    first), not ones only hatched.
 - **Saved data:** under `zoe-games:store`: `hatched`, the ids of the
   squishies whose eggs Zoe has hatched. Coins are under `zoe-games:coins`:
   - `earned`: source → coins. The sources are `01-times-table`,

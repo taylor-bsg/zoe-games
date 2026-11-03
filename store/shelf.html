@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#4cc9f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zoe's Games">
+  <title>My Shelf · Zoe's Games</title>
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="icon" href="../icons/icon-192.png">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.6">
+  <style>
+    /* How many she has, in the middle of the top bar. */
+    .count {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 24px 6px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .count-label {
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.7;
+    }
+
+    .count-value {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    /* A bookcase: a wooden frame around the shelves, which scroll when
+       there are more than fit. */
+    .case {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      margin-top: 12px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 10px solid #9c6233;
+      border-radius: var(--radius);
+      background: #fbe7cc;
+      box-shadow: var(--shadow);
+    }
+
+    /* A spot for each squishy, in rows, with a plank under every row: the
+       planks repeat down the background, one per row, so they go all the
+       way across, and empty shelves fill the rest of the bookcase. A row
+       fits a picture (sized in shelf.js) above its plank. */
+    .shelves {
+      --spot: clamp(94px, 21vmin, 170px);
+      --row: calc(var(--spot) * 0.82 + 40px);
+      min-height: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, var(--spot));
+      grid-auto-rows: var(--row);
+      justify-content: center;
+      column-gap: 10px;
+      padding: 0 10px;
+      background: linear-gradient(to bottom,
+        transparent 0, transparent calc(var(--row) - 36px),
+        #e3ac70 calc(var(--row) - 36px), #e3ac70 calc(var(--row) - 27px),
+        #b97a42 calc(var(--row) - 27px), #b97a42 calc(var(--row) - 3px),
+        #8a5529 calc(var(--row) - 3px), #8a5529 100%) 0 0 / 100% var(--row);
+    }
+
+    .spot {
+      -webkit-appearance: none;
+      appearance: none;
+      position: relative;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+    }
+
+    /* The squishy, standing on the plank's top. */
+    .spot-picture {
+      position: absolute;
+      bottom: 32px;
+    }
+
+    /* Stands in until the 3D picture is drawn. */
+    .spot-emoji {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 38px;
+      font-size: calc(var(--spot) * 0.34);
+      line-height: 1;
+      text-align: center;
+    }
+
+    .spot-emoji.is-bounced {
+      animation: pop 0.5s ease;
+    }
+
+    /* Its name, on the front of the plank. */
+    .spot-name {
+      position: absolute;
+      left: -5px;
+      right: -5px;
+      bottom: 6px;
+      overflow: hidden;
+      color: var(--white);
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 18px;
+      text-align: center;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+      white-space: nowrap;
+    }
+
+    /* Nothing on the shelves yet. */
+    .empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(90%, 520px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 22px 24px 26px;
+      font-size: 22px;
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
+
+    .empty-title {
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .empty-store {
+      margin-top: 6px;
+      padding: 0 0.9em;
+      background: #ff8fab;
+      font-size: 26px;
+      white-space: nowrap;
+    }
+
+    /* The 3D view draws each picture here, off screen, at a spot's size. */
+    .lens {
+      position: fixed;
+      top: 0;
+      left: -10000px;
+    }
+  </style>
+</head>
+<body ontouchstart="">
+  <div class="page fit">
+    <header class="topbar">
+      <a class="btn btn-icon" href="../" aria-label="Home">🏠</a>
+      <div class="count">
+        <span class="count-label">My squishies</span>
+        <span class="count-value" id="count"></span>
+      </div>
+      <a class="btn btn-icon" href="./" aria-label="Store">🛍️</a>
+    </header>
+
+    <main class="case" id="case">
+      <div class="shelves" id="shelves"></div>
+      <div class="card empty" id="empty" hidden>
+        <p class="empty-title">🧸 No squishies yet!</p>
+        <p>Squishies you buy in the store will sit here.</p>
+        <a class="btn empty-store" href="./">🛍️ Go to the store</a>
+      </div>
+    </main>
+  </div>
+  <canvas class="lens" id="lens" aria-hidden="true"></canvas>
+
+  <script type="module" src="shelf.js?v=0.8.6"></script>
+</body>
+</html>
