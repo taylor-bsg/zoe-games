@@ -5,12 +5,12 @@
 // says its name. The 🐒 button turns the bookcase into a monkey maze
 // (maze.js), with the same pictures climbing it.
 
-import * as coins from '../shared/coins.js?v=0.8.8';
-import * as sound from '../shared/sound.js?v=0.8.8';
-import * as speech from '../shared/speech.js?v=0.8.8';
-import { createMaze } from './maze.js?v=0.8.8';
-import { createSquishy } from './squishy.js?v=0.8.8';
-import { ITEMS } from './items.js?v=0.8.8';
+import * as coins from '../shared/coins.js?v=0.8.9';
+import * as sound from '../shared/sound.js?v=0.8.9';
+import * as speech from '../shared/speech.js?v=0.8.9';
+import { createMaze } from './maze.js?v=0.8.9';
+import { createSquishy } from './squishy.js?v=0.8.9';
+import { ITEMS } from './items.js?v=0.8.9';
 
 const ANGLE = 0.5; // facing three-quarters forward, as in the store
 const SPIN_MS = 1200; // how long a tapped squishy takes to turn all the way around

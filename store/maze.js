@@ -3,7 +3,7 @@
 // jumping over the barrels a monkey throws down from the top, then ride a
 // winding slide back to the bottom and go around again. See SPEC.md.
 //
-//   import { createMaze } from './maze.js?v=0.8.8';
+//   import { createMaze } from './maze.js?v=0.8.9';
 //   const maze = createMaze(canvas, squishies);
 //   maze.start();
 //   maze.stop();
@@ -17,14 +17,18 @@
 // Everything moves by the clock: where a squishy is on its way around, and
 // where a barrel is on its way down, depend only on the time, so nothing
 // drifts. Squishies always walk toward the barrels on their shelf, and jump
-// so that a barrel passes under them at the top of the jump. But a barrel
-// rolling past the top of a ladder knocks off a squishy whose head is up
-// there: it falls upside down to the level below, lies there kicking for a
-// moment, and flips back onto its feet. Then it waits at the bottom of the
-// ladder until no barrel is coming past the top before it climbs again.
+// so that a barrel passes under them at the top of the jump, even at the
+// bottom of a ladder, where they wait for any barrel about to roll by and
+// jump it before climbing. But a barrel rolling past the top of a ladder
+// knocks off a squishy whose head is up there: it tumbles upside down to the
+// level below, landing beside the ladder, lies there kicking for a moment
+// (barrels roll up over it), flips back onto its feet, and walks back to the
+// ladder. Then it waits at the bottom until no barrel is coming past the top
+// before it climbs again. So barrels don't pass through squishies (one in
+// mid-tumble can cross a barrel, rarely, for a moment).
 
-import * as sound from '../shared/sound.js?v=0.8.8';
-import * as speech from '../shared/speech.js?v=0.8.8';
+import * as sound from '../shared/sound.js?v=0.8.9';
+import * as speech from '../shared/speech.js?v=0.8.9';
 
 // Sizes are in units: a full-size squishy's width.
 const WALK = 1.3; // walking speed, units a second
@@ -39,8 +43,14 @@ const THROW = [2.6, 4.4]; // seconds between barrels, at random in this range
 const WINDUP = 0.5; // seconds the monkey holds a barrel up before throwing it
 const TOSS = 0.75; // seconds a thrown barrel flies before it lands
 const BONK = 0.5; // seconds a squishy stays squashed if a barrel bumps it
-const DOWN = 1; // seconds a knocked-off squishy lies upside down
-const FLIP = 0.4; // seconds it takes to flip back onto its feet
+const DOWN = 0.5; // seconds a knocked-off squishy lies upside down
+const FLIP = 0.35; // seconds it takes to flip back onto its feet
+// A barrel rolls up and over a squishy lying in its way: up as it comes
+// within HOP_SPAN units of it (rising over the first HOP_RAMP), HOP_HIGH
+// units up across it, and down again past it.
+const HOP_SPAN = 0.65;
+const HOP_RAMP = 0.12;
+const HOP_HIGH = 0.62;
 const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
 // A smooth curve through points (Catmull-Rom), as many short straight steps.
@@ -69,17 +79,22 @@ export function createMaze(canvas, squishies) {
   let m = null; // where everything goes, for the canvas's size (see build)
   let frameId = 0;
   let clock0 = 0; // when the maze started (ms)
-  let barrels = []; // { at: when it was thrown (s), bumped: the squishies it has met, by number }
+  // Barrels: { at: when it was thrown (s), bumped: the squishies it has
+  // met, by number, and hop: { x, level } while it rolls over one }.
+  let barrels = [];
   let nextThrow = 0;
   let hitBoxes = []; // where each squishy was drawn, for taps
   let hopped = -1e9; // when the last hop sounded, so lots of squishies don't chatter
+  let lastT = 0; // the time of the last frame (s)
   const pictures = {}; // emoji drawn once, by name, for each size
   // Each squishy: where it is on the way around is the clock plus its
-  // offset (s); fall is set while it's been knocked off a ladder, and
-  // careful (the ladder's part of the way) while it waits to climb it again.
+  // offset (s). fall is set while it's been knocked off a ladder, back while
+  // it walks back to it, and careful while it waits at the bottom of one: {
+  // segment, the ladder's part of the way, and above, whether to wait for
+  // the top to be clear too, as it does after a fall }.
   const actors = squishies.map(function (squishy) {
-    return { squishy: squishy, offset: 0, fall: null, careful: -1, jumpAt: -1e9, bonkAt: -1e9,
-      segment: -1 };
+    return { squishy: squishy, offset: 0, fall: null, back: null, careful: null, jumpAt: -1e9,
+      bonkAt: -1e9, segment: -1 };
   });
 
   // The height of a shelf's top at x.
@@ -109,6 +124,7 @@ export function createMaze(canvas, squishies) {
     const opening = 0.6 * u;
     m.S = S;
     m.u = u;
+    m.mw = mw;
     m.thick = thick;
     m.floor = floor;
     m.levels = [];
@@ -195,7 +211,7 @@ export function createMaze(canvas, squishies) {
       const x = part.xa + (part.xb - part.xa) * f;
       const facing = part.xb > part.xa ? 1 : -1;
       return { kind: 'walk', segment: i, level: part.level, x: x, y: shelfY(part.level, x), facing: facing,
-        vx: facing * WALK * m.u, walked: Math.abs(x - part.xa), length: Math.abs(part.xb - part.xa) };
+        vx: facing * WALK * m.u, walked: Math.abs(x - part.xa), left: part.time - t, endX: part.xb };
     }
     if (part.kind === 'climb') {
       const y = part.ya + (part.yb - part.ya) * f;
@@ -248,21 +264,40 @@ export function createMaze(canvas, squishies) {
     return 4 * JUMP_HEIGHT * m.u * f * (1 - f);
   }
 
+  // How high a barrel at x is, rolling over something at center.
+  function hopProfile(center, x) {
+    const into = (HOP_SPAN * m.u - Math.abs(x - center)) / (HOP_RAMP * m.u);
+    if (into <= 0) return 0;
+    const k = Math.min(1, into);
+    return HOP_HIGH * m.u * k * k * (3 - 2 * k);
+  }
+
+  function hopHeight(b, x) {
+    return b.hop ? hopProfile(b.hop.x, x) : 0;
+  }
+
+  // Sends a rolling barrel up and over something at x, unless it's on its
+  // way over something already.
+  function hopOver(b, place, x) {
+    if (!b.hop) b.hop = { x: x, level: place.level };
+  }
+
   // How far around the way a squishy is, in seconds.
   function routeTime(a, t) {
     return (((t + a.offset) % m.loop) + m.loop) % m.loop;
   }
 
-  // A knocked-off squishy: dropping to the level below as it turns upside
-  // down, landing with a squeak, lying there kicking, then flipping back onto
-  // its feet. Null once it's up again.
+  // A knocked-off squishy: dropping to the level below, beside the ladder,
+  // as it turns upside down; landing with a squeak; lying there kicking;
+  // then flipping back onto its feet. Null once it's up again.
   function fallen(a, t) {
     const f = a.fall;
     const since = t - f.at;
     const drop = Math.sqrt((2 * (f.y1 - f.y0)) / (FALL * m.S));
     if (since < drop) {
       const k = since / drop;
-      return { x: f.x, y: f.y0 + (f.y1 - f.y0) * k * k, turn: Math.PI * k, lift: 0, squash: 0 };
+      return { x: f.x + (f.landX - f.x) * k, y: f.y0 + (f.y1 - f.y0) * k * k, turn: Math.PI * k, lift: 0,
+        squash: 0 };
     }
     if (!f.landed) {
       f.landed = true;
@@ -270,12 +305,29 @@ export function createMaze(canvas, squishies) {
     }
     const lying = since - drop;
     if (lying < DOWN) {
-      return { x: f.x, y: f.y1, turn: Math.PI + 0.14 * Math.sin(lying * 22), lift: 0,
+      return { x: f.landX, y: f.y1, turn: Math.PI + 0.14 * Math.sin(lying * 22), lift: 0,
         squash: lying < 0.3 ? 0.25 * (1 - lying / 0.3) : 0 };
     }
     const k = (lying - DOWN) / FLIP;
     if (k >= 1) return null;
-    return { x: f.x, y: f.y1, turn: Math.PI * (1 + k), lift: 0.4 * m.u * Math.sin(Math.PI * k), squash: 0 };
+    return { x: f.landX, y: f.y1, turn: Math.PI * (1 + k), lift: 0, squash: 0.15 * Math.sin(Math.PI * k) };
+  }
+
+  // Back on its feet after a fall, walking back to the bottom of the ladder
+  // it was knocked off, but staying put while a barrel rolls over the spot
+  // where it fell (it's safe right under it). Null once it's there.
+  function walkingBack(a, dt, rolling) {
+    const part = m.route[a.back.segment];
+    const facing = part.x > a.back.from ? 1 : -1;
+    const overhead = rolling.some(function (b) {
+      return b.barrel.hop && b.barrel.hop.x === a.back.from;
+    });
+    if (!overhead) a.back.x += facing * WALK * m.u * dt;
+    if ((part.x - a.back.x) * facing <= 0) return null;
+    const x = a.back.x;
+    return { kind: 'walk', segment: a.back.segment, level: part.level, x: x, y: shelfY(part.level, x),
+      facing: facing, vx: overhead ? 0 : facing * WALK * m.u, walked: Math.abs(x - a.back.from),
+      left: Math.abs(part.x - x) / (WALK * m.u), endX: part.x };
   }
 
   function drawPlank(s) {
@@ -469,22 +521,39 @@ export function createMaze(canvas, squishies) {
     return { x: pose.x - u / 2, y: pose.y - pose.lift - tall, w: u, h: tall };
   }
 
-  // Whether a squishy could climb ladder part (of the way) starting at t
-  // without a barrel rolling past the top while its body is up there. Each
-  // barrel's way down is known, so this looks ahead at every barrel,
-  // including the next one the monkey will throw.
-  function clearAbove(a, part, t) {
-    const body = 0.5 * m.u * a.squishy.size;
-    const up = part.time * Math.max(0, 1 - body / (part.ya - part.yb)); // when its body reaches the top
+  // Whether no barrel will roll past x on a level, close enough to touch
+  // squishy a, between from and to seconds after t. Each barrel's way down
+  // is known, so this looks ahead at every barrel, including the next one
+  // the monkey will throw.
+  function clear(a, level, x, from, to, t) {
     const reach = (0.25 * a.squishy.size + BARREL) * m.u;
     return barrels.concat([{ at: nextThrow }]).every(function (b) {
-      for (let s = up; s <= part.time; s += 0.05) {
+      for (let s = from; s <= to; s += 0.05) {
         const p = placeBarrel(t + s - b.at);
-        const passing = p && p.kind === 'roll' && p.level === part.level + 1;
-        if (passing && Math.abs(p.x - part.x) < reach) return false;
+        if (p && p.kind === 'roll' && p.level === level && Math.abs(p.x - x) < reach) return false;
       }
       return true;
     });
+  }
+
+  // Whether a squishy can start up ladder part (of the way) at t: no barrel
+  // will roll past the bottom while it's still low enough to be hit, and,
+  // if above, none past the top while its body is up there.
+  function safeToClimb(a, part, above, t) {
+    const body = 0.5 * m.u * a.squishy.size;
+    const low = (2 * BARREL * m.u) / (CLIMB * m.S) + 0.05; // until it's above a barrel at the bottom
+    const up = part.time * Math.max(0, 1 - body / (part.ya - part.yb)); // when its body reaches the top
+    return clear(a, part.level, part.x, 0, low, t) &&
+      (!above || clear(a, part.level + 1, part.x, up, part.time, t));
+  }
+
+  // A squishy waiting at the bottom of the ladder that's part segment of
+  // the way: standing still, facing the way it walked there.
+  function waitingPlace(segment) {
+    const part = m.route[segment];
+    const walk = m.route[segment - 1];
+    return { kind: 'walk', segment: segment, level: part.level, x: part.x, y: part.ya,
+      facing: walk.xb > walk.xa ? 1 : -1, vx: 0, walked: 0, left: 0, endX: part.x };
   }
 
   // A barrel rolling along the shelf at the top of a ladder knocks off a
@@ -497,48 +566,114 @@ export function createMaze(canvas, squishies) {
     rolling.forEach(function (b) {
       if (a.fall || b.place.level !== place.level + 1 || b.barrel.bumped[i]) return;
       const across = Math.abs(b.place.x - place.x) < (0.25 * size + BARREL) * m.u;
-      const up = b.place.y + r > place.y - body && b.place.y - r < place.y;
+      const up = b.place.top + r > place.y - body && b.place.top - r < place.y;
       if (!across || !up) return;
       b.barrel.bumped[i] = true;
-      a.fall = { at: t, x: place.x, y0: place.y, y1: shelfY(place.level, place.x), segment: place.segment,
-        facing: b.place.vx > 0 ? 1 : -1, landed: false };
+      // It tumbles toward the middle of the shelf below, away from where
+      // barrels drop onto it, so they pass the ladder first, then it.
+      const facing = place.x < m.mw / 2 ? 1 : -1;
+      const landX = place.x + facing * 1.1 * m.u; // far enough that barrels rolling over it miss the ladder
+      a.fall = { at: t, x: place.x, y0: place.y, landX: landX, y1: shelfY(place.level, landX),
+        level: place.level, segment: place.segment, facing: facing, landed: false };
       sound.wrong();
     });
   }
 
-  // Each squishy walking along a shelf jumps when a barrel coming its way
-  // will reach it in half a jump, so the barrel passes under the middle of
-  // the jump. Walking by a ladder (at each end of a walk), it doesn't jump,
-  // and a barrel rolls behind it. A barrel that still touches a walking
-  // squishy bumps it, squashing it. (Climbing is knock's business.)
+  // Whether rolling barrel b ({ barrel, place }) will be well up in the
+  // air at x (at least halfway up): rolling over something there already,
+  // or about to roll over a squishy lying near it.
+  function overSomething(b, x) {
+    const high = 0.5 * HOP_HIGH * m.u;
+    if (b.barrel.hop) return hopProfile(b.barrel.hop.x, x) >= high;
+    return actors.some(function (f) {
+      return f.fall && f.fall.level === b.place.level && hopProfile(f.fall.landX, x) >= high;
+    });
+  }
+
+  // Each squishy on a shelf jumps when a barrel coming its way will reach it
+  // in half a jump, so the barrel passes under the middle of the jump: on
+  // its way, or at the bottom of the ladder at the end of the walk, where it
+  // stops to wait. A barrel that still touches it (one it had no time to
+  // jump) bumps it, squashing it. (Climbing is knock's business.)
   function dodge(a, i, place, t, rolling) {
     if (place.kind !== 'walk') return;
-    const zone = 0.45 * m.u;
     const jumped = t - a.jumpAt;
-    // A barrel meeting it by a ladder touches it a little before and after,
-    // so that counts as by the ladder too.
-    const reach = zone + 0.4 * m.u;
-    const byLadder = place.walked < reach || place.length - place.walked < reach;
     rolling.forEach(function (b) {
       if (b.place.level !== place.level) return;
-      const meet = (b.place.x - place.x) / (place.vx - b.place.vx);
-      const there = place.walked + meet * WALK * m.u; // how far along it will be when they meet
-      const clear = there > zone && place.length - there > zone;
-      if (clear && jumped > JUMP && meet > 0 && meet <= JUMP / 2) {
-        a.jumpAt = t;
+      let meet = (b.place.x - place.x) / (place.vx - b.place.vx);
+      let meetX = place.x + place.vx * meet;
+      if (!(meet <= place.left)) { // meeting where it stops
+        meet = (place.endX - b.place.x) / b.place.vx;
+        meetX = place.endX;
+      }
+      if (overSomething(b, meetX)) return; // it'll be up in the air there: no need to jump
+      if (jumped > JUMP && meet > 0 && meet <= JUMP / 2) {
+        // Timed so the top of the jump comes as they meet, even if this
+        // frame came late (by up to 0.12 s; any later, it bumps).
+        a.jumpAt = t - Math.min(0.12, JUMP / 2 - meet);
         if (t - hopped > 0.35) {
           sound.hop();
           hopped = t;
         }
       }
-      const touching = Math.abs(b.place.x - place.x) < (0.25 + BARREL) * m.u;
-      if (touching && byLadder) b.barrel.bumped[i] = true; // it passed behind
-      if (touching && jumpHeight(t - a.jumpAt) < 2 * BARREL * m.u && !b.barrel.bumped[i] && t > 1) {
+      // Touching its round body, not just the corners of its box.
+      const r = BARREL * m.u;
+      const touching = Math.abs(b.place.x - place.x) < 0.8 * (0.25 * a.squishy.size + BARREL) * m.u;
+      const feet = place.y - jumpHeight(t - a.jumpAt);
+      const sameHeight = b.place.top + 0.8 * r > feet - 0.5 * m.u * a.squishy.size && b.place.top - 0.8 * r < feet;
+      if (touching && sameHeight && !b.barrel.bumped[i] && t > 1) {
         b.barrel.bumped[i] = true;
+        hopOver(b.barrel, b.place, place.x);
         a.bonkAt = t;
         sound.squeak();
       }
     });
+  }
+
+  // Moves squishy a along (or down) for time t, checks it against the
+  // barrels, and draws it. Returns where it was drawn, for taps.
+  function step(a, i, t, dt, rolling) {
+    if (a.fall) {
+      const pose = fallen(a, t);
+      if (pose) {
+        // Barrels coming along its shelf roll up and over it.
+        rolling.forEach(function (b) {
+          const coming = (a.fall.landX - b.place.x) * b.place.vx > 0;
+          const near = Math.abs(b.place.x - a.fall.landX) < (HOP_SPAN + 0.2) * m.u;
+          if (b.place.level === a.fall.level && coming && near) hopOver(b.barrel, b.place, a.fall.landX);
+        });
+        return drawFallen(a, pose);
+      }
+      a.back = { from: a.fall.landX, x: a.fall.landX, segment: a.fall.segment };
+      a.fall = null;
+    }
+    let place = a.back ? walkingBack(a, dt, rolling) : null;
+    if (a.back && !place) { // back at the ladder: waits until the way up is clear
+      a.careful = { segment: a.back.segment, above: true };
+      a.back = null;
+    }
+    if (!place) {
+      if (!a.careful) { // just reaching the bottom of a ladder?
+        const next = placeOnRoute(routeTime(a, t));
+        if (next.kind === 'climb' && a.segment === next.segment - 1) {
+          a.careful = { segment: next.segment, above: false };
+        }
+      }
+      if (a.careful) { // waiting at the bottom of the ladder until it's safe to climb
+        const part = m.route[a.careful.segment];
+        a.offset = part.start + 1e-3 - t;
+        if (t - a.jumpAt > JUMP && safeToClimb(a, part, a.careful.above, t)) a.careful = null;
+      }
+      place = a.careful ? waitingPlace(a.careful.segment) : placeOnRoute(routeTime(a, t));
+    }
+    if (place.segment !== a.segment) {
+      if (place.kind === 'slide' && a.segment >= 0) sound.whee();
+      a.segment = place.segment;
+    }
+    dodge(a, i, place, t, rolling);
+    knock(a, i, place, t, rolling);
+    if (a.fall) return drawFallen(a, fallen(a, t));
+    return drawSquishy(a, place, t);
   }
 
   function frame(now) {
@@ -560,32 +695,19 @@ export function createMaze(canvas, squishies) {
     barrels = barrels.filter(function (b) {
       const place = placeBarrel(t - b.at);
       if (!place) return false;
-      drawBarrel(g, place.x, place.y, place.spin * (place.vx < 0 ? -1 : 1));
+      if (b.hop && (place.kind !== 'roll' || place.level !== b.hop.level ||
+          ((place.x - b.hop.x) * place.vx > 0 && hopHeight(b, place.x) === 0))) {
+        b.hop = null; // over it, or off the shelf
+      }
+      place.top = place.y - hopHeight(b, place.x); // where it's drawn
+      drawBarrel(g, place.x, place.top, place.spin * (place.vx < 0 ? -1 : 1));
       if (place.kind === 'roll') rolling.push({ barrel: b, place: place });
       return true;
     });
+    const dt = Math.min(0.1, Math.max(0, t - lastT));
+    lastT = t;
     hitBoxes = actors.map(function (a, i) {
-      if (a.fall) {
-        const pose = fallen(a, t);
-        if (pose) return drawFallen(a, pose);
-        // Up again: back to the bottom of the ladder it fell from, to wait.
-        a.careful = a.fall.segment;
-        a.fall = null;
-      }
-      if (a.careful >= 0) {
-        const part = m.route[a.careful];
-        a.offset = part.start + 1e-3 - t;
-        if (clearAbove(a, part, t)) a.careful = -1;
-      }
-      const place = placeOnRoute(routeTime(a, t));
-      if (place.segment !== a.segment) {
-        if (place.kind === 'slide' && a.segment >= 0) sound.whee();
-        a.segment = place.segment;
-      }
-      dodge(a, i, place, t, rolling);
-      knock(a, i, place, t, rolling);
-      if (a.fall) return drawFallen(a, fallen(a, t));
-      return drawSquishy(a, place, t);
+      return step(a, i, t, dt, rolling);
     });
     // The basket the barrels drop into, in front of them.
     emoji('🧺', 0.62 * m.u, m.basketX, m.floor + 0.04 * m.u);
@@ -635,6 +757,7 @@ export function createMaze(canvas, squishies) {
       m = null;
       fit();
       clock0 = performance.now();
+      lastT = 0;
       // Some barrels already on their way down, and the next one soon.
       barrels = [];
       for (let k = 1; k <= 6; k++) barrels.push({ at: -k * 3.5, bumped: {} });
@@ -642,7 +765,8 @@ export function createMaze(canvas, squishies) {
       actors.forEach(function (a, i) {
         a.offset = (i * m.loop) / actors.length; // spread out evenly
         a.fall = null;
-        a.careful = -1;
+        a.back = null;
+        a.careful = null;
         a.jumpAt = -1e9;
         a.bonkAt = -1e9;
         a.segment = -1;

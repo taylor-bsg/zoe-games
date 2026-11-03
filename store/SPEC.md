@@ -265,6 +265,21 @@ a ladder now knocks off a squishy climbing it: it falls upside down to
 the level below, lies there kicking, flips back up, and waits for the
 coast to be clear before climbing again.
 
+Reported by the user, verbatim (2026-11-03):
+
+> On iOS I see no falling monkeys, and some walking monkeys have barrels pass right through them.
+
+Near the ladders, walking squishies didn't jump, and barrels were meant to
+roll behind them, which looked just like passing through them. Now they
+jump there too, and a squishy reaching the bottom of a ladder waits there,
+jumping any barrel about to roll by, before it climbs. A knocked-off
+squishy lands beside the ladder, toward the middle of the shelf; barrels
+roll up and over it while it's down, and it walks back to the ladder once
+it's up. In testing, no barrel passed through a standing, walking, or
+climbing squishy, with 12–25 falls a minute with six squishies. (The iPad
+may have still had the earlier version, from before falls, which would
+explain seeing none; the main page shows the version.)
+
 ## Implementation notes
 
 - **Getting there:** a pink "🛍️ Store" button with the coin balance, at the
@@ -566,22 +581,36 @@ coast to be clear before climbing again.
     left), so the pricier ones are bigger.
   - **Jumping:** a squishy jumps when a barrel coming its way will reach it
     in half a jump (0.55 s, 0.42 units high), so the barrel passes under it
-    at the top. Walking near a ladder, there's no jumping, and barrels roll
-    behind it. A barrel that still touches a walking squishy would squash
-    it with a squeak; in testing (90 s, and 60 s on phone, portrait, and
-    with all sixteen), none did.
+    at the top; the jump is timed by when they'll meet, so a late frame
+    doesn't spoil it. That works anywhere on a shelf, including right at a
+    ladder: a squishy reaching the bottom of a ladder waits there while a
+    barrel is about to roll past (low enough to hit it as it starts up),
+    jumps it, then climbs. A squishy doesn't jump for a barrel that will be
+    rolling over a fallen squishy where they meet (it's up in the air
+    there). A barrel that still touches a squishy (one it had no time to
+    jump) squashes it with a squeak and rolls up over it.
+  - **Checked by counting:** a test-only copy counted every time a barrel's
+    drawn circle touched a squishy's round body without a jump, squash, or
+    fall to show for it. Over a minute each on an iPad sideways and upright,
+    a phone, and with all sixteen, there were none, except once, a squishy
+    in mid-tumble crossing a barrel.
   - **Knocked off a ladder:** a barrel rolling along the shelf at the top
     of a ladder knocks off a squishy climbing it if the squishy's body
     (half a unit tall at full size, so smaller ones less) is up where the
     barrel passes. With a soft "uh-oh" (`sound.wrong()`), it drops to the
-    level below, turning upside down as it falls, lands on its head with a
-    squeak and a squash, and lies there kicking for 1 s. Then it flips back
-    onto its feet with a hop (0.4 s), back at the bottom of that ladder.
-    The first try up a ladder is blind, but after a fall it waits at the
-    bottom until no barrel will pass the top while it's up there: each
-    barrel's way down is known, so it looks ahead at all of them, and at
-    the monkey's next throw. With six squishies, about seven falls a minute,
-    and none fell twice at the same ladder in a row.
+    level below, turning upside down as it falls and landing 1.1 units
+    from the ladder, toward the middle of the shelf (away from where
+    barrels drop onto that shelf, so they pass the ladder first). It lands
+    on its head with a squeak and a squash, lies there kicking for 0.5 s,
+    flips back onto its feet (0.35 s), and walks back to the ladder. While
+    it's down, barrels coming along roll up and over it (0.62 units up
+    across it, rising and falling within 0.65 units of it); walking back,
+    it waits right under one that's rolling over. The first try up a
+    ladder is blind, but after a fall it waits at the bottom until no
+    barrel will pass the top while it's up there: each barrel's way down is
+    known, so it looks ahead at all of them, and at the monkey's next
+    throw. With six squishies, 12–25 falls a minute depending on the
+    screen, and none fell twice at the same ladder in a row.
   - **Speeds:** walking 1.3 units a second, barrels 2.1, climbing 0.6
     levels a second; the slide takes 3.2 s, slow at the top and fast in
     the middle.
