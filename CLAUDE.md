@@ -103,8 +103,12 @@ NN-skill/             one folder per game: SPEC.md, index.html, game.js
   `base.css` puts `100vh` before `100dvh`. Examples that need a guard:
   `:has()`, `<dialog>`, CSS nesting, container queries, `Array.prototype.at`,
   `structuredClone`, view transitions.
+- **Devices:** Zoe plays on an iPad, in portrait and landscape, and on a
+  Chromebook. Phones are supported in portrait only (the user's call,
+  2026-11-04), so a phone turned sideways needn't fit.
 - **Test before committing** (see Testing): the game in portrait and
-  landscape, `/template/` after any change to `shared/`, and the launcher.
+  landscape (on a phone, portrait only), `/template/` after any change to
+  `shared/`, and the launcher.
 
 ## Versions
 
