@@ -383,7 +383,8 @@ explain seeing none; the main page shows the version.)
     walls (levels 1–4, 2A, and 2B) pay 1,400, and Zoe Multiplies pays 5 for
     every 0.01 s faster (0.02 s over 3 s, 0.03 s over 4 s). Both also pay
     1 for every 25 right answers. Zoe Writes pays 2 for each perfect word
-    until its sticker: at most 6 a word, 2,400 for its four levels.
+    until its sticker (at most 6 a word) and 50 for each full notebook
+    page: 2,600 for its four levels.
 - **3D** (`squishy.js`): WebGL 1 and one fragment shader that ray-marches
   signed distance shapes melted together. Each dragon has a round body,
   feet, a tail, horns, small wings, and spikes or a crown on some. Galaxy

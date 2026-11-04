@@ -41,6 +41,13 @@ Answers to questions asked before building:
 - **Levels:** 1, 2, 2A, and 2B, each open in Zoe Writes once it's open in
   Zoe Spells, so she writes words she has already seen.
 
+Requested by the user, verbatim (2026-11-03):
+
+> Give 50 points for finishing a Zoe writes level
+
+Points are coins. A level is finished when its notebook page is full: all
+100 of its words have their stickers. That pays 50 coins, once per level.
+
 ## Implementation notes
 
 - **Launcher tile:** ✏️ "Zoe Writes", "Write the missing word!".
@@ -88,13 +95,23 @@ Answers to questions asked before building:
 - **Stickers:** each word has its own emoji sticker (100 per level, a
   different order in each level). A new sticker pops up big ("New
   sticker!") with the royal trumpet, and the next word waits 2.6 s. When
-  all 100 in a level are stickers, the notebook is full: confetti.
+  all 100 in a level are stickers, the notebook is full: confetti, and
+  the big sticker's card says "Your notebook is full! You won 50 🪙".
+- **Full-page prize:** 50 coins the first time a level's page fills,
+  paid with the word's own 2 coins, as the last sticker is earned. With
+  the confetti, it says "Your notebook is full! You won 50 coins!", and
+  the coins float up from the sticker count with a "ching"; the next word
+  waits 5.5 s, to hear it. A page that was already full before the prize
+  existed is paid, quietly, the next time Zoe Writes opens.
 - **Start screen:** the level's notebook page, ruled like paper, with a
   space for each of its 100 words and the stickers earned so far; the
-  title, "Write the missing word!", "Perfect words win 2 🪙"; the level
-  buttons (a locked one says to open it in Zoe Spells first); and Start.
+  title, "Write the missing word!", and what the level can win: "Perfect
+  words win 2 🪙" and "A full page wins 50 🪙" (or "Full page won: 50 🪙
+  ✓"); the level buttons (a locked one says to open it in Zoe Spells
+  first); and Start.
   The top bar counts the level's stickers.
 - **Saved data:** under `zoe-games:03-writing`: `stages` (word → 0–3, for
-  every word started; no word is in two levels) and `level` (the level
-  last picked: 1, 2, `2a`, or `2b`). It reads Zoe Spells' saved data
-  (`unlocked`, `missed`) without changing it.
+  every word started; no word is in two levels), `level` (the level last
+  picked: 1, 2, `2a`, or `2b`), and `paid` (level id → true once its
+  full-page prize is paid). It reads Zoe Spells' saved data (`unlocked`,
+  `missed`) without changing it.

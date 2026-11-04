@@ -4,16 +4,16 @@
 // are Zoe Spells', in its levels 1, 2, 2A, and 2B. See SPEC.md. Play never
 // ends; the Home button is the way out.
 
-import * as sound from '../shared/sound.js?v=0.8.9';
-import * as speech from '../shared/speech.js?v=0.8.9';
-import * as storage from '../shared/storage.js?v=0.8.9';
-import * as coins from '../shared/coins.js?v=0.8.9';
-import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.9';
-import { createKeyboard } from './keyboard.js?v=0.8.9';
-import { WORDS as WORDS_1 } from '../02-spelling/words-1.js?v=0.8.9';
-import { WORDS as WORDS_2 } from '../02-spelling/words-2.js?v=0.8.9';
-import { WORDS as WORDS_2A } from '../02-spelling/words-2a.js?v=0.8.9';
-import { WORDS as WORDS_2B } from '../02-spelling/words-2b.js?v=0.8.9';
+import * as sound from '../shared/sound.js?v=0.8.10';
+import * as speech from '../shared/speech.js?v=0.8.10';
+import * as storage from '../shared/storage.js?v=0.8.10';
+import * as coins from '../shared/coins.js?v=0.8.10';
+import { stars, confetti, coins as floatCoins } from '../shared/celebrate.js?v=0.8.10';
+import { createKeyboard } from './keyboard.js?v=0.8.10';
+import { WORDS as WORDS_1 } from '../02-spelling/words-1.js?v=0.8.10';
+import { WORDS as WORDS_2 } from '../02-spelling/words-2.js?v=0.8.10';
+import { WORDS as WORDS_2A } from '../02-spelling/words-2a.js?v=0.8.10';
+import { WORDS as WORDS_2B } from '../02-spelling/words-2b.js?v=0.8.10';
 
 const GAME_ID = '03-writing'; // the folder name; also the save key
 // The levels, with Zoe Spells' ids and the Zoe Spells level that must be
@@ -26,6 +26,7 @@ const LEVELS = [
 ];
 const STICKER = 3; // a word's stages: 0 most letters given, 1 the first, 2 none, 3 its sticker
 const PAY = 2; // coins for a perfect word, until its sticker
+const FULL_PRIZE = 50; // coins for filling a level's notebook page, once
 const LEARNING = 8; // words being learned at a time
 const HINT_AFTER = 2; // wrong tries at a letter before it shows faintly
 const LOOK_AGAIN_AFTER = 2; // words before one that needed a hint comes back
@@ -33,7 +34,7 @@ const LOOK_MS = 3000; // how long "Look, cover, write" shows the word
 const REVIEW = 1 / 8; // share of turns that review a word with its sticker
 const NEXT_AFTER = 1400; // ms before the next word
 const NEXT_AFTER_STICKER = 2600;
-const NEXT_AFTER_FULL = 4500; // after the last sticker of a level
+const NEXT_AFTER_FULL = 5500; // after the last sticker of a level, with time to hear the prize
 const WRONG_MS = 450; // how long a wrong letter shows
 const PRAISE = ['Perfect!', 'Perfect! ✨', 'Wow, perfect!', 'Super speller!'];
 // 100 stickers, one for each word of a level; each level starts elsewhere.
@@ -71,9 +72,11 @@ function byId(id) {
 }
 
 // stages: word -> its stage (see STICKER), for every word started; no word
-// is in two levels. level: the id of the level last picked.
-const saved = storage.load(GAME_ID, { stages: {}, level: 1 });
+// is in two levels. level: the id of the level last picked. paid: level id
+// -> true once its full-page prize is paid.
+const saved = storage.load(GAME_ID, { stages: {}, level: 1, paid: {} });
 if (!isObject(saved.stages)) saved.stages = {};
+if (!isObject(saved.paid)) saved.paid = {};
 // From Zoe Spells, read only: the levels open there, and the words missed.
 const spells = storage.load('02-spelling', { unlocked: 1, missed: {} });
 const spellsOpen = typeof spells.unlocked === 'number' ? spells.unlocked : 1;
@@ -425,9 +428,15 @@ function finish() {
     }, 350);
     if (stage === STICKER) {
       const full = stickerCount(level) === level.words.length;
+      const prize = full && !saved.paid[level.id] ? FULL_PRIZE : 0;
+      if (prize) {
+        saved.paid[level.id] = true;
+        storage.save(GAME_ID, saved);
+        coins.earn(GAME_ID, prize);
+      }
       wait = full ? NEXT_AFTER_FULL : NEXT_AFTER_STICKER;
       setTimeout(function () {
-        newSticker(entry, full);
+        newSticker(entry, full, prize);
       }, 700);
     }
   } else if (perfect) {
@@ -439,8 +448,11 @@ function finish() {
   timer = setTimeout(next, wait);
 }
 
-function newSticker(entry, full) {
+// A new sticker pops up big; the last one of a level fills the notebook
+// page, with confetti and, the first time, the page's prize.
+function newSticker(entry, full, prize) {
   $('sticker-big').textContent = stickerOf(level, level.words.indexOf(entry));
+  $('sticker-caption').textContent = 'New sticker!';
   $('sticker-pop').hidden = false;
   sound.trumpet();
   stars($('sticker-big'));
@@ -448,9 +460,25 @@ function newSticker(entry, full) {
     setTimeout(function () {
       sound.celebrate();
       confetti();
-      tell('Your level ' + level.label + ' notebook is full!', 'good');
+      $('sticker-caption').innerHTML = 'Your notebook is full!' +
+        (prize ? '<br>You won ' + prize + ' ' + coins.ICON : '');
+      tell('Your level ' + level.label + ' notebook is full!' + (prize ? ' You won ' + prize + ' coins!' : ''),
+        'good');
+      if (!prize) return;
+      speech.speak('Your notebook is full! You won ' + prize + ' coins!');
+      setTimeout(function () {
+        sound.coin();
+        floatCoins($('tally'), prize);
+      }, 900);
     }, 1400);
   }
+}
+
+// What the start screen says Zoe can win on the level.
+function showPrize() {
+  $('prize').innerHTML = 'Perfect words win ' + PAY + ' ' + coins.ICON + '<br>' +
+    (saved.paid[level.id] ? 'Full page won: ' + FULL_PRIZE + ' ' + coins.ICON + ' ✓' :
+      'A full page wins ' + FULL_PRIZE + ' ' + coins.ICON);
 }
 
 // The start screen's notebook page: a space for each of the level's words,
@@ -507,6 +535,7 @@ function showLevel(info) {
   level = info;
   showTally();
   showNotebook();
+  showPrize();
   showLevelButtons();
 }
 
@@ -557,5 +586,12 @@ document.addEventListener('visibilitychange', function () {
   if (document.hidden) speech.stop();
 });
 
-$('prize').innerHTML = 'Perfect words win ' + PAY + ' ' + coins.ICON;
+// A page filled before it paid a prize is paid now, once.
+LEVELS.forEach(function (info) {
+  if (stickerCount(info) === info.words.length && !saved.paid[info.id]) {
+    saved.paid[info.id] = true;
+    coins.earn(GAME_ID, FULL_PRIZE);
+    storage.save(GAME_ID, saved);
+  }
+});
 showLevel(preview || byId(saved.level));

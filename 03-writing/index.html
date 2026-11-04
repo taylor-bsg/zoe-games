@@ -12,7 +12,7 @@
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="icon" href="../icons/icon-192.png">
-  <link rel="stylesheet" href="../shared/base.css?v=0.8.9">
+  <link rel="stylesheet" href="../shared/base.css?v=0.8.10">
   <style>
     /* Sticker count, in the middle of the top bar. */
     .tally {
@@ -338,6 +338,11 @@
       animation: pop 0.5s ease;
     }
 
+    .sticker-caption {
+      padding: 0 16px;
+      text-align: center;
+    }
+
     .sticker-big {
       padding: 10px 18px;
       border-radius: 28px;
@@ -437,7 +442,7 @@
           <button type="button" class="btn btn-icon say-again" id="say-again" aria-label="Say it again">🔊</button>
           <div class="sticker-pop" id="sticker-pop" hidden>
             <span class="sticker-big" id="sticker-big"></span>
-            <span>New sticker!</span>
+            <span class="sticker-caption" id="sticker-caption">New sticker!</span>
           </div>
         </div>
         <div id="keyboard"></div>
@@ -445,6 +450,6 @@
     </main>
   </div>
 
-  <script type="module" src="game.js?v=0.8.9"></script>
+  <script type="module" src="game.js?v=0.8.10"></script>
 </body>
 </html>

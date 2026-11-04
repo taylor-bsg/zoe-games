@@ -3,7 +3,7 @@
 // jumping over the barrels a monkey throws down from the top, then ride a
 // winding slide back to the bottom and go around again. See SPEC.md.
 //
-//   import { createMaze } from './maze.js?v=0.8.9';
+//   import { createMaze } from './maze.js?v=0.8.10';
 //   const maze = createMaze(canvas, squishies);
 //   maze.start();
 //   maze.stop();
@@ -27,8 +27,8 @@
 // before it climbs again. So barrels don't pass through squishies (one in
 // mid-tumble can cross a barrel, rarely, for a moment).
 
-import * as sound from '../shared/sound.js?v=0.8.9';
-import * as speech from '../shared/speech.js?v=0.8.9';
+import * as sound from '../shared/sound.js?v=0.8.10';
+import * as speech from '../shared/speech.js?v=0.8.10';
 
 // Sizes are in units: a full-size squishy's width.
 const WALK = 1.3; // walking speed, units a second
